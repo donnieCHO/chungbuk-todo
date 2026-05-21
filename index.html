@@ -194,26 +194,39 @@
   .memo-list { display:flex;flex-direction:column;gap:5px;margin-bottom:10px; }
   .memo-item {
     display:grid;
-    grid-template-columns:auto 1fr auto;
+    grid-template-columns:auto 1fr auto auto;
     gap:0 10px;
-    align-items:baseline;
+    align-items:center;
     background:var(--surface2);
-    border-radius:10px;padding:9px 13px;
+    border-radius:10px;padding:8px 10px 8px 13px;
     border-left:3px solid var(--border);
     transition:border-color .2s;
   }
   .memo-item:hover { border-left-color:var(--accent); }
   .memo-writer {
     font-size:12px;font-weight:700;white-space:nowrap;
-    color:var(--accent);
+    color:var(--accent);align-self:baseline;padding-top:1px;
   }
   /* 작성자 색상별 */
   .memo-writer.w-ops     { color:var(--ops); }
   .memo-writer.w-naver   { color:var(--naver); }
   .memo-writer.w-upstage { color:var(--upstage); }
   .memo-writer.w-sejong  { color:var(--sejong); }
-  .memo-text { font-size:13px;line-height:1.55;color:var(--text); }
-  .memo-date { font-size:10px;color:var(--muted);white-space:nowrap;font-family:'DM Mono',monospace;text-align:right; }
+  .memo-text { font-size:13px;line-height:1.55;color:var(--text);align-self:baseline;padding-top:1px; }
+  .memo-date { font-size:10px;color:var(--muted);white-space:nowrap;font-family:'DM Mono',monospace;text-align:right;align-self:baseline;padding-top:2px; }
+  /* 메모 액션 버튼 */
+  .memo-actions { display:flex;gap:2px;flex-shrink:0; }
+  .memo-btn { background:none;border:none;cursor:pointer;font-size:13px;padding:3px 6px;border-radius:5px;color:var(--muted);transition:all .15s;line-height:1; }
+  .memo-btn:hover { background:var(--surface);color:var(--text); }
+  .memo-btn.del:hover { color:var(--red); }
+  /* 메모 인라인 수정 */
+  .memo-item.editing { grid-template-columns:auto 1fr auto;border-left-color:var(--accent); }
+  .memo-edit-inp {
+    font-family:'Pretendard',sans-serif;font-size:13px;
+    background:var(--surface);border:1px solid var(--accent);
+    color:var(--text);border-radius:6px;padding:4px 8px;
+    outline:none;width:100%;
+  }
 
   /* 입력 행 */
   .memo-input-row {
@@ -576,10 +589,14 @@ function renderTask(key, t, showCat=false) {
     const d = new Date(m.ts);
     const dateStr = `${String(d.getMonth()+1).padStart(2,'0')}. ${String(d.getDate()).padStart(2,'0')}. ${d.getHours()>=12?'오후':'오전'} ${String(d.getHours()>12?d.getHours()-12:d.getHours()||12).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     return `
-    <div class="memo-item">
+    <div class="memo-item" id="mi-${key}-${mk}" data-writer="${m.writer||''}" data-text="${(m.text||'').replace(/"/g,'&quot;')}">
       <span class="memo-writer ${wCls}">${m.writer||'?'}</span>
       <span class="memo-text">${m.text}</span>
       <span class="memo-date">${dateStr}</span>
+      <div class="memo-actions">
+        <button class="memo-btn" onclick="startEditMemo('${key}','${mk}')" title="수정">✏️</button>
+        <button class="memo-btn del" onclick="deleteMemo('${key}','${mk}')" title="삭제">×</button>
+      </div>
     </div>`;
   }).join('');
 
@@ -632,6 +649,55 @@ window.addMemo = async (key) => {
   await push(ref(db, `tasks/${key}/memos`), { writer, text, ts: Date.now() });
   await update(ref(db, `tasks/${key}`), { updatedAt: Date.now() });
   inp.value = '';
+};
+
+/* ── 메모 삭제 ── */
+window.deleteMemo = async (taskKey, memoKey) => {
+  if (!confirm('이 메모를 삭제할까요?')) return;
+  setSyncStatus('syncing', '저장 중...');
+  await remove(ref(db, `tasks/${taskKey}/memos/${memoKey}`));
+  await update(ref(db, `tasks/${taskKey}`), { updatedAt: Date.now() });
+};
+
+/* ── 메모 인라인 수정 시작 ── */
+window.startEditMemo = (taskKey, memoKey) => {
+  const item = document.getElementById(`mi-${taskKey}-${memoKey}`);
+  if (!item) return;
+  const writer  = item.dataset.writer || '';
+  const curText = item.dataset.text   || '';
+  const writerEl = item.querySelector('.memo-writer');
+  const writerCls = writerEl ? writerEl.className : 'memo-writer';
+  item.classList.add('editing');
+  item.innerHTML = `
+    <span class="${writerCls}">${writer}</span>
+    <input class="memo-edit-inp" id="mei-${taskKey}-${memoKey}" value="${curText}" />
+    <div style="display:flex;gap:4px;flex-shrink:0;">
+      <button class="memo-btn" onclick="saveEditMemo('${taskKey}','${memoKey}')" title="저장" style="color:var(--green);font-size:13px;">✓</button>
+      <button class="memo-btn del" onclick="cancelEditMemo()" title="취소">×</button>
+    </div>`;
+  const inp = document.getElementById(`mei-${taskKey}-${memoKey}`);
+  if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  inp?.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  window.saveEditMemo(taskKey, memoKey);
+    if (e.key === 'Escape') window.cancelEditMemo();
+  });
+};
+
+/* ── 메모 수정 저장 ── */
+window.saveEditMemo = async (taskKey, memoKey) => {
+  const inp = document.getElementById(`mei-${taskKey}-${memoKey}`);
+  if (!inp) return;
+  const newText = inp.value.trim();
+  if (!newText) return;
+  setSyncStatus('syncing', '저장 중...');
+  await update(ref(db, `tasks/${taskKey}/memos/${memoKey}`), { text: newText });
+  await update(ref(db, `tasks/${taskKey}`), { updatedAt: Date.now() });
+};
+
+/* ── 메모 수정 취소 (리렌더 트리거) ── */
+window.cancelEditMemo = (taskKey) => {
+  // onValue가 이미 최신 데이터를 가지고 있으므로 그냥 다시 렌더
+  renderAll();
 };
 
 /* ── 그룹 렌더 공통 ── */
