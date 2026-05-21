@@ -288,8 +288,293 @@
   .note-banner { font-size:12px;color:var(--muted);background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.15);border-radius:8px;padding:7px 14px;margin:8px 18px 4px; }
   .empty-state { text-align:center;padding:28px;color:var(--muted);font-size:13px; }
 
-  @media(max-width:700px){.add-grid{grid-template-columns:1fr 1fr}.add-field.full{grid-column:span 2}}
-  @media(max-width:480px){.add-grid{grid-template-columns:1fr}.add-field.full{grid-column:span 1}}
+  /* ══════════════════════════════
+     ── TIMELINE ──
+  ══════════════════════════════ */
+  .timeline-section {
+    max-width:960px;margin:48px auto 0;
+    padding-bottom:60px;
+  }
+  .timeline-header {
+    display:flex;align-items:baseline;gap:12px;margin-bottom:28px;
+    border-top:1px solid var(--border);padding-top:32px;
+  }
+  .timeline-title {
+    font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--text);
+  }
+  .timeline-title span { color:var(--accent); }
+  .timeline-sub { font-size:12px;color:var(--muted); }
+
+  .timeline-wrap {
+    position:relative;padding-left:36px;
+  }
+  /* 수직 선 */
+  .timeline-wrap::before {
+    content:'';position:absolute;left:10px;top:0;bottom:0;
+    width:2px;background:var(--border);border-radius:2px;
+  }
+
+  /* 월 구분 헤더 */
+  .tl-month {
+    position:relative;margin-bottom:20px;
+  }
+  .tl-month-label {
+    font-size:11px;font-weight:700;letter-spacing:.08em;
+    color:var(--muted);text-transform:uppercase;
+    background:var(--bg);padding:0 10px 0 0;
+    position:relative;z-index:1;
+    display:inline-block;margin-left:-28px;
+    border:1px solid var(--border);border-radius:99px;
+    padding:3px 12px;font-family:'DM Mono',monospace;
+  }
+
+  /* 타임라인 아이템 */
+  .tl-item {
+    position:relative;margin-bottom:12px;
+    display:flex;align-items:flex-start;gap:14px;
+  }
+  /* 점 */
+  .tl-dot {
+    position:absolute;left:-30px;top:10px;
+    width:12px;height:12px;border-radius:50%;
+    border:2px solid var(--bg);
+    flex-shrink:0;transition:transform .2s;
+    z-index:1;
+  }
+  .tl-item:hover .tl-dot { transform:scale(1.3); }
+
+  /* 날짜 */
+  .tl-date {
+    font-family:'DM Mono',monospace;font-size:11px;font-weight:500;
+    color:var(--muted);white-space:nowrap;
+    padding-top:11px;min-width:52px;text-align:right;
+    margin-left:-14px;
+  }
+
+  /* 카드 */
+  .tl-card {
+    flex:1;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:11px 14px;
+    transition:border-color .2s, opacity .2s;
+    cursor:default;
+  }
+  .tl-card:hover { border-color:rgba(79,142,247,.4); }
+
+  /* 완료 항목: 흐리게 */
+  .tl-item.done .tl-card {
+    opacity:.38;
+  }
+  .tl-item.done .tl-dot {
+    opacity:.35;
+  }
+  .tl-item.done .tl-card-text {
+    text-decoration:line-through;
+  }
+
+  /* 기한 초과 */
+  .tl-item.over .tl-dot    { box-shadow:0 0 0 3px rgba(247,111,111,.25); }
+  .tl-item.over .tl-date   { color:var(--red); }
+
+  /* 7일 이내 */
+  .tl-item.near .tl-dot    { box-shadow:0 0 0 3px rgba(245,200,66,.25); }
+  .tl-item.near .tl-date   { color:var(--yellow); }
+
+  /* 오늘 */
+  .tl-item.today .tl-dot   { box-shadow:0 0 0 4px rgba(61,214,140,.3); }
+  .tl-item.today .tl-date  { color:var(--green);font-weight:700; }
+
+  .tl-card-top {
+    display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px;
+  }
+  .tl-card-text {
+    font-size:14px;font-weight:500;color:var(--text);line-height:1.4;flex:1;min-width:0;
+  }
+  .tl-card-meta {
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px;
+  }
+
+  /* 오늘 마커 */
+  .tl-today-marker {
+    position:relative;margin-bottom:16px;display:flex;align-items:center;gap:10px;
+  }
+  .tl-today-marker::before {
+    content:'';position:absolute;left:-30px;top:50%;transform:translateY(-50%);
+    width:14px;height:14px;border-radius:50%;
+    background:var(--green);border:3px solid var(--bg);
+    box-shadow:0 0 0 3px rgba(61,214,140,.3);z-index:2;
+  }
+  .tl-today-line {
+    flex:1;height:1px;background:rgba(61,214,140,.4);
+    border-top:1px dashed rgba(61,214,140,.5);
+  }
+  .tl-today-label {
+    font-size:11px;font-weight:700;color:var(--green);
+    font-family:'DM Mono',monospace;white-space:nowrap;
+  }
+
+  /* 기한 없음 */
+  .tl-nodl {
+    margin-top:24px;padding-top:20px;border-top:1px dashed var(--border);
+  }
+  .tl-nodl-label {
+    font-size:11px;color:var(--muted);margin-bottom:10px;
+    font-family:'DM Mono',monospace;letter-spacing:.05em;
+  }
+  .tl-nodl-list { display:flex;flex-direction:column;gap:6px; }
+  .tl-nodl-item {
+    display:flex;align-items:center;gap:8px;
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:8px;padding:8px 12px;opacity:.5;
+    font-size:13px;color:var(--muted);
+  }
+  .timeline-loading { color:var(--muted);font-size:13px;padding:20px; }
+
+  /* ══════════════════════════════
+     ── CONTACTS ──
+  ══════════════════════════════ */
+  .contacts-section {
+    max-width:960px;margin:48px auto 0;padding-bottom:80px;
+  }
+  .contacts-header {
+    display:flex;align-items:baseline;gap:12px;margin-bottom:28px;
+    border-top:1px solid var(--border);padding-top:32px;
+  }
+  .contacts-title { font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--text); }
+  .contacts-title span { color:var(--accent); }
+  .contacts-sub { font-size:12px;color:var(--muted); }
+
+  /* 입력 폼 */
+  .contact-add-form {
+    background:rgba(79,142,247,.04);border:2px solid var(--accent);
+    border-radius:18px;padding:22px 24px 20px;margin-bottom:36px;
+    box-shadow:0 0 0 5px rgba(79,142,247,.06),0 4px 24px rgba(0,0,0,.3);
+  }
+  .contact-form-title {
+    font-size:16px;font-weight:800;color:var(--accent);margin-bottom:16px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .contact-form-title-icon {
+    width:28px;height:28px;border-radius:8px;
+    background:rgba(79,142,247,.15);display:flex;align-items:center;justify-content:center;font-size:14px;
+  }
+  .contact-form-grid {
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 12px;
+  }
+  .contact-form-field { display:flex;flex-direction:column;gap:5px; }
+  .contact-form-field.full { grid-column:span 3; }
+  .contact-form-field.half { grid-column:span 1; }
+  .contact-field-label {
+    font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;
+  }
+  .contact-form-field input,.contact-form-field select {
+    font-family:'Pretendard',sans-serif;font-size:13px;
+    background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);border-radius:9px;padding:9px 12px;outline:none;
+    transition:border-color .2s;width:100%;
+  }
+  .contact-form-field input::placeholder { color:var(--muted); }
+  .contact-form-field input:focus,.contact-form-field select:focus { border-color:var(--accent); }
+  .contact-form-field select option { background:var(--surface2); }
+  .contact-form-footer { display:flex;justify-content:flex-end;margin-top:14px; }
+  .btn-contact-add {
+    font-family:'Pretendard',sans-serif;font-size:14px;font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;border:none;border-radius:10px;padding:11px 28px;
+    cursor:pointer;transition:opacity .2s;
+    box-shadow:0 4px 14px rgba(79,142,247,.3);
+  }
+  .btn-contact-add:hover { opacity:.88; }
+
+  /* 소속별 그룹 */
+  .contact-groups { display:flex;flex-direction:column;gap:28px; }
+  .contact-group-label {
+    font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:12px;font-family:'DM Mono',monospace;
+    display:flex;align-items:center;gap:8px;
+  }
+  .contact-group-label::after {
+    content:'';flex:1;height:1px;background:var(--border);border-radius:1px;
+  }
+  .contact-cards { display:flex;flex-wrap:wrap;gap:14px; }
+
+  /* 카드 공통 */
+  .contact-card {
+    width:200px;border-radius:16px;padding:20px 18px 16px;
+    border:1px solid transparent;
+    position:relative;overflow:hidden;
+    transition:transform .2s,box-shadow .2s;
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .contact-card:hover { transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.35); }
+
+  /* 빈 카드 (placeholder) */
+  .contact-card.empty {
+    border-style:dashed;opacity:.4;
+    align-items:center;justify-content:center;
+    min-height:160px;cursor:default;
+  }
+  .contact-card.empty:hover { transform:none;box-shadow:none; }
+  .contact-card-empty-icon { font-size:22px;margin-bottom:4px; }
+  .contact-card-empty-text { font-size:12px;color:var(--muted); }
+
+  /* 카드 상단 줄무늬 */
+  .contact-card-stripe {
+    position:absolute;top:0;left:0;right:0;height:4px;border-radius:16px 16px 0 0;
+  }
+
+  /* 아바타 이니셜 */
+  .contact-avatar {
+    width:40px;height:40px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;font-weight:800;color:#fff;flex-shrink:0;
+  }
+
+  .contact-card-top { display:flex;align-items:center;gap:10px; }
+  .contact-card-info { flex:1;min-width:0; }
+  .contact-name {
+    font-size:14px;font-weight:700;color:var(--text);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .contact-role {
+    font-size:11px;color:var(--muted);margin-top:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* 연락처 항목 */
+  .contact-detail {
+    display:flex;align-items:center;gap:7px;
+    font-size:12px;color:var(--muted);line-height:1.4;
+  }
+  .contact-detail-icon { font-size:11px;flex-shrink:0;opacity:.7; }
+  .contact-detail a {
+    color:inherit;text-decoration:none;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    transition:color .15s;
+  }
+  .contact-detail a:hover { color:var(--text); }
+
+  /* 삭제 버튼 */
+  .contact-del-btn {
+    position:absolute;top:10px;right:10px;
+    background:none;border:none;color:transparent;
+    cursor:pointer;font-size:14px;padding:2px 5px;border-radius:5px;
+    transition:all .15s;line-height:1;
+  }
+  .contact-card:hover .contact-del-btn { color:var(--muted); }
+  .contact-del-btn:hover { color:var(--red) !important;background:rgba(247,111,111,.12); }
+
+  @media(max-width:700px){
+    .add-grid{grid-template-columns:1fr 1fr}.add-field.full{grid-column:span 2}
+    .contact-form-grid{grid-template-columns:1fr 1fr}
+    .contact-form-field.full{grid-column:span 2}
+    .contact-card{width:calc(50% - 7px)}
+  }
+  @media(max-width:480px){
+    .add-grid{grid-template-columns:1fr}.add-field.full{grid-column:span 1}
+    .contact-form-grid{grid-template-columns:1fr}
+    .contact-form-field.full,.contact-form-field.half{grid-column:span 1}
+    .contact-card{width:100%}
+  }
 </style>
 </head>
 <body>
@@ -420,6 +705,67 @@
 
 <div class="filter-section" id="filterSection"></div>
 <div class="categories" id="catContainer"></div>
+
+<!-- ══ Timeline ══ -->
+<div class="timeline-section" id="timelineSection">
+  <div class="timeline-header">
+    <div class="timeline-title">📅 <span>타임라인</span></div>
+    <div class="timeline-sub">기한이 설정된 항목만 표시됩니다</div>
+  </div>
+  <div class="timeline-wrap" id="timelineWrap">
+    <div class="timeline-loading">데이터 로딩 중...</div>
+  </div>
+</div>
+
+<!-- ══ Contacts ══ -->
+<div class="contacts-section">
+  <div class="contacts-header">
+    <div class="contacts-title">👥 <span>참여자 연락처</span></div>
+    <div class="contacts-sub">소속별로 정렬됩니다</div>
+  </div>
+
+  <!-- 입력 폼 -->
+  <div class="contact-add-form">
+    <div class="contact-form-title">
+      <div class="contact-form-title-icon">➕</div>
+      연락처 추가
+    </div>
+    <div class="contact-form-grid">
+      <div class="contact-form-field half">
+        <span class="contact-field-label">이름</span>
+        <input type="text" id="ct-name" placeholder="홍길동" />
+      </div>
+      <div class="contact-form-field half">
+        <span class="contact-field-label">소속</span>
+        <select id="ct-org">
+          <option value="naver">네이버</option>
+          <option value="upstage">Upstage</option>
+          <option value="sejong">세종대</option>
+          <option value="ops">운영팀</option>
+          <option value="education">교육청</option>
+        </select>
+      </div>
+      <div class="contact-form-field half">
+        <span class="contact-field-label">담당 업무</span>
+        <input type="text" id="ct-role" placeholder="커리큘럼 설계" />
+      </div>
+      <div class="contact-form-field half">
+        <span class="contact-field-label">전화번호</span>
+        <input type="text" id="ct-phone" placeholder="010-0000-0000" />
+      </div>
+      <div class="contact-form-field full">
+        <span class="contact-field-label">이메일</span>
+        <input type="text" id="ct-email" placeholder="name@example.com" />
+      </div>
+    </div>
+    <div class="contact-form-footer">
+      <button class="btn-contact-add" id="btnContactAdd" onclick="addContact()">+ 추가</button>
+    </div>
+  </div>
+
+  <!-- 카드 목록 -->
+  <div class="contact-groups" id="contactGroups"></div>
+</div>
 
 <!-- Firebase -->
 <script type="module">
@@ -783,6 +1129,167 @@ function renderAll() {
   if      (viewMode==='cat')      renderByCat();
   else if (viewMode==='priority') renderByPriority();
   else if (viewMode==='deadline') renderByDeadline();
+  renderTimeline();
+}
+
+/* ══════════════════════════════
+   ── TIMELINE ──
+══════════════════════════════ */
+function renderTimeline() {
+  const wrap  = document.getElementById('timelineWrap');
+  if (!wrap) return;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const allEntries = Object.entries(tasks);
+
+  // 기한 있는 항목 날짜순 정렬
+  const withDL = allEntries
+    .filter(([,t]) => t.deadline)
+    .sort(([,a],[,b]) => new Date(a.deadline) - new Date(b.deadline));
+
+  // 기한 없는 항목
+  const noDL = allEntries
+    .filter(([,t]) => !t.deadline)
+    .sort(([,a],[,b]) => (a.order||0) - (b.order||0));
+
+  if (withDL.length === 0 && noDL.length === 0) {
+    wrap.innerHTML = '<div class="timeline-loading">기한이 설정된 항목이 없습니다</div>';
+    return;
+  }
+
+  // 날짜 포맷 헬퍼
+  const fmtDate = (dl) => {
+    const d = new Date(dl);
+    return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  };
+  const fmtMonth = (dl) => {
+    const d = new Date(dl);
+    return `${d.getFullYear()}년 ${d.getMonth()+1}월`;
+  };
+
+  // 긴급도 클래스
+  const urgency = (dl, done) => {
+    if (done) return 'done';
+    const diff = Math.ceil((new Date(dl) - today) / 86400000);
+    if (diff < 0)  return 'over';
+    if (diff === 0) return 'today';
+    if (diff <= 7)  return 'near';
+    return '';
+  };
+
+  // 점 색상
+  const dotColor = (dl, done) => {
+    if (done) return 'var(--border)';
+    const diff = Math.ceil((new Date(dl) - today) / 86400000);
+    if (diff < 0)   return 'var(--red)';
+    if (diff === 0) return 'var(--green)';
+    if (diff <= 7)  return 'var(--yellow)';
+    return 'var(--accent)';
+  };
+
+  // 카테고리 태그
+  const catTag = (cat) => {
+    const cfg = CAT_CONFIG[cat];
+    if (!cfg) return '';
+    return `<span class="tag cat-tag" style="color:${cfg.color};border-color:${cfg.color}44;background:${cfg.color}11">${cfg.icon} ${cat}</span>`;
+  };
+
+  // 담당기관 태그
+  const agencyTags = (agencies) => (agencies||[]).map(a => {
+    const cls = ENTITY_CLS[a]||a, lbl = ENTITY_LABEL[a]||a;
+    return `<span class="tag agency-${cls}">${lbl}</span>`;
+  }).join('');
+
+  // 우선순위 태그
+  const prioTag = (p) => {
+    if (p === 'high') return `<span class="tag priority-high">우선</span>`;
+    if (p === 'mid')  return `<span class="tag priority-mid">보통</span>`;
+    return '';
+  };
+
+  // 오늘 기준으로 before/after 분리
+  const past   = withDL.filter(([,t]) => new Date(t.deadline) < today);
+  const future = withDL.filter(([,t]) => new Date(t.deadline) >= today);
+
+  // 타임라인 아이템 HTML 생성
+  const itemHtml = ([key, t]) => {
+    const urg  = urgency(t.deadline, t.done);
+    const col  = dotColor(t.deadline, t.done);
+    const doneClass = t.done ? 'done' : '';
+    return `
+    <div class="tl-item ${urg} ${doneClass}">
+      <div class="tl-dot" style="background:${col}"></div>
+      <div class="tl-date">${fmtDate(t.deadline)}</div>
+      <div class="tl-card">
+        <div class="tl-card-top">
+          ${prioTag(t.priority)}
+          <span class="tl-card-text">${t.text}</span>
+          ${t.done ? '<span class="tag confirmed">✓ 완료</span>' : ''}
+        </div>
+        <div class="tl-card-meta">
+          ${catTag(t.cat)}
+          ${agencyTags(t.agencies)}
+        </div>
+      </div>
+    </div>`;
+  };
+
+  // 월별 그룹핑 함수
+  const groupByMonth = (entries) => {
+    const months = {};
+    entries.forEach(e => {
+      const key = fmtMonth(e[1].deadline);
+      if (!months[key]) months[key] = [];
+      months[key].push(e);
+    });
+    return months;
+  };
+
+  let html = '';
+
+  // 과거 항목 (완료됐든 아니든)
+  if (past.length > 0) {
+    const pastMonths = groupByMonth(past);
+    Object.entries(pastMonths).forEach(([month, items]) => {
+      html += `<div class="tl-month"><span class="tl-month-label">${month}</span></div>`;
+      html += items.map(itemHtml).join('');
+    });
+  }
+
+  // 오늘 마커
+  html += `
+  <div class="tl-today-marker">
+    <div class="tl-today-line"></div>
+    <span class="tl-today-label">TODAY</span>
+    <div class="tl-today-line"></div>
+  </div>`;
+
+  // 미래 항목
+  if (future.length > 0) {
+    const futureMonths = groupByMonth(future);
+    Object.entries(futureMonths).forEach(([month, items]) => {
+      html += `<div class="tl-month"><span class="tl-month-label">${month}</span></div>`;
+      html += items.map(itemHtml).join('');
+    });
+  }
+
+  // 기한 없는 항목
+  if (noDL.length > 0) {
+    const nodlItems = noDL.map(([,t]) => `
+      <div class="tl-nodl-item">
+        <span style="color:var(--muted);font-size:11px;">—</span>
+        ${prioTag(t.priority)}
+        <span>${t.text}</span>
+        ${t.done ? '<span class="tag confirmed" style="margin-left:auto">✓ 완료</span>' : ''}
+      </div>`).join('');
+    html += `
+    <div class="tl-nodl">
+      <div class="tl-nodl-label">기한 미설정</div>
+      <div class="tl-nodl-list">${nodlItems}</div>
+    </div>`;
+  }
+
+  wrap.innerHTML = html;
 }
 
 /* ── Firebase actions ── */
@@ -910,6 +1417,121 @@ onValue(tasksRef, snap => {
 }, err => { console.error(err); setSyncStatus('error','연결 오류'); });
 
 calcDDay();
+
+/* ══════════════════════════════
+   ── CONTACTS ──
+══════════════════════════════ */
+const contactsRef = ref(db, 'contacts');
+
+const ORG_CONFIG = {
+  naver:     { label:'네이버',  color:'#00c73c', bg:'rgba(0,199,60,.12)',   initBg:'#00c73c' },
+  upstage:   { label:'Upstage', color:'#8b5cf6', bg:'rgba(139,92,246,.12)', initBg:'#8b5cf6' },
+  sejong:    { label:'세종대',  color:'#c3002f', bg:'rgba(195,0,47,.12)',   initBg:'#c3002f' },
+  ops:       { label:'운영팀',  color:'#e8ecf4', bg:'rgba(232,236,244,.08)',initBg:'#6b7a9e' },
+  education: { label:'교육청',  color:'#f5c842', bg:'rgba(245,200,66,.12)', initBg:'#f5c842' },
+};
+const ORG_ORDER = ['naver','upstage','sejong','ops','education'];
+
+let contacts = {};
+
+/* ── 연락처 추가 ── */
+window.addContact = async () => {
+  const name  = document.getElementById('ct-name').value.trim();
+  const org   = document.getElementById('ct-org').value;
+  const role  = document.getElementById('ct-role').value.trim();
+  const phone = document.getElementById('ct-phone').value.trim();
+  const email = document.getElementById('ct-email').value.trim();
+  if (!name) { document.getElementById('ct-name').focus(); return; }
+  document.getElementById('btnContactAdd').disabled = true;
+  setSyncStatus('syncing','저장 중...');
+  await push(contactsRef, { name, org, role, phone, email, order: Date.now() });
+  ['ct-name','ct-role','ct-phone','ct-email'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('btnContactAdd').disabled = false;
+};
+
+/* ── 연락처 삭제 ── */
+window.deleteContact = async (key) => {
+  if (!confirm('이 연락처를 삭제할까요?')) return;
+  setSyncStatus('syncing','저장 중...');
+  await remove(ref(db, `contacts/${key}`));
+};
+
+/* ── 이니셜 추출 ── */
+function getInitial(name) {
+  if (!name) return '?';
+  return name.charAt(0).toUpperCase();
+}
+
+/* ── 카드 렌더 ── */
+function renderContactCard(key, c, isEmpty=false) {
+  const org = ORG_CONFIG[c.org] || ORG_CONFIG.ops;
+  if (isEmpty) {
+    return `
+    <div class="contact-card empty" style="border-color:${org.color};background:${org.bg};">
+      <div class="contact-card-empty-icon">👤</div>
+      <div class="contact-card-empty-text">아직 없음</div>
+    </div>`;
+  }
+  const phone = c.phone ? `<div class="contact-detail"><span class="contact-detail-icon">📞</span><a href="tel:${c.phone}">${c.phone}</a></div>` : '';
+  const email = c.email ? `<div class="contact-detail"><span class="contact-detail-icon">✉️</span><a href="mailto:${c.email}">${c.email}</a></div>` : '';
+  return `
+  <div class="contact-card" style="background:${org.bg};border-color:${org.color}33;">
+    <div class="contact-card-stripe" style="background:${org.color};"></div>
+    <button class="contact-del-btn" onclick="deleteContact('${key}')" title="삭제">×</button>
+    <div class="contact-card-top">
+      <div class="contact-avatar" style="background:${org.initBg};">${getInitial(c.name)}</div>
+      <div class="contact-card-info">
+        <div class="contact-name">${c.name}</div>
+        <div class="contact-role">${c.role||''}</div>
+      </div>
+    </div>
+    ${phone}${email}
+  </div>`;
+}
+
+/* ── 연락처 전체 렌더 ── */
+function renderContacts() {
+  const wrap = document.getElementById('contactGroups');
+  if (!wrap) return;
+
+  // 소속별로 분류
+  const grouped = {};
+  ORG_ORDER.forEach(k => grouped[k] = []);
+  Object.entries(contacts)
+    .sort(([,a],[,b]) => (a.order||0)-(b.order||0))
+    .forEach(([key,c]) => {
+      const org = c.org && grouped[c.org] !== undefined ? c.org : 'ops';
+      grouped[org].push([key, c]);
+    });
+
+  wrap.innerHTML = ORG_ORDER.map(orgKey => {
+    const cfg   = ORG_CONFIG[orgKey];
+    const items = grouped[orgKey];
+    const cardsHtml = items.length > 0
+      ? items.map(([key,c]) => renderContactCard(key, c)).join('')
+      : renderContactCard(null, { org: orgKey }, true);
+    return `
+    <div>
+      <div class="contact-group-label" style="color:${cfg.color}">
+        ${cfg.label} <span style="font-size:10px;opacity:.6">${items.length}명</span>
+      </div>
+      <div class="contact-cards">${cardsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Enter 키로 추가 ── */
+['ct-name','ct-role','ct-phone','ct-email'].forEach(id => {
+  document.getElementById(id)?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') window.addContact();
+  });
+});
+
+/* ── Firebase 리스너 ── */
+onValue(contactsRef, snap => {
+  contacts = snap.val() || {};
+  renderContacts();
+}, err => console.error('contacts error:', err));
 </script>
 </body>
 </html>
