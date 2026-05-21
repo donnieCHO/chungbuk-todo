@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>충북교육청 AI 교원연수 준비 현황</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
 
   :root {
@@ -20,212 +20,321 @@
     --red: #f76f6f;
     --text: #e8ecf4;
     --muted: #6b7a9e;
-    --tag-bg: #1a2040;
-    --upstage: #ff6b35;
-    --sejong: #3db8f5;
+    --naver: #00c73c;
+    --upstage: #8b5cf6;
+    --sejong: #c3002f;
+    --ops: #e8ecf4;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Pretendard','Malgun Gothic',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 32px 24px; }
 
-  body {
-    font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 32px 24px;
+  /* ── Loading ── */
+  #loadingOverlay { position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;transition:opacity .4s; }
+  #loadingOverlay.hidden { opacity:0;pointer-events:none; }
+  .spinner { width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { font-size:14px;color:var(--muted); }
+
+  /* ── Sync ── */
+  #syncStatus { position:fixed;bottom:20px;right:20px;font-size:12px;padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:flex;align-items:center;gap:6px;transition:all .3s;z-index:100; }
+  #syncStatus.syncing { border-color:var(--yellow);color:var(--yellow); }
+  #syncStatus.synced  { border-color:var(--green); color:var(--green);  }
+  #syncStatus.error   { border-color:var(--red);   color:var(--red);    }
+  .sync-dot { width:6px;height:6px;border-radius:50%;background:currentColor; }
+  #syncStatus.syncing .sync-dot { animation:pulse 1s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+  /* ── Header ── */
+  .header { max-width:960px;margin:0 auto 32px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px; }
+  .header-left h1 { font-size:22px;font-weight:700;letter-spacing:-.5px; }
+  .header-left h1 span { color:var(--accent); }
+  .header-left .meta { margin-top:8px;font-size:13px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap; }
+  .meta-chip { display:flex;align-items:center;gap:5px; }
+  .meta-chip .dot { width:6px;height:6px;border-radius:50%;background:var(--accent); }
+  .dday { font-family:'DM Mono',monospace;font-size:13px;font-weight:500;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:6px 14px;border-radius:999px;white-space:nowrap; }
+
+  /* ── Progress ── */
+  .progress-section { max-width:960px;margin:0 auto 28px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 22px;display:flex;align-items:center;gap:20px;flex-wrap:wrap; }
+  .progress-label { font-size:13px;color:var(--muted);white-space:nowrap; }
+  .progress-bar-wrap { flex:1;min-width:200px;height:8px;background:var(--surface2);border-radius:99px;overflow:hidden; }
+  .progress-bar-fill { height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .6s ease; }
+  .progress-pct { font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--accent);white-space:nowrap; }
+  .stat-chips { display:flex;gap:10px; }
+  .stat-chip { font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid var(--border);color:var(--muted); }
+  .stat-chip.done { border-color:var(--green);color:var(--green); }
+  .stat-chip.todo { border-color:var(--yellow);color:var(--yellow); }
+
+  /* ══ ADD SECTION ══ */
+  .add-section { max-width:960px;margin:0 auto 12px;background:rgba(79,142,247,.04);border:2px solid var(--accent);border-radius:18px;padding:22px 24px 20px;box-shadow:0 0 0 5px rgba(79,142,247,.06),0 4px 24px rgba(0,0,0,.3); }
+  .add-title { font-size:18px;font-weight:800;letter-spacing:-.3px;color:var(--accent);margin-bottom:18px;display:flex;align-items:center;gap:8px; }
+  .add-title-icon { width:32px;height:32px;border-radius:9px;background:rgba(79,142,247,.15);display:flex;align-items:center;justify-content:center;font-size:16px; }
+  .add-grid { display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px 12px; }
+  .add-field { display:flex;flex-direction:column;gap:5px; }
+  .add-field.full { grid-column:span 4; }
+  .field-label { font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);text-transform:uppercase; }
+  .add-section input[type=text],.add-section input[type=date],.add-section select {
+    font-family:'Pretendard',sans-serif;font-size:13px;background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);border-radius:9px;padding:9px 12px;outline:none;transition:border-color .2s;width:100%;
   }
+  .add-section input[type=date] { color-scheme:dark; }
+  .add-section input::placeholder { color:var(--muted); }
+  .add-section input:focus,.add-section select:focus { border-color:var(--accent); }
+  .add-section select option { background:var(--surface2); }
+  .agency-btn-group { display:flex;gap:7px;flex-wrap:wrap; }
+  .agency-btn { font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;padding:7px 13px;border-radius:99px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap; }
+  .agency-btn:hover { border-color:var(--text);color:var(--text); }
+  .agency-btn.active-ops     { border-color:var(--ops);    color:var(--ops);    background:rgba(232,236,244,.1); }
+  .agency-btn.active-naver   { border-color:var(--naver);  color:var(--naver);  background:rgba(0,199,60,.12); }
+  .agency-btn.active-upstage { border-color:var(--upstage);color:var(--upstage);background:rgba(139,92,246,.12); }
+  .agency-btn.active-sejong  { border-color:var(--sejong); color:var(--sejong); background:rgba(195,0,47,.12); }
+  .add-footer { margin-top:14px;display:flex;justify-content:flex-end; }
+  .btn-add { font-family:'Pretendard',sans-serif;font-size:14px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:11px 28px;cursor:pointer;transition:opacity .2s;box-shadow:0 4px 14px rgba(79,142,247,.3); }
+  .btn-add:hover { opacity:.88; }
+  .btn-add:disabled { opacity:.4;cursor:not-allowed; }
 
-  /* Loading overlay */
-  #loadingOverlay {
-    position: fixed; inset: 0;
-    background: var(--bg);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 16px; z-index: 999;
-    transition: opacity 0.4s;
+  /* ══ TODO LIST HEADER ══ */
+  .todo-list-header { max-width:960px;margin:32px auto 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px; }
+  .todo-list-title { font-size:26px;font-weight:800;letter-spacing:-.8px; }
+  .todo-list-title span { color:var(--accent); }
+
+  /* 뷰 탭 + 완료 필터 */
+  .list-controls { display:flex;flex-wrap:wrap;gap:8px;align-items:center; }
+  .view-tabs,.done-tabs { display:flex;gap:5px; }
+  .tab-divider { width:1px;height:24px;background:var(--border);align-self:center; }
+  .view-tab,.done-tab {
+    font-family:'Pretendard',sans-serif;font-size:13px;font-weight:500;
+    padding:6px 14px;border-radius:99px;border:1.5px solid var(--border);
+    background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;
   }
-  #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+  .view-tab:hover,.done-tab:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.07); }
+  .view-tab.active { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.12);font-weight:600; }
+  .done-tab.active-all  { border-color:var(--muted); color:var(--text);  background:rgba(255,255,255,.06); font-weight:600; }
+  .done-tab.active-todo { border-color:var(--yellow);color:var(--yellow);background:rgba(245,200,66,.1);  font-weight:600; }
+  .done-tab.active-done { border-color:var(--green); color:var(--green); background:rgba(61,214,140,.1);  font-weight:600; }
+
+  /* 카테고리 필터 */
+  .filter-section { max-width:960px;margin:0 auto 18px;display:flex;gap:8px;flex-wrap:wrap; }
+  .filter-btn { font-family:'Pretendard',sans-serif;font-size:13px;padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s; }
+  .filter-btn.active,.filter-btn:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08); }
+
+  /* ── Category groups ── */
+  .categories { max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:20px; }
+  .cat-group { background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden; }
+  .cat-header { display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none; }
+  .cat-header:hover { background:var(--surface2); }
+  .cat-title { display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600; }
+  .cat-icon { width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px; }
+  .cat-stats { display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted); }
+  .mini-progress { width:60px;height:5px;background:var(--surface2);border-radius:99px;overflow:hidden; }
+  .mini-progress-fill { height:100%;border-radius:99px;transition:width .4s; }
+  .collapse-btn { font-size:11px;color:var(--muted);transition:transform .2s; }
+  .cat-group.collapsed .collapse-btn { transform:rotate(-90deg); }
+  .cat-group.collapsed .task-list { display:none; }
+
+  /* ── Task item ── */
+  .task-list { padding:4px 0; }
+  .task-item { border-bottom:1px solid rgba(42,48,80,.5);transition:background .15s;animation:fadeIn .25s ease; }
+  .task-item:last-child { border-bottom:none; }
+  .task-item:hover { background:rgba(255,255,255,.015); }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none} }
+
+  /* 메인 행 */
+  .task-main { display:flex;align-items:center;gap:12px;padding:12px 18px; }
+
+  /* ── 완료 버튼 ── */
+  .check-wrap {
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    height:26px;padding:0 11px;border-radius:99px;
+    border:1.5px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.04);
+    cursor:pointer;transition:all .2s;
+    gap:5px;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 14px; color: var(--muted); }
+  .check-wrap:hover { border-color:var(--green);background:rgba(61,214,140,.1); }
+  .check-wrap .check-icon { font-size:11px;color:rgba(255,255,255,.25);transition:all .2s;font-weight:700;line-height:1; }
+  .check-wrap .check-label { font-size:11px;font-weight:600;color:rgba(255,255,255,.25);transition:all .2s;white-space:nowrap;letter-spacing:.02em; }
+  .check-wrap:hover .check-icon,
+  .check-wrap:hover .check-label { color:var(--green); }
+  .task-item.done .check-wrap { background:rgba(61,214,140,.15);border-color:var(--green); }
+  .task-item.done .check-wrap .check-icon,
+  .task-item.done .check-wrap .check-label { color:var(--green); }
+  .task-item.done .task-text { text-decoration:line-through;color:var(--muted); }
+  .task-item.done .task-deadline { opacity:.45; }
 
-  /* Sync indicator */
-  #syncStatus {
-    position: fixed; bottom: 20px; right: 20px;
-    font-size: 12px; padding: 6px 14px;
-    border-radius: 99px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--muted);
-    display: flex; align-items: center; gap: 6px;
-    transition: all 0.3s;
-    z-index: 100;
+  /* 한 줄 콘텐츠 */
+  .task-content { flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0; }
+  .task-text { font-size:14px;font-weight:500;line-height:1.4;flex:1;min-width:100px; }
+
+  /* Tags */
+  .tag { font-size:11px;padding:2px 9px;border-radius:99px;background:#1a2040;color:var(--muted);border:1px solid var(--border);white-space:nowrap; }
+  .tag.priority-high { color:var(--red);   border-color:rgba(247,111,111,.35);background:rgba(247,111,111,.08);font-weight:700; }
+  .tag.priority-mid  { color:var(--yellow);border-color:rgba(245,200,66,.35); background:rgba(245,200,66,.08); font-weight:700; }
+  .tag.agency-ops    { color:var(--ops);   border-color:rgba(232,236,244,.3); background:rgba(232,236,244,.07); }
+  .tag.agency-naver  { color:var(--naver); border-color:rgba(0,199,60,.35);   background:rgba(0,199,60,.08); }
+  .tag.agency-upstage{ color:var(--upstage);border-color:rgba(139,92,246,.4); background:rgba(139,92,246,.1);font-weight:500; }
+  .tag.agency-sejong { color:var(--sejong);border-color:rgba(195,0,47,.4);    background:rgba(195,0,47,.1);  font-weight:500; }
+  .tag.confirmed     { color:var(--green); border-color:rgba(61,214,140,.35); background:rgba(61,214,140,.08); }
+  .tag.cat-tag       { font-size:10px;padding:1px 7px; }
+
+  .task-deadline { font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap; }
+  .task-deadline.near { color:var(--yellow); }
+  .task-deadline.over { color:var(--red); }
+
+  /* 액션 버튼 */
+  .task-actions { display:flex;gap:2px;flex-shrink:0; }
+  .btn-icon { background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:4px 6px;border-radius:6px;transition:all .15s;line-height:1; }
+  .btn-icon:hover { background:var(--surface2); }
+  .btn-edit:hover { color:var(--accent); }
+  .btn-del:hover  { color:var(--red); }
+
+  /* ── 메모 영역 (항상 표시, 메모 있으면 자동 펼침) ── */
+  .task-memo-wrap { padding:0 18px 12px 18px; }
+  .memo-list { display:flex;flex-direction:column;gap:5px;margin-bottom:10px; }
+  .memo-item {
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    gap:0 10px;
+    align-items:baseline;
+    background:var(--surface2);
+    border-radius:10px;padding:9px 13px;
+    border-left:3px solid var(--border);
+    transition:border-color .2s;
   }
-  #syncStatus.syncing { border-color: var(--yellow); color: var(--yellow); }
-  #syncStatus.synced  { border-color: var(--green);  color: var(--green);  }
-  #syncStatus.error   { border-color: var(--red);    color: var(--red);    }
-  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  #syncStatus.syncing .sync-dot { animation: pulse 1s ease infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  .header {
-    max-width: 920px; margin: 0 auto 32px;
-    display: flex; justify-content: space-between; align-items: flex-end;
-    flex-wrap: wrap; gap: 16px;
+  .memo-item:hover { border-left-color:var(--accent); }
+  .memo-writer {
+    font-size:12px;font-weight:700;white-space:nowrap;
+    color:var(--accent);
   }
-  .header-left h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.3; }
-  .header-left h1 span { color: var(--accent); }
-  .header-left .meta { margin-top: 8px; font-size: 13px; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
-  .meta-chip { display: flex; align-items: center; gap: 5px; }
-  .meta-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  /* 작성자 색상별 */
+  .memo-writer.w-ops     { color:var(--ops); }
+  .memo-writer.w-naver   { color:var(--naver); }
+  .memo-writer.w-upstage { color:var(--upstage); }
+  .memo-writer.w-sejong  { color:var(--sejong); }
+  .memo-text { font-size:13px;line-height:1.55;color:var(--text); }
+  .memo-date { font-size:10px;color:var(--muted);white-space:nowrap;font-family:'DM Mono',monospace;text-align:right; }
 
-  .dday {
-    font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: #fff; padding: 6px 14px; border-radius: 999px; white-space: nowrap;
+  /* 입력 행 */
+  .memo-input-row {
+    display:flex;gap:8px;align-items:center;
+    background:var(--surface2);border:1px solid var(--border);
+    border-radius:10px;padding:6px 6px 6px 10px;
+    transition:border-color .2s;
   }
-
-  .progress-section {
-    max-width: 920px; margin: 0 auto 24px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    padding: 18px 22px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  .memo-input-row:focus-within { border-color:rgba(79,142,247,.4); }
+  .memo-writer-sel {
+    font-family:'Pretendard',sans-serif;font-size:12px;font-weight:600;
+    background:transparent;border:none;color:var(--accent);
+    outline:none;cursor:pointer;padding:0;
   }
-  .progress-label { font-size: 13px; color: var(--muted); white-space: nowrap; }
-  .progress-bar-wrap { flex: 1; min-width: 200px; height: 8px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
-  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; transition: width 0.6s ease; }
-  .progress-pct { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; color: var(--accent); white-space: nowrap; }
-  .stat-chips { display: flex; gap: 10px; flex-wrap: wrap; }
-  .stat-chip { font-size: 12px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
-  .stat-chip.done { border-color: var(--green); color: var(--green); }
-  .stat-chip.todo { border-color: var(--yellow); color: var(--yellow); }
-
-  .add-section {
-    max-width: 920px; margin: 0 auto 24px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    padding: 14px 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  .memo-divider { color:var(--border);font-size:12px;flex-shrink:0; }
+  .memo-text-inp {
+    flex:1;font-family:'Pretendard',sans-serif;font-size:13px;
+    background:transparent;border:none;color:var(--text);outline:none;
   }
-  .add-section input, .add-section select {
-    font-family: 'Pretendard', sans-serif; font-size: 13px;
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); border-radius: 8px; padding: 8px 12px; outline: none; transition: border-color 0.2s;
+  .memo-text-inp::placeholder { color:var(--muted); }
+  .memo-send-btn {
+    font-family:'Pretendard',sans-serif;font-size:12px;font-weight:700;
+    background:rgba(79,142,247,.15);color:var(--accent);
+    border:1px solid rgba(79,142,247,.25);border-radius:7px;
+    padding:5px 14px;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;
   }
-  .add-section input { flex: 1; min-width: 180px; }
-  .add-section input::placeholder { color: var(--muted); }
-  .add-section input:focus, .add-section select:focus { border-color: var(--accent); }
-  .add-section select option { background: var(--surface2); }
-  .add-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .memo-send-btn:hover { background:rgba(79,142,247,.28); }
 
-  .agency-selector { display: flex; gap: 6px; }
-  .agency-toggle {
-    font-size: 12px; padding: 6px 12px; border-radius: 99px;
-    border: 1px solid var(--border); background: transparent; color: var(--muted);
-    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  /* 최종 수정일 */
+  .task-last-updated { font-size:10px;color:var(--muted);padding:0 18px 8px 58px;font-family:'DM Mono',monospace; }
+
+  /* ── 수정 모달 ── */
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px; }
+  .modal-overlay.hidden { display:none; }
+  .modal { background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  .modal-title { font-size:17px;font-weight:700;margin-bottom:20px;color:var(--accent); }
+  .modal-grid { display:flex;flex-direction:column;gap:14px; }
+  .modal-field { display:flex;flex-direction:column;gap:5px; }
+  .modal-field label { font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);text-transform:uppercase; }
+  .modal-field input,.modal-field select {
+    font-family:'Pretendard',sans-serif;font-size:14px;background:var(--surface2);
+    border:1px solid var(--border);color:var(--text);border-radius:9px;padding:10px 13px;outline:none;transition:border-color .2s;
   }
-  .agency-toggle.active-upstage { border-color: var(--upstage); color: var(--upstage); background: rgba(255,107,53,0.12); }
-  .agency-toggle.active-sejong  { border-color: var(--sejong);  color: var(--sejong);  background: rgba(61,184,245,0.12); }
+  .modal-field input[type=date] { color-scheme:dark; }
+  .modal-field input:focus,.modal-field select:focus { border-color:var(--accent); }
+  .modal-field select option { background:var(--surface2); }
+  .modal-agency-group { display:flex;gap:7px;flex-wrap:wrap; }
+  .modal-agency-btn { font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;padding:6px 13px;border-radius:99px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s; }
+  .modal-agency-btn.active-ops     { border-color:var(--ops);    color:var(--ops);    background:rgba(232,236,244,.1); }
+  .modal-agency-btn.active-naver   { border-color:var(--naver);  color:var(--naver);  background:rgba(0,199,60,.12); }
+  .modal-agency-btn.active-upstage { border-color:var(--upstage);color:var(--upstage);background:rgba(139,92,246,.12); }
+  .modal-agency-btn.active-sejong  { border-color:var(--sejong); color:var(--sejong); background:rgba(195,0,47,.12); }
+  .modal-footer { display:flex;justify-content:flex-end;gap:10px;margin-top:22px; }
+  .btn-cancel { font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:9px;padding:9px 20px;cursor:pointer;transition:all .15s; }
+  .btn-cancel:hover { border-color:var(--text);color:var(--text); }
+  .btn-save { font-family:'Pretendard',sans-serif;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:9px;padding:9px 24px;cursor:pointer;transition:opacity .2s; }
+  .btn-save:hover { opacity:.88; }
 
-  .btn-add {
-    font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 600;
-    background: var(--accent); color: #fff; border: none; border-radius: 8px;
-    padding: 8px 18px; cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
-  }
-  .btn-add:hover { opacity: 0.85; }
-  .btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
+  .note-banner { font-size:12px;color:var(--muted);background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.15);border-radius:8px;padding:7px 14px;margin:8px 18px 4px; }
+  .empty-state { text-align:center;padding:28px;color:var(--muted);font-size:13px; }
 
-  .filter-section { max-width: 920px; margin: 0 auto 20px; display: flex; gap: 8px; flex-wrap: wrap; }
-  .filter-btn {
-    font-family: 'Pretendard', sans-serif; font-size: 13px; padding: 6px 14px;
-    border-radius: 99px; border: 1px solid var(--border);
-    background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s;
-  }
-  .filter-btn.active, .filter-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,0.08); }
-
-  .categories { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-  .cat-group { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
-  .cat-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 18px; border-bottom: 1px solid var(--border);
-    cursor: pointer; user-select: none;
-  }
-  .cat-header:hover { background: var(--surface2); }
-  .cat-title { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
-  .cat-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-  .cat-stats { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
-  .mini-progress { width: 60px; height: 5px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
-  .mini-progress-fill { height: 100%; border-radius: 99px; background: var(--green); transition: width 0.4s; }
-  .collapse-btn { font-size: 11px; color: var(--muted); transition: transform 0.2s; }
-  .cat-group.collapsed .collapse-btn { transform: rotate(-90deg); }
-  .cat-group.collapsed .task-list { display: none; }
-
-  .task-list { padding: 8px 0; }
-  .task-item {
-    display: flex; align-items: flex-start; gap: 12px;
-    padding: 11px 18px; border-bottom: 1px solid rgba(42,48,80,0.5);
-    transition: background 0.15s; animation: fadeIn 0.25s ease;
-  }
-  .task-item:last-child { border-bottom: none; }
-  .task-item:hover { background: rgba(255,255,255,0.02); }
-  .task-item.done .task-text { text-decoration: line-through; color: var(--muted); }
-
-  @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
-
-  .checkbox {
-    width: 20px; height: 20px; border-radius: 6px;
-    border: 2px solid var(--border); background: transparent;
-    cursor: pointer; flex-shrink: 0; margin-top: 1px;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s; font-size: 11px; color: transparent;
-  }
-  .checkbox:hover { border-color: var(--green); }
-  .task-item.done .checkbox { background: var(--green); border-color: var(--green); color: #0f1117; }
-
-  .task-body { flex: 1; }
-  .task-text { font-size: 14px; line-height: 1.5; }
-  .task-meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; align-items: center; }
-
-  .tag { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--tag-bg); color: var(--muted); border: 1px solid var(--border); }
-  .tag.owner         { color: var(--accent);  border-color: rgba(79,142,247,0.3);  background: rgba(79,142,247,0.08); }
-  .tag.priority-high { color: var(--red);     border-color: rgba(247,111,111,0.3); background: rgba(247,111,111,0.08); }
-  .tag.priority-mid  { color: var(--yellow);  border-color: rgba(245,200,66,0.3);  background: rgba(245,200,66,0.08); }
-  .tag.agency-upstage{ color: var(--upstage); border-color: rgba(255,107,53,0.35); background: rgba(255,107,53,0.1); font-weight:500; }
-  .tag.agency-sejong { color: var(--sejong);  border-color: rgba(61,184,245,0.35); background: rgba(61,184,245,0.1); font-weight:500; }
-  .tag.confirmed     { color: var(--green);   border-color: rgba(61,214,140,0.35); background: rgba(61,214,140,0.08); }
-
-  .btn-del {
-    background: none; border: none; color: var(--muted);
-    cursor: pointer; font-size: 16px; padding: 2px 4px;
-    border-radius: 6px; transition: color 0.15s, background 0.15s; flex-shrink: 0; line-height: 1;
-  }
-  .btn-del:hover { color: var(--red); background: rgba(247,111,111,0.1); }
-
-  .note-banner {
-    font-size: 12px; color: var(--muted);
-    background: rgba(79,142,247,0.06); border: 1px solid rgba(79,142,247,0.15);
-    border-radius: 8px; padding: 7px 14px; margin: 8px 18px 2px;
-  }
-  .empty-state { text-align: center; padding: 24px; color: var(--muted); font-size: 13px; }
+  @media(max-width:700px){.add-grid{grid-template-columns:1fr 1fr}.add-field.full{grid-column:span 2}}
+  @media(max-width:480px){.add-grid{grid-template-columns:1fr}.add-field.full{grid-column:span 1}}
 </style>
 </head>
 <body>
 
-<!-- Loading -->
-<div id="loadingOverlay">
-  <div class="spinner"></div>
-  <div class="loading-text">데이터 불러오는 중...</div>
+<div id="loadingOverlay"><div class="spinner"></div><div class="loading-text">데이터 불러오는 중...</div></div>
+<div id="syncStatus"><span class="sync-dot"></span><span id="syncText">연결 중</span></div>
+
+<!-- ── 수정 모달 ── -->
+<div class="modal-overlay hidden" id="editModal">
+  <div class="modal">
+    <div class="modal-title">✏️ 항목 수정</div>
+    <div class="modal-grid">
+      <div class="modal-field"><label>내용</label><input type="text" id="editText" /></div>
+      <div class="modal-field">
+        <label>카테고리</label>
+        <select id="editCat">
+          <option value="강사·커리큘럼">강사·커리큘럼</option>
+          <option value="장소·시설">장소·시설</option>
+          <option value="운영·물품">운영·물품</option>
+          <option value="사후처리">사후처리</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>작성자</label>
+        <select id="editWriter">
+          <option value="운영팀">운영팀</option>
+          <option value="네이버">네이버</option>
+          <option value="Upstage">Upstage</option>
+          <option value="세종대">세종대</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>우선순위</label>
+        <select id="editPriority">
+          <option value="high">🔴 우선</option>
+          <option value="mid">🟡 보통</option>
+          <option value="low">⚪ 나중</option>
+        </select>
+      </div>
+      <div class="modal-field"><label>업무 기한</label><input type="date" id="editDeadline" /></div>
+      <div class="modal-field">
+        <label>담당기관</label>
+        <div class="modal-agency-group">
+          <button class="modal-agency-btn" id="mab-ops"     onclick="toggleEditAgency('ops')">운영팀</button>
+          <button class="modal-agency-btn" id="mab-naver"   onclick="toggleEditAgency('naver')">네이버</button>
+          <button class="modal-agency-btn" id="mab-upstage" onclick="toggleEditAgency('upstage')">Upstage</button>
+          <button class="modal-agency-btn" id="mab-sejong"  onclick="toggleEditAgency('sejong')">세종대</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-save"   onclick="saveEdit()">저장</button>
+    </div>
+  </div>
 </div>
 
-<!-- Sync status -->
-<div id="syncStatus">
-  <span class="sync-dot"></span>
-  <span id="syncText">연결 중</span>
-</div>
-
+<!-- ── Header ── -->
 <div class="header">
   <div class="header-left">
     <h1>충북교육청 <span>AI 교원연수</span> 준비 현황</h1>
@@ -238,6 +347,7 @@
   <div class="dday" id="ddayBadge">D-?</div>
 </div>
 
+<!-- ── Progress ── -->
 <div class="progress-section">
   <span class="progress-label">전체 진행률</span>
   <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
@@ -248,41 +358,61 @@
   </div>
 </div>
 
+<!-- ══ 새 항목 추가 ══ -->
 <div class="add-section">
-  <input type="text" id="newTask" placeholder="새 항목 입력..." />
-  <select id="newCat">
-    <option value="강사·커리큘럼">강사·커리큘럼</option>
-    <option value="장소·시설">장소·시설</option>
-    <option value="운영·물품">운영·물품</option>
-    <option value="사후처리">사후처리</option>
-  </select>
-  <select id="newOwner">
-    <option value="운영팀">운영팀</option>
-    <option value="교육청">교육청</option>
-    <option value="Upstage">Upstage</option>
-    <option value="세종대">세종대</option>
-    <option value="공동">공동</option>
-  </select>
-  <select id="newPriority">
-    <option value="high">🔴 우선</option>
-    <option value="mid">🟡 보통</option>
-    <option value="low">⚪ 나중</option>
-  </select>
-  <span class="add-label">담당기관:</span>
-  <div class="agency-selector">
-    <button class="agency-toggle" id="toggleUpstage" onclick="toggleAgency('upstage')">Upstage</button>
-    <button class="agency-toggle" id="toggleSejong"  onclick="toggleAgency('sejong')">세종대</button>
+  <div class="add-title"><div class="add-title-icon">✏️</div>새 항목 추가</div>
+  <div class="add-grid">
+    <div class="add-field"><span class="field-label">작성자</span>
+      <select id="newWriter"><option value="운영팀">운영팀</option><option value="네이버">네이버</option><option value="Upstage">Upstage</option><option value="세종대">세종대</option></select>
+    </div>
+    <div class="add-field"><span class="field-label">카테고리</span>
+      <select id="newCat"><option value="강사·커리큘럼">강사·커리큘럼</option><option value="장소·시설">장소·시설</option><option value="운영·물품">운영·물품</option><option value="사후처리">사후처리</option></select>
+    </div>
+    <div class="add-field"><span class="field-label">우선순위</span>
+      <select id="newPriority"><option value="high">🔴 우선</option><option value="mid">🟡 보통</option><option value="low">⚪ 나중</option></select>
+    </div>
+    <div class="add-field"><span class="field-label">업무 기한</span><input type="date" id="newDeadline" /></div>
+    <div class="add-field full"><span class="field-label">내용</span><input type="text" id="newTask" placeholder="업무 내용을 입력하세요..." /></div>
+    <div class="add-field full"><span class="field-label">담당기관</span>
+      <div class="agency-btn-group">
+        <button class="agency-btn" id="ab-ops"     onclick="toggleAgency('ops')">운영팀</button>
+        <button class="agency-btn" id="ab-naver"   onclick="toggleAgency('naver')">네이버</button>
+        <button class="agency-btn" id="ab-upstage" onclick="toggleAgency('upstage')">Upstage</button>
+        <button class="agency-btn" id="ab-sejong"  onclick="toggleAgency('sejong')">세종대</button>
+      </div>
+    </div>
   </div>
-  <button class="btn-add" id="btnAdd" onclick="addTask()">+ 추가</button>
+  <div class="add-footer"><button class="btn-add" id="btnAdd" onclick="addTask()">+ 항목 추가</button></div>
+</div>
+
+<!-- ══ To Do List ══ -->
+<div class="todo-list-header">
+  <div class="todo-list-title">To Do <span>List</span></div>
+  <div class="list-controls">
+    <!-- 뷰 탭 -->
+    <div class="view-tabs">
+      <button class="view-tab active" id="vt-cat"      onclick="setView('cat')">📂 카테고리</button>
+      <button class="view-tab"        id="vt-priority" onclick="setView('priority')">🔴 우선순위</button>
+      <button class="view-tab"        id="vt-deadline" onclick="setView('deadline')">📅 날짜 임박순</button>
+    </div>
+    <div class="tab-divider"></div>
+    <!-- 완료 필터 -->
+    <div class="done-tabs">
+      <button class="done-tab active-all"  id="dt-all"  onclick="setDoneFilter('all')">전체</button>
+      <button class="done-tab"             id="dt-todo" onclick="setDoneFilter('todo')">⏳ 미완</button>
+      <button class="done-tab"             id="dt-done" onclick="setDoneFilter('done')">✅ 완료</button>
+    </div>
+  </div>
 </div>
 
 <div class="filter-section" id="filterSection"></div>
 <div class="categories" id="catContainer"></div>
 
-<!-- Firebase SDK -->
+<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, update, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, update, remove, push }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAkHIuEOP0oHZlceCy-lgwjhvT4avyIAFg",
@@ -293,242 +423,425 @@ const firebaseConfig = {
   messagingSenderId: "1089691391533",
   appId: "1:1089691391533:web:b958819a1084ff29d20aa4"
 };
-
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const db  = getDatabase(app);
 const tasksRef = ref(db, 'tasks');
 
-// ── 초기 데이터 (DB가 비어있을 때 한 번만 씀) ──
 const INITIAL_TASKS = [
-  { cat:'강사·커리큘럼', text:'전체 커리큘럼 설계 (3일 세션 구성)', owner:'공동', priority:'high', done:false, agencies:['upstage','sejong'] },
-  { cat:'강사·커리큘럼', text:'Upstage 담당 세션 강의자료·실습자료 제작', owner:'Upstage', priority:'high', done:false, agencies:['upstage'] },
-  { cat:'강사·커리큘럼', text:'세종대 담당 세션 강의자료·실습자료 제작', owner:'세종대', priority:'high', done:false, agencies:['sejong'] },
-  { cat:'강사·커리큘럼', text:'사전 수준 진단 설문 설계', owner:'운영팀', priority:'mid', done:false, agencies:[] },
-  { cat:'강사·커리큘럼', text:'양 기관 강사 합동 사전 미팅 및 콘텐츠 검토', owner:'공동', priority:'mid', done:false, agencies:['upstage','sejong'] },
-  { cat:'강사·커리큘럼', text:'AI 실습 환경 구성 (계정, 도구 목록 확정)', owner:'Upstage', priority:'high', done:false, agencies:['upstage'] },
-  { cat:'장소·시설', text:'세종대학교 강의실 예약 확정', owner:'세종대', priority:'high', done:true, agencies:['sejong'], confirmed:true },
-  { cat:'장소·시설', text:'숙박 시설 선정 및 예약', owner:'운영팀', priority:'high', done:false, agencies:[] },
-  { cat:'장소·시설', text:'강의실 IT 인프라 점검 (Wi-Fi, 빔프로젝터, PC)', owner:'운영팀', priority:'high', done:false, agencies:[] },
-  { cat:'장소·시설', text:'식사·케이터링 업체 섭외 및 메뉴 확정', owner:'운영팀', priority:'mid', done:false, agencies:[] },
-  { cat:'장소·시설', text:'참가자 교통 편의 안내 자료 작성', owner:'운영팀', priority:'low', done:false, agencies:[] },
-  { cat:'운영·물품', text:'연수 키트 구성 및 제작 (교재, 명찰 등)', owner:'운영팀', priority:'mid', done:false, agencies:[] },
-  { cat:'운영·물품', text:'현장 운영 인력 배치 계획 수립', owner:'운영팀', priority:'mid', done:false, agencies:[] },
-  { cat:'운영·물품', text:'현장 출결 관리 시스템 준비', owner:'운영팀', priority:'mid', done:false, agencies:[] },
-  { cat:'운영·물품', text:'비상 상황 대응 매뉴얼 준비', owner:'운영팀', priority:'low', done:false, agencies:[] },
-  { cat:'사후처리', text:'연수 만족도 설문 설계 및 도구 준비', owner:'운영팀', priority:'mid', done:false, agencies:[] },
-  { cat:'사후처리', text:'이수증 발급 기준·양식 확정', owner:'교육청', priority:'mid', done:false, agencies:[] },
-  { cat:'사후처리', text:'결과보고서 템플릿 사전 준비', owner:'공동', priority:'low', done:false, agencies:[] },
-  { cat:'사후처리', text:'예산 정산 계획 수립', owner:'교육청', priority:'low', done:false, agencies:[] },
+  { cat:'강사·커리큘럼', text:'전체 커리큘럼 설계 (3일 세션 구성)',         writer:'운영팀',  priority:'high', done:false, agencies:['upstage','sejong'], deadline:'' },
+  { cat:'강사·커리큘럼', text:'Upstage 담당 세션 강의자료·실습자료 제작',   writer:'Upstage', priority:'high', done:false, agencies:['upstage'],          deadline:'' },
+  { cat:'강사·커리큘럼', text:'세종대 담당 세션 강의자료·실습자료 제작',    writer:'세종대',  priority:'high', done:false, agencies:['sejong'],           deadline:'' },
+  { cat:'강사·커리큘럼', text:'사전 수준 진단 설문 설계',                   writer:'운영팀',  priority:'mid',  done:false, agencies:[],                   deadline:'' },
+  { cat:'강사·커리큘럼', text:'양 기관 강사 합동 사전 미팅 및 콘텐츠 검토', writer:'운영팀',  priority:'mid',  done:false, agencies:['upstage','sejong'], deadline:'' },
+  { cat:'강사·커리큘럼', text:'AI 실습 환경 구성 (계정, 도구 목록 확정)',   writer:'Upstage', priority:'high', done:false, agencies:['upstage'],          deadline:'' },
+  { cat:'장소·시설',     text:'세종대학교 강의실 예약 확정',                writer:'세종대',  priority:'high', done:true,  agencies:['sejong'],           confirmed:true, deadline:'' },
+  { cat:'장소·시설',     text:'숙박 시설 선정 및 예약',                     writer:'운영팀',  priority:'high', done:false, agencies:[],                   deadline:'' },
+  { cat:'장소·시설',     text:'강의실 IT 인프라 점검 (Wi-Fi, 빔프로젝터)',  writer:'운영팀',  priority:'high', done:false, agencies:[],                   deadline:'' },
+  { cat:'장소·시설',     text:'식사·케이터링 업체 섭외 및 메뉴 확정',       writer:'운영팀',  priority:'mid',  done:false, agencies:[],                   deadline:'' },
+  { cat:'장소·시설',     text:'참가자 교통 편의 안내 자료 작성',             writer:'운영팀',  priority:'low',  done:false, agencies:[],                   deadline:'' },
+  { cat:'운영·물품',     text:'연수 키트 구성 및 제작 (교재, 명찰 등)',     writer:'운영팀',  priority:'mid',  done:false, agencies:[],                   deadline:'' },
+  { cat:'운영·물품',     text:'현장 운영 인력 배치 계획 수립',               writer:'운영팀',  priority:'mid',  done:false, agencies:[],                   deadline:'' },
+  { cat:'운영·물품',     text:'현장 출결 관리 시스템 준비',                  writer:'운영팀',  priority:'mid',  done:false, agencies:[],                   deadline:'' },
+  { cat:'운영·물품',     text:'비상 상황 대응 매뉴얼 준비',                  writer:'운영팀',  priority:'low',  done:false, agencies:[],                   deadline:'' },
+  { cat:'사후처리',      text:'연수 만족도 설문 설계 및 도구 준비',          writer:'운영팀',  priority:'mid',  done:false, agencies:[],                   deadline:'' },
+  { cat:'사후처리',      text:'이수증 발급 기준·양식 확정',                  writer:'운영팀',  priority:'mid',  done:false, agencies:[],                   deadline:'' },
+  { cat:'사후처리',      text:'결과보고서 템플릿 사전 준비',                 writer:'운영팀',  priority:'low',  done:false, agencies:[],                   deadline:'' },
+  { cat:'사후처리',      text:'예산 정산 계획 수립',                         writer:'운영팀',  priority:'low',  done:false, agencies:[],                   deadline:'' },
 ];
 
-// ── UI 설정 ──
 const CAT_CONFIG = {
-  '강사·커리큘럼': { icon: '🎓', color: '#7c6af7' },
-  '장소·시설':     { icon: '🏛️', color: '#3dd68c' },
-  '운영·물품':     { icon: '⚙️', color: '#f7a34f' },
-  '사후처리':      { icon: '📊', color: '#f76f6f' },
+  '강사·커리큘럼':{ icon:'🎓', color:'#7c6af7' },
+  '장소·시설':    { icon:'🏛️', color:'#3dd68c' },
+  '운영·물품':    { icon:'⚙️',  color:'#f7a34f' },
+  '사후처리':     { icon:'📊', color:'#f76f6f' },
 };
-const CAT_NOTES = {
-  '운영·물품': '세부 항목은 추후 업데이트 예정',
-  '사후처리':  '세부 항목은 추후 업데이트 예정',
-};
+const CAT_NOTES = { '운영·물품':'세부 항목은 추후 업데이트 예정', '사후처리':'세부 항목은 추후 업데이트 예정' };
+const ENTITY_CLS   = { '운영팀':'ops','네이버':'naver','Upstage':'upstage','세종대':'sejong', ops:'ops',naver:'naver',upstage:'upstage',sejong:'sejong' };
+const ENTITY_LABEL = { ops:'운영팀', naver:'네이버', upstage:'Upstage', sejong:'세종대' };
 
-let tasks = {};          // { firebaseKey: taskObj }
+let tasks      = {};
 let activeFilter = '전체';
+let viewMode   = 'cat';
+let doneFilter = 'all';   // 'all' | 'todo' | 'done'
 let newAgencies = [];
-let isReady = false;
+let isReady    = false;
+let seedAttempted = false;  // 초기 데이터 입력 중복 방지
 
-// ── 동기화 상태 표시 ──
+// 수정 모달 상태
+let editKey      = null;
+let editAgencies = [];
+
+/* ── sync ── */
 function setSyncStatus(state, text) {
   const el = document.getElementById('syncStatus');
-  el.className = `${state}`;
+  el.className = state; el.style.display = 'flex';
   document.getElementById('syncText').textContent = text;
-  // id="syncStatus" 스타일은 CSS에 있음
-  el.style.display = 'flex';
 }
 
-// ── D-Day ──
+/* ── D-Day ── */
 function calcDDay() {
   const target = new Date('2026-08-12');
-  const today = new Date(); today.setHours(0,0,0,0);
-  const diff = Math.ceil((target - today) / 86400000);
-  document.getElementById('ddayBadge').textContent =
-    diff > 0 ? `D-${diff}` : diff === 0 ? 'D-Day!' : `D+${Math.abs(diff)}`;
+  const today  = new Date(); today.setHours(0,0,0,0);
+  const diff   = Math.ceil((target-today)/86400000);
+  document.getElementById('ddayBadge').textContent = diff>0?`D-${diff}`:diff===0?'D-Day!':`D+${Math.abs(diff)}`;
 }
 
-// ── 진행률 ──
+/* ── progress ── */
 function updateProgress() {
-  const list = Object.values(tasks);
-  const src  = activeFilter === '전체' ? list : list.filter(t => t.cat === activeFilter);
-  const total = src.length, done = src.filter(t => t.done).length;
-  const pct = total ? Math.round(done / total * 100) : 0;
-  document.getElementById('progressBar').style.width = pct + '%';
-  document.getElementById('progressPct').textContent = pct + '%';
+  const list  = Object.values(tasks);
+  const total = list.length, done = list.filter(t=>t.done).length;
+  const pct   = total ? Math.round(done/total*100) : 0;
+  document.getElementById('progressBar').style.width = pct+'%';
+  document.getElementById('progressPct').textContent = pct+'%';
   document.getElementById('statDone').textContent = `완료 ${done}`;
-  document.getElementById('statTodo').textContent = `미완 ${total - done}`;
+  document.getElementById('statTodo').textContent = `미완 ${total-done}`;
 }
 
-// ── 필터 ──
+/* ── 완료 필터 ── */
+window.setDoneFilter = (f) => {
+  doneFilter = f;
+  ['all','todo','done'].forEach(k => {
+    const btn = document.getElementById(`dt-${k}`);
+    btn.className = 'done-tab' + (k===f ? ` active-${k}` : '');
+  });
+  renderAll();
+};
+
+function applyDoneFilter(entries) {
+  if (doneFilter === 'todo') return entries.filter(([,t]) => !t.done);
+  if (doneFilter === 'done') return entries.filter(([,t]) =>  t.done);
+  return entries;
+}
+
+/* ── 뷰 탭 ── */
+window.setView = (mode) => {
+  viewMode = mode;
+  ['cat','priority','deadline'].forEach(m => {
+    document.getElementById(`vt-${m}`).classList.toggle('active', m===mode);
+  });
+  document.getElementById('filterSection').style.display = mode==='cat' ? 'flex' : 'none';
+  renderAll();
+};
+
+/* ── 카테고리 필터 ── */
 function renderFilters() {
   document.getElementById('filterSection').innerHTML =
-    ['전체', ...Object.keys(CAT_CONFIG)].map(c =>
+    ['전체',...Object.keys(CAT_CONFIG)].map(c =>
       `<button class="filter-btn ${activeFilter===c?'active':''}" onclick="setFilter('${c}')">${c}</button>`
     ).join('');
 }
-window.setFilter = (cat) => {
-  activeFilter = cat;
-  renderFilters(); renderCategories(); updateProgress();
-};
+window.setFilter = (cat) => { activeFilter=cat; renderFilters(); renderAll(); updateProgress(); };
 
-// ── 카테고리 렌더 ──
-function renderCategories() {
-  const cats = activeFilter === '전체' ? Object.keys(CAT_CONFIG) : [activeFilter];
-  document.getElementById('catContainer').innerHTML = cats.map(cat => {
-    const cfg = CAT_CONFIG[cat];
-    const ct  = Object.entries(tasks)
-      .filter(([,t]) => t.cat === cat)
-      .sort(([,a],[,b]) => (a.order||0) - (b.order||0));
-    const done = ct.filter(([,t]) => t.done).length;
-    const pct  = ct.length ? Math.round(done / ct.length * 100) : 0;
-    const note = CAT_NOTES[cat] ? `<div class="note-banner">📝 ${CAT_NOTES[cat]}</div>` : '';
-    const cid  = 'cg-' + cat.replace(/[·\s]/g, '-');
-    return `
-    <div class="cat-group" id="${cid}">
-      <div class="cat-header" onclick="toggleCat('${cid}')">
-        <div class="cat-title">
-          <div class="cat-icon" style="background:${cfg.color}22;color:${cfg.color}">${cfg.icon}</div>
-          <span>${cat}</span>
-        </div>
-        <div class="cat-stats">
-          <span>${done}/${ct.length}</span>
-          <div class="mini-progress"><div class="mini-progress-fill" style="width:${pct}%;background:${cfg.color}"></div></div>
-          <span class="collapse-btn">▾</span>
-        </div>
-      </div>
-      <div class="task-list">
-        ${note}
-        ${ct.length
-          ? ct.map(([key, t]) => renderTask(key, t)).join('')
-          : '<div class="empty-state">항목이 없습니다</div>'}
-      </div>
-    </div>`;
-  }).join('');
+/* ── 기한 표시 ── */
+function deadlineDisplay(dl) {
+  if (!dl) return '';
+  const d=new Date(dl), today=new Date(); today.setHours(0,0,0,0);
+  const diff=Math.ceil((d-today)/86400000);
+  const str=dl.replace(/-/g,'.').slice(2);
+  let cls=''; if(diff<0) cls='over'; else if(diff<=7) cls='near';
+  const icon=diff<0?'⚠️':'📅';
+  return `<span class="task-deadline ${cls}">${icon} ${str}</span>`;
 }
 
-function renderTask(key, t) {
+/* ── 최종 업데이트 시각 ── */
+function lastUpdatedStr(t) {
+  const ts = t.updatedAt;
+  if (!ts) return '';
+  const d = new Date(ts);
+  return `최종 수정: ${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+/* ── 태스크 렌더 ── */
+function renderTask(key, t, showCat=false) {
   const pl = t.priority==='high'?'우선':t.priority==='mid'?'보통':'';
   const pc = t.priority==='high'?'priority-high':t.priority==='mid'?'priority-mid':'';
-  const ags = (t.agencies||[]);
-  const aTags = ags.map(a =>
-    a==='upstage'
-      ? `<span class="tag agency-upstage">Upstage</span>`
-      : `<span class="tag agency-sejong">세종대</span>`
-  ).join('');
-  const cTag = t.confirmed ? `<span class="tag confirmed">✓ 확정</span>` : '';
+
+  const agencyTags = (t.agencies||[]).map(a => {
+    const cls=ENTITY_CLS[a]||a, lbl=ENTITY_LABEL[a]||a;
+    return `<span class="tag agency-${cls}">${lbl}</span>`;
+  }).join('');
+
+  const cTag   = t.confirmed ? `<span class="tag confirmed">✓ 확정</span>` : '';
+  const dl     = deadlineDisplay(t.deadline||'');
+  const catCfg = CAT_CONFIG[t.cat];
+  const catTag = showCat && catCfg
+    ? `<span class="tag cat-tag" style="color:${catCfg.color};border-color:${catCfg.color}44;background:${catCfg.color}11">${catCfg.icon} ${t.cat}</span>`
+    : '';
+
+  // 메모
+  const memos = t.memos ? Object.entries(t.memos).sort(([,a],[,b])=>(a.ts||0)-(b.ts||0)) : [];
+  const WRITER_CLS = { '운영팀':'w-ops','네이버':'w-naver','Upstage':'w-upstage','세종대':'w-sejong' };
+  const memoListHtml = memos.map(([mk,m]) => {
+    const wCls = WRITER_CLS[m.writer]||'';
+    const d = new Date(m.ts);
+    const dateStr = `${String(d.getMonth()+1).padStart(2,'0')}. ${String(d.getDate()).padStart(2,'0')}. ${d.getHours()>=12?'오후':'오전'} ${String(d.getHours()>12?d.getHours()-12:d.getHours()||12).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return `
+    <div class="memo-item">
+      <span class="memo-writer ${wCls}">${m.writer||'?'}</span>
+      <span class="memo-text">${m.text}</span>
+      <span class="memo-date">${dateStr}</span>
+    </div>`;
+  }).join('');
+
+  const lastUpd = lastUpdatedStr(t);
+
   return `
   <div class="task-item ${t.done?'done':''}" id="ti-${key}">
-    <div class="checkbox" onclick="toggleTask('${key}')">✓</div>
-    <div class="task-body">
-      <div class="task-text">${t.text}</div>
-      <div class="task-meta">
-        <span class="tag owner">${t.owner}</span>
-        ${aTags}${cTag}
-        ${pl?`<span class="tag ${pc}">${pl}</span>`:''}
+    <div class="task-main">
+      <div class="check-wrap" onclick="toggleTask('${key}')" title="완료 처리">
+        <span class="check-icon">✓</span>
+        <span class="check-label">완료</span>
+      </div>
+      <div class="task-content">
+        ${pl ? `<span class="tag ${pc}">${pl}</span>` : ''}
+        ${catTag}
+        <span class="task-text">${t.text}</span>
+        ${agencyTags}${cTag}
+        ${dl}
+      </div>
+      <div class="task-actions">
+        <button class="btn-icon btn-edit" onclick="openEdit('${key}')" title="수정">✏️</button>
+        <button class="btn-icon btn-del"  onclick="deleteTask('${key}')" title="삭제">×</button>
       </div>
     </div>
-    <button class="btn-del" onclick="deleteTask('${key}')">×</button>
+    ${lastUpd ? `<div class="task-last-updated">${lastUpd}</div>` : ''}
+    <div class="task-memo-wrap">
+      ${memoListHtml ? `<div class="memo-list">${memoListHtml}</div>` : ''}
+      <div class="memo-input-row">
+        <select class="memo-writer-sel" id="mw-${key}">
+          <option value="운영팀">운영팀</option>
+          <option value="네이버">네이버</option>
+          <option value="Upstage">Upstage</option>
+          <option value="세종대">세종대</option>
+        </select>
+        <span class="memo-divider">|</span>
+        <input class="memo-text-inp" id="mt-${key}" placeholder="진행 상황을 입력하세요..." />
+        <button class="memo-send-btn" onclick="addMemo('${key}')">추가</button>
+      </div>
+    </div>
   </div>`;
 }
 
-// ── Firebase 액션 ──
-window.toggleTask = async (key) => {
-  const t = tasks[key]; if (!t) return;
+/* ── 메모 추가 ── */
+window.addMemo = async (key) => {
+  const writer = document.getElementById(`mw-${key}`).value;
+  const inp    = document.getElementById(`mt-${key}`);
+  const text   = inp.value.trim();
+  if (!text) return;
   setSyncStatus('syncing', '저장 중...');
-  await update(ref(db, `tasks/${key}`), { done: !t.done });
+  await push(ref(db, `tasks/${key}/memos`), { writer, text, ts: Date.now() });
+  await update(ref(db, `tasks/${key}`), { updatedAt: Date.now() });
+  inp.value = '';
+};
+
+/* ── 그룹 렌더 공통 ── */
+function renderGroup(cid, icon, label, color, items, note='') {
+  const done = items.filter(([,t])=>t.done).length;
+  const pct  = items.length ? Math.round(done/items.length*100) : 0;
+  return `
+  <div class="cat-group" id="${cid}">
+    <div class="cat-header" onclick="toggleCat('${cid}')">
+      <div class="cat-title">
+        <div class="cat-icon" style="background:${color}22;color:${color}">${icon}</div>
+        <span>${label}</span>
+      </div>
+      <div class="cat-stats">
+        <span>${done}/${items.length}</span>
+        <div class="mini-progress"><div class="mini-progress-fill" style="width:${pct}%;background:${color}"></div></div>
+        <span class="collapse-btn">▾</span>
+      </div>
+    </div>
+    <div class="task-list">
+      ${note}
+      ${items.length
+        ? items.map(([k,t])=>renderTask(k,t,true)).join('')
+        : '<div class="empty-state">항목이 없습니다</div>'}
+    </div>
+  </div>`;
+}
+
+/* ── 카테고리별 ── */
+function renderByCat() {
+  const cats = activeFilter==='전체' ? Object.keys(CAT_CONFIG) : [activeFilter];
+  document.getElementById('catContainer').innerHTML = cats.map(cat => {
+    const cfg = CAT_CONFIG[cat];
+    let ct = Object.entries(tasks).filter(([,t])=>t.cat===cat).sort(([,a],[,b])=>(a.order||0)-(b.order||0));
+    ct = applyDoneFilter(ct);
+    const note = CAT_NOTES[cat] ? `<div class="note-banner">📝 ${CAT_NOTES[cat]}</div>` : '';
+    const cid  = 'cg-'+cat.replace(/[·\s]/g,'-');
+    return renderGroup(cid, cfg.icon, cat, cfg.color, ct, note);
+  }).join('');
+}
+
+/* ── 우선순위별 ── */
+function renderByPriority() {
+  const GROUPS = [
+    { key:'high', label:'우선',  color:'#f76f6f', icon:'🔴' },
+    { key:'mid',  label:'보통',  color:'#f5c842', icon:'🟡' },
+    { key:'low',  label:'나중',  color:'#6b7a9e', icon:'⚪' },
+  ];
+  const all = applyDoneFilter(Object.entries(tasks).sort(([,a],[,b])=>(a.order||0)-(b.order||0)));
+  document.getElementById('catContainer').innerHTML = GROUPS.map(pg => {
+    const ct = all.filter(([,t])=>(t.priority||'low')===pg.key);
+    return renderGroup('pg-'+pg.key, pg.icon, `${pg.label} 항목`, pg.color, ct);
+  }).join('');
+}
+
+/* ── 날짜 임박순 ── */
+function renderByDeadline() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const all   = applyDoneFilter(Object.entries(tasks));
+  const withDL = all.filter(([,t])=>t.deadline).sort(([,a],[,b])=>new Date(a.deadline)-new Date(b.deadline));
+  const noDL   = all.filter(([,t])=>!t.deadline).sort(([,a],[,b])=>(a.order||0)-(b.order||0));
+  const groups = [
+    { key:'over',  label:'기한 초과',  color:'#f76f6f', icon:'⚠️',  items:[] },
+    { key:'week',  label:'7일 이내',   color:'#f5c842', icon:'📅',  items:[] },
+    { key:'month', label:'한 달 이내', color:'#4f8ef7', icon:'📆',  items:[] },
+    { key:'later', label:'이후',       color:'#6b7a9e', icon:'🗓️', items:[] },
+  ];
+  withDL.forEach(e => {
+    const diff = Math.ceil((new Date(e[1].deadline)-today)/86400000);
+    if      (diff<0)   groups[0].items.push(e);
+    else if (diff<=7)  groups[1].items.push(e);
+    else if (diff<=31) groups[2].items.push(e);
+    else               groups[3].items.push(e);
+  });
+  const noGroup = { key:'nodl', label:'기한 미설정', color:'#2a3050', icon:'📋', items:noDL };
+  const visible = [...groups, noGroup].filter(g=>g.items.length>0);
+  document.getElementById('catContainer').innerHTML = visible.length
+    ? visible.map(g => renderGroup('dlg-'+g.key, g.icon, g.label, g.color, g.items)).join('')
+    : '<div class="empty-state" style="color:var(--muted);text-align:center;padding:32px">항목이 없습니다</div>';
+}
+
+function renderAll() {
+  if      (viewMode==='cat')      renderByCat();
+  else if (viewMode==='priority') renderByPriority();
+  else if (viewMode==='deadline') renderByDeadline();
+}
+
+/* ── Firebase actions ── */
+window.toggleTask = async (key) => {
+  const t = tasks[key]; if(!t) return;
+  setSyncStatus('syncing','저장 중...');
+  await update(ref(db,`tasks/${key}`), { done:!t.done, updatedAt:Date.now() });
 };
 
 window.deleteTask = async (key) => {
-  if (!confirm('이 항목을 삭제할까요?')) return;
-  setSyncStatus('syncing', '저장 중...');
-  await remove(ref(db, `tasks/${key}`));
+  if(!confirm('이 항목을 삭제할까요?')) return;
+  setSyncStatus('syncing','저장 중...');
+  await remove(ref(db,`tasks/${key}`));
 };
 
 window.addTask = async () => {
   const input = document.getElementById('newTask');
   const text  = input.value.trim();
-  if (!text) { input.focus(); return; }
+  if(!text){ input.focus(); return; }
   document.getElementById('btnAdd').disabled = true;
-  setSyncStatus('syncing', '저장 중...');
-  const order = Date.now();
+  setSyncStatus('syncing','저장 중...');
   await push(tasksRef, {
     cat:      document.getElementById('newCat').value,
-    text,
-    owner:    document.getElementById('newOwner').value,
+    text, writer: document.getElementById('newWriter').value,
     priority: document.getElementById('newPriority').value,
-    done:     false,
-    agencies: [...newAgencies],
-    order,
+    deadline: document.getElementById('newDeadline').value||'',
+    done: false, agencies:[...newAgencies],
+    order: Date.now(), updatedAt: Date.now(),
   });
-  input.value = '';
-  document.getElementById('btnAdd').disabled = false;
+  input.value=''; document.getElementById('newDeadline').value='';
+  document.getElementById('btnAdd').disabled=false;
 };
 
-window.toggleCat = (cid) => {
-  const el = document.getElementById(cid);
-  if (el) el.classList.toggle('collapsed');
-};
+window.toggleCat = (cid) => { const el=document.getElementById(cid); if(el) el.classList.toggle('collapsed'); };
 
-// ── 기관 토글 ──
 window.toggleAgency = (a) => {
-  newAgencies = newAgencies.includes(a)
-    ? newAgencies.filter(x => x !== a)
-    : [...newAgencies, a];
-  document.getElementById('toggleUpstage').className = 'agency-toggle' + (newAgencies.includes('upstage') ? ' active-upstage' : '');
-  document.getElementById('toggleSejong').className  = 'agency-toggle' + (newAgencies.includes('sejong')  ? ' active-sejong'  : '');
+  newAgencies = newAgencies.includes(a) ? newAgencies.filter(x=>x!==a) : [...newAgencies,a];
+  ['ops','naver','upstage','sejong'].forEach(k => {
+    const btn=document.getElementById(`ab-${k}`);
+    if(btn) btn.className='agency-btn'+(newAgencies.includes(k)?` active-${k}`:'');
+  });
 };
 
-// ── Enter 키 ──
-document.getElementById('newTask').addEventListener('keydown', e => {
-  if (e.key === 'Enter') window.addTask();
+/* ── 수정 모달 ── */
+window.openEdit = (key) => {
+  const t = tasks[key]; if(!t) return;
+  editKey = key;
+  editAgencies = [...(t.agencies||[])];
+  document.getElementById('editText').value     = t.text||'';
+  document.getElementById('editCat').value      = t.cat||'강사·커리큘럼';
+  document.getElementById('editWriter').value   = t.writer||'운영팀';
+  document.getElementById('editPriority').value = t.priority||'mid';
+  document.getElementById('editDeadline').value = t.deadline||'';
+  refreshModalAgencyBtns();
+  document.getElementById('editModal').classList.remove('hidden');
+};
+
+window.closeModal = () => {
+  document.getElementById('editModal').classList.add('hidden');
+  editKey=null; editAgencies=[];
+};
+
+window.toggleEditAgency = (a) => {
+  editAgencies = editAgencies.includes(a) ? editAgencies.filter(x=>x!==a) : [...editAgencies,a];
+  refreshModalAgencyBtns();
+};
+
+function refreshModalAgencyBtns() {
+  ['ops','naver','upstage','sejong'].forEach(k => {
+    const btn=document.getElementById(`mab-${k}`);
+    if(btn) btn.className='modal-agency-btn'+(editAgencies.includes(k)?` active-${k}`:'');
+  });
+}
+
+window.saveEdit = async () => {
+  if(!editKey) return;
+  setSyncStatus('syncing','저장 중...');
+  await update(ref(db,`tasks/${editKey}`), {
+    text:     document.getElementById('editText').value.trim(),
+    cat:      document.getElementById('editCat').value,
+    writer:   document.getElementById('editWriter').value,
+    priority: document.getElementById('editPriority').value,
+    deadline: document.getElementById('editDeadline').value||'',
+    agencies: [...editAgencies],
+    updatedAt: Date.now(),
+  });
+  closeModal();
+};
+
+// 모달 바깥 클릭 닫기
+document.getElementById('editModal').addEventListener('click', e => {
+  if(e.target===document.getElementById('editModal')) closeModal();
 });
 
-// ── Firebase 실시간 리스너 ──
-setSyncStatus('syncing', '연결 중...');
+document.getElementById('newTask').addEventListener('keydown', e => { if(e.key==='Enter') window.addTask(); });
 
-onValue(tasksRef, (snapshot) => {
-  const data = snapshot.val();
+// 메모 입력창 Enter 지원 (이벤트 위임)
+document.getElementById('catContainer').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.classList.contains('memo-text-inp')) {
+    const key = e.target.id.replace('mt-', '');
+    window.addMemo(key);
+  }
+});
 
-  // DB 비어있으면 초기 데이터 입력
-  if (!data) {
-    const writes = {};
-    INITIAL_TASKS.forEach((t, i) => {
-      const newRef = push(tasksRef);
-      writes[newRef.key] = { ...t, order: i };
-    });
-    // push each individually
-    INITIAL_TASKS.forEach((t, i) => {
-      push(tasksRef, { ...t, order: i });
-    });
+/* ── Firebase 리스너 ── */
+setSyncStatus('syncing','연결 중...');
+onValue(tasksRef, snap => {
+  const data = snap.val();
+  if(!data){
+    // 빈 DB인 경우, 이 세션에서 한 번만 초기 데이터 입력 시도
+    if(!seedAttempted){
+      seedAttempted = true;
+      INITIAL_TASKS.forEach((t,i)=>push(tasksRef,{...t,order:i,updatedAt:Date.now()}));
+    }
     return;
   }
-
   tasks = data;
-
-  if (!isReady) {
-    isReady = true;
-    const overlay = document.getElementById('loadingOverlay');
-    overlay.classList.add('hidden');
-    setTimeout(() => overlay.style.display = 'none', 400);
+  if(!isReady){
+    isReady=true;
+    const ov=document.getElementById('loadingOverlay');
+    ov.classList.add('hidden'); setTimeout(()=>ov.style.display='none',400);
   }
-
-  renderFilters();
-  renderCategories();
-  updateProgress();
-  setSyncStatus('synced', '실시간 동기화 중');
-}, (error) => {
-  console.error(error);
-  setSyncStatus('error', '연결 오류');
-});
+  renderFilters(); renderAll(); updateProgress();
+  setSyncStatus('synced','실시간 동기화 중');
+}, err => { console.error(err); setSyncStatus('error','연결 오류'); });
 
 calcDDay();
 </script>
