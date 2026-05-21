@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>충북교육청 AI 교원연수 준비 현황</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1f2437;
+    --border: #2a3050;
+    --accent: #4f8ef7;
+    --accent2: #7c6af7;
+    --green: #3dd68c;
+    --yellow: #f5c842;
+    --red: #f76f6f;
+    --text: #e8ecf4;
+    --muted: #6b7a9e;
+    --tag-bg: #1a2040;
+    --upstage: #ff6b35;
+    --sejong: #3db8f5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+
+  /* Loading overlay */
+  #loadingOverlay {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; z-index: 999;
+    transition: opacity 0.4s;
+  }
+  #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--muted); }
+
+  /* Sync indicator */
+  #syncStatus {
+    position: fixed; bottom: 20px; right: 20px;
+    font-size: 12px; padding: 6px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+    transition: all 0.3s;
+    z-index: 100;
+  }
+  #syncStatus.syncing { border-color: var(--yellow); color: var(--yellow); }
+  #syncStatus.synced  { border-color: var(--green);  color: var(--green);  }
+  #syncStatus.error   { border-color: var(--red);    color: var(--red);    }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  #syncStatus.syncing .sync-dot { animation: pulse 1s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .header {
+    max-width: 920px; margin: 0 auto 32px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    flex-wrap: wrap; gap: 16px;
+  }
+  .header-left h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.3; }
+  .header-left h1 span { color: var(--accent); }
+  .header-left .meta { margin-top: 8px; font-size: 13px; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
+  .meta-chip { display: flex; align-items: center; gap: 5px; }
+  .meta-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  .dday {
+    font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; padding: 6px 14px; border-radius: 999px; white-space: nowrap;
+  }
+
+  .progress-section {
+    max-width: 920px; margin: 0 auto 24px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px 22px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .progress-label { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .progress-bar-wrap { flex: 1; min-width: 200px; height: 8px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; transition: width 0.6s ease; }
+  .progress-pct { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; color: var(--accent); white-space: nowrap; }
+  .stat-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+  .stat-chip { font-size: 12px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+  .stat-chip.done { border-color: var(--green); color: var(--green); }
+  .stat-chip.todo { border-color: var(--yellow); color: var(--yellow); }
+
+  .add-section {
+    max-width: 920px; margin: 0 auto 24px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  }
+  .add-section input, .add-section select {
+    font-family: 'Pretendard', sans-serif; font-size: 13px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px; padding: 8px 12px; outline: none; transition: border-color 0.2s;
+  }
+  .add-section input { flex: 1; min-width: 180px; }
+  .add-section input::placeholder { color: var(--muted); }
+  .add-section input:focus, .add-section select:focus { border-color: var(--accent); }
+  .add-section select option { background: var(--surface2); }
+  .add-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+  .agency-selector { display: flex; gap: 6px; }
+  .agency-toggle {
+    font-size: 12px; padding: 6px 12px; border-radius: 99px;
+    border: 1px solid var(--border); background: transparent; color: var(--muted);
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .agency-toggle.active-upstage { border-color: var(--upstage); color: var(--upstage); background: rgba(255,107,53,0.12); }
+  .agency-toggle.active-sejong  { border-color: var(--sejong);  color: var(--sejong);  background: rgba(61,184,245,0.12); }
+
+  .btn-add {
+    font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 600;
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 8px 18px; cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
+  }
+  .btn-add:hover { opacity: 0.85; }
+  .btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .filter-section { max-width: 920px; margin: 0 auto 20px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-btn {
+    font-family: 'Pretendard', sans-serif; font-size: 13px; padding: 6px 14px;
+    border-radius: 99px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn.active, .filter-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,0.08); }
+
+  .categories { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+  .cat-group { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .cat-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    cursor: pointer; user-select: none;
+  }
+  .cat-header:hover { background: var(--surface2); }
+  .cat-title { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+  .cat-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .cat-stats { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+  .mini-progress { width: 60px; height: 5px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .mini-progress-fill { height: 100%; border-radius: 99px; background: var(--green); transition: width 0.4s; }
+  .collapse-btn { font-size: 11px; color: var(--muted); transition: transform 0.2s; }
+  .cat-group.collapsed .collapse-btn { transform: rotate(-90deg); }
+  .cat-group.collapsed .task-list { display: none; }
+
+  .task-list { padding: 8px 0; }
+  .task-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 11px 18px; border-bottom: 1px solid rgba(42,48,80,0.5);
+    transition: background 0.15s; animation: fadeIn 0.25s ease;
+  }
+  .task-item:last-child { border-bottom: none; }
+  .task-item:hover { background: rgba(255,255,255,0.02); }
+  .task-item.done .task-text { text-decoration: line-through; color: var(--muted); }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+
+  .checkbox {
+    width: 20px; height: 20px; border-radius: 6px;
+    border: 2px solid var(--border); background: transparent;
+    cursor: pointer; flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; font-size: 11px; color: transparent;
+  }
+  .checkbox:hover { border-color: var(--green); }
+  .task-item.done .checkbox { background: var(--green); border-color: var(--green); color: #0f1117; }
+
+  .task-body { flex: 1; }
+  .task-text { font-size: 14px; line-height: 1.5; }
+  .task-meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; align-items: center; }
+
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--tag-bg); color: var(--muted); border: 1px solid var(--border); }
+  .tag.owner         { color: var(--accent);  border-color: rgba(79,142,247,0.3);  background: rgba(79,142,247,0.08); }
+  .tag.priority-high { color: var(--red);     border-color: rgba(247,111,111,0.3); background: rgba(247,111,111,0.08); }
+  .tag.priority-mid  { color: var(--yellow);  border-color: rgba(245,200,66,0.3);  background: rgba(245,200,66,0.08); }
+  .tag.agency-upstage{ color: var(--upstage); border-color: rgba(255,107,53,0.35); background: rgba(255,107,53,0.1); font-weight:500; }
+  .tag.agency-sejong { color: var(--sejong);  border-color: rgba(61,184,245,0.35); background: rgba(61,184,245,0.1); font-weight:500; }
+  .tag.confirmed     { color: var(--green);   border-color: rgba(61,214,140,0.35); background: rgba(61,214,140,0.08); }
+
+  .btn-del {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 16px; padding: 2px 4px;
+    border-radius: 6px; transition: color 0.15s, background 0.15s; flex-shrink: 0; line-height: 1;
+  }
+  .btn-del:hover { color: var(--red); background: rgba(247,111,111,0.1); }
+
+  .note-banner {
+    font-size: 12px; color: var(--muted);
+    background: rgba(79,142,247,0.06); border: 1px solid rgba(79,142,247,0.15);
+    border-radius: 8px; padding: 7px 14px; margin: 8px 18px 2px;
+  }
+  .empty-state { text-align: center; padding: 24px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">데이터 불러오는 중...</div>
+</div>
+
+<!-- Sync status -->
+<div id="syncStatus">
+  <span class="sync-dot"></span>
+  <span id="syncText">연결 중</span>
+</div>
+
+<div class="header">
+  <div class="header-left">
+    <h1>충북교육청 <span>AI 교원연수</span> 준비 현황</h1>
+    <div class="meta">
+      <span class="meta-chip"><span class="dot"></span>2026년 8월 12~14일 · 2박 3일</span>
+      <span class="meta-chip"><span class="dot" style="background:var(--green)"></span>세종대학교 (장소 확정)</span>
+      <span class="meta-chip"><span class="dot" style="background:var(--accent2)"></span>50명 이하</span>
+    </div>
+  </div>
+  <div class="dday" id="ddayBadge">D-?</div>
+</div>
+
+<div class="progress-section">
+  <span class="progress-label">전체 진행률</span>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+  <span class="progress-pct" id="progressPct">0%</span>
+  <div class="stat-chips">
+    <span class="stat-chip done" id="statDone">완료 0</span>
+    <span class="stat-chip todo" id="statTodo">미완 0</span>
+  </div>
+</div>
+
+<div class="add-section">
+  <input type="text" id="newTask" placeholder="새 항목 입력..." />
+  <select id="newCat">
+    <option value="강사·커리큘럼">강사·커리큘럼</option>
+    <option value="장소·시설">장소·시설</option>
+    <option value="운영·물품">운영·물품</option>
+    <option value="사후처리">사후처리</option>
+  </select>
+  <select id="newOwner">
+    <option value="운영팀">운영팀</option>
+    <option value="교육청">교육청</option>
+    <option value="Upstage">Upstage</option>
+    <option value="세종대">세종대</option>
+    <option value="공동">공동</option>
+  </select>
+  <select id="newPriority">
+    <option value="high">🔴 우선</option>
+    <option value="mid">🟡 보통</option>
+    <option value="low">⚪ 나중</option>
+  </select>
+  <span class="add-label">담당기관:</span>
+  <div class="agency-selector">
+    <button class="agency-toggle" id="toggleUpstage" onclick="toggleAgency('upstage')">Upstage</button>
+    <button class="agency-toggle" id="toggleSejong"  onclick="toggleAgency('sejong')">세종대</button>
+  </div>
+  <button class="btn-add" id="btnAdd" onclick="addTask()">+ 추가</button>
+</div>
+
+<div class="filter-section" id="filterSection"></div>
+<div class="categories" id="catContainer"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, update, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAkHIuEOP0oHZlceCy-lgwjhvT4avyIAFg",
+  authDomain: "chungbuk-ai-training2026.firebaseapp.com",
+  databaseURL: "https://chungbuk-ai-training2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "chungbuk-ai-training2026",
+  storageBucket: "chungbuk-ai-training2026.firebasestorage.app",
+  messagingSenderId: "1089691391533",
+  appId: "1:1089691391533:web:b958819a1084ff29d20aa4"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const tasksRef = ref(db, 'tasks');
+
+// ── 초기 데이터 (DB가 비어있을 때 한 번만 씀) ──
+const INITIAL_TASKS = [
+  { cat:'강사·커리큘럼', text:'전체 커리큘럼 설계 (3일 세션 구성)', owner:'공동', priority:'high', done:false, agencies:['upstage','sejong'] },
+  { cat:'강사·커리큘럼', text:'Upstage 담당 세션 강의자료·실습자료 제작', owner:'Upstage', priority:'high', done:false, agencies:['upstage'] },
+  { cat:'강사·커리큘럼', text:'세종대 담당 세션 강의자료·실습자료 제작', owner:'세종대', priority:'high', done:false, agencies:['sejong'] },
+  { cat:'강사·커리큘럼', text:'사전 수준 진단 설문 설계', owner:'운영팀', priority:'mid', done:false, agencies:[] },
+  { cat:'강사·커리큘럼', text:'양 기관 강사 합동 사전 미팅 및 콘텐츠 검토', owner:'공동', priority:'mid', done:false, agencies:['upstage','sejong'] },
+  { cat:'강사·커리큘럼', text:'AI 실습 환경 구성 (계정, 도구 목록 확정)', owner:'Upstage', priority:'high', done:false, agencies:['upstage'] },
+  { cat:'장소·시설', text:'세종대학교 강의실 예약 확정', owner:'세종대', priority:'high', done:true, agencies:['sejong'], confirmed:true },
+  { cat:'장소·시설', text:'숙박 시설 선정 및 예약', owner:'운영팀', priority:'high', done:false, agencies:[] },
+  { cat:'장소·시설', text:'강의실 IT 인프라 점검 (Wi-Fi, 빔프로젝터, PC)', owner:'운영팀', priority:'high', done:false, agencies:[] },
+  { cat:'장소·시설', text:'식사·케이터링 업체 섭외 및 메뉴 확정', owner:'운영팀', priority:'mid', done:false, agencies:[] },
+  { cat:'장소·시설', text:'참가자 교통 편의 안내 자료 작성', owner:'운영팀', priority:'low', done:false, agencies:[] },
+  { cat:'운영·물품', text:'연수 키트 구성 및 제작 (교재, 명찰 등)', owner:'운영팀', priority:'mid', done:false, agencies:[] },
+  { cat:'운영·물품', text:'현장 운영 인력 배치 계획 수립', owner:'운영팀', priority:'mid', done:false, agencies:[] },
+  { cat:'운영·물품', text:'현장 출결 관리 시스템 준비', owner:'운영팀', priority:'mid', done:false, agencies:[] },
+  { cat:'운영·물품', text:'비상 상황 대응 매뉴얼 준비', owner:'운영팀', priority:'low', done:false, agencies:[] },
+  { cat:'사후처리', text:'연수 만족도 설문 설계 및 도구 준비', owner:'운영팀', priority:'mid', done:false, agencies:[] },
+  { cat:'사후처리', text:'이수증 발급 기준·양식 확정', owner:'교육청', priority:'mid', done:false, agencies:[] },
+  { cat:'사후처리', text:'결과보고서 템플릿 사전 준비', owner:'공동', priority:'low', done:false, agencies:[] },
+  { cat:'사후처리', text:'예산 정산 계획 수립', owner:'교육청', priority:'low', done:false, agencies:[] },
+];
+
+// ── UI 설정 ──
+const CAT_CONFIG = {
+  '강사·커리큘럼': { icon: '🎓', color: '#7c6af7' },
+  '장소·시설':     { icon: '🏛️', color: '#3dd68c' },
+  '운영·물품':     { icon: '⚙️', color: '#f7a34f' },
+  '사후처리':      { icon: '📊', color: '#f76f6f' },
+};
+const CAT_NOTES = {
+  '운영·물품': '세부 항목은 추후 업데이트 예정',
+  '사후처리':  '세부 항목은 추후 업데이트 예정',
+};
+
+let tasks = {};          // { firebaseKey: taskObj }
+let activeFilter = '전체';
+let newAgencies = [];
+let isReady = false;
+
+// ── 동기화 상태 표시 ──
+function setSyncStatus(state, text) {
+  const el = document.getElementById('syncStatus');
+  el.className = `${state}`;
+  document.getElementById('syncText').textContent = text;
+  // id="syncStatus" 스타일은 CSS에 있음
+  el.style.display = 'flex';
+}
+
+// ── D-Day ──
+function calcDDay() {
+  const target = new Date('2026-08-12');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.ceil((target - today) / 86400000);
+  document.getElementById('ddayBadge').textContent =
+    diff > 0 ? `D-${diff}` : diff === 0 ? 'D-Day!' : `D+${Math.abs(diff)}`;
+}
+
+// ── 진행률 ──
+function updateProgress() {
+  const list = Object.values(tasks);
+  const src  = activeFilter === '전체' ? list : list.filter(t => t.cat === activeFilter);
+  const total = src.length, done = src.filter(t => t.done).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('statDone').textContent = `완료 ${done}`;
+  document.getElementById('statTodo').textContent = `미완 ${total - done}`;
+}
+
+// ── 필터 ──
+function renderFilters() {
+  document.getElementById('filterSection').innerHTML =
+    ['전체', ...Object.keys(CAT_CONFIG)].map(c =>
+      `<button class="filter-btn ${activeFilter===c?'active':''}" onclick="setFilter('${c}')">${c}</button>`
+    ).join('');
+}
+window.setFilter = (cat) => {
+  activeFilter = cat;
+  renderFilters(); renderCategories(); updateProgress();
+};
+
+// ── 카테고리 렌더 ──
+function renderCategories() {
+  const cats = activeFilter === '전체' ? Object.keys(CAT_CONFIG) : [activeFilter];
+  document.getElementById('catContainer').innerHTML = cats.map(cat => {
+    const cfg = CAT_CONFIG[cat];
+    const ct  = Object.entries(tasks)
+      .filter(([,t]) => t.cat === cat)
+      .sort(([,a],[,b]) => (a.order||0) - (b.order||0));
+    const done = ct.filter(([,t]) => t.done).length;
+    const pct  = ct.length ? Math.round(done / ct.length * 100) : 0;
+    const note = CAT_NOTES[cat] ? `<div class="note-banner">📝 ${CAT_NOTES[cat]}</div>` : '';
+    const cid  = 'cg-' + cat.replace(/[·\s]/g, '-');
+    return `
+    <div class="cat-group" id="${cid}">
+      <div class="cat-header" onclick="toggleCat('${cid}')">
+        <div class="cat-title">
+          <div class="cat-icon" style="background:${cfg.color}22;color:${cfg.color}">${cfg.icon}</div>
+          <span>${cat}</span>
+        </div>
+        <div class="cat-stats">
+          <span>${done}/${ct.length}</span>
+          <div class="mini-progress"><div class="mini-progress-fill" style="width:${pct}%;background:${cfg.color}"></div></div>
+          <span class="collapse-btn">▾</span>
+        </div>
+      </div>
+      <div class="task-list">
+        ${note}
+        ${ct.length
+          ? ct.map(([key, t]) => renderTask(key, t)).join('')
+          : '<div class="empty-state">항목이 없습니다</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTask(key, t) {
+  const pl = t.priority==='high'?'우선':t.priority==='mid'?'보통':'';
+  const pc = t.priority==='high'?'priority-high':t.priority==='mid'?'priority-mid':'';
+  const ags = (t.agencies||[]);
+  const aTags = ags.map(a =>
+    a==='upstage'
+      ? `<span class="tag agency-upstage">Upstage</span>`
+      : `<span class="tag agency-sejong">세종대</span>`
+  ).join('');
+  const cTag = t.confirmed ? `<span class="tag confirmed">✓ 확정</span>` : '';
+  return `
+  <div class="task-item ${t.done?'done':''}" id="ti-${key}">
+    <div class="checkbox" onclick="toggleTask('${key}')">✓</div>
+    <div class="task-body">
+      <div class="task-text">${t.text}</div>
+      <div class="task-meta">
+        <span class="tag owner">${t.owner}</span>
+        ${aTags}${cTag}
+        ${pl?`<span class="tag ${pc}">${pl}</span>`:''}
+      </div>
+    </div>
+    <button class="btn-del" onclick="deleteTask('${key}')">×</button>
+  </div>`;
+}
+
+// ── Firebase 액션 ──
+window.toggleTask = async (key) => {
+  const t = tasks[key]; if (!t) return;
+  setSyncStatus('syncing', '저장 중...');
+  await update(ref(db, `tasks/${key}`), { done: !t.done });
+};
+
+window.deleteTask = async (key) => {
+  if (!confirm('이 항목을 삭제할까요?')) return;
+  setSyncStatus('syncing', '저장 중...');
+  await remove(ref(db, `tasks/${key}`));
+};
+
+window.addTask = async () => {
+  const input = document.getElementById('newTask');
+  const text  = input.value.trim();
+  if (!text) { input.focus(); return; }
+  document.getElementById('btnAdd').disabled = true;
+  setSyncStatus('syncing', '저장 중...');
+  const order = Date.now();
+  await push(tasksRef, {
+    cat:      document.getElementById('newCat').value,
+    text,
+    owner:    document.getElementById('newOwner').value,
+    priority: document.getElementById('newPriority').value,
+    done:     false,
+    agencies: [...newAgencies],
+    order,
+  });
+  input.value = '';
+  document.getElementById('btnAdd').disabled = false;
+};
+
+window.toggleCat = (cid) => {
+  const el = document.getElementById(cid);
+  if (el) el.classList.toggle('collapsed');
+};
+
+// ── 기관 토글 ──
+window.toggleAgency = (a) => {
+  newAgencies = newAgencies.includes(a)
+    ? newAgencies.filter(x => x !== a)
+    : [...newAgencies, a];
+  document.getElementById('toggleUpstage').className = 'agency-toggle' + (newAgencies.includes('upstage') ? ' active-upstage' : '');
+  document.getElementById('toggleSejong').className  = 'agency-toggle' + (newAgencies.includes('sejong')  ? ' active-sejong'  : '');
+};
+
+// ── Enter 키 ──
+document.getElementById('newTask').addEventListener('keydown', e => {
+  if (e.key === 'Enter') window.addTask();
+});
+
+// ── Firebase 실시간 리스너 ──
+setSyncStatus('syncing', '연결 중...');
+
+onValue(tasksRef, (snapshot) => {
+  const data = snapshot.val();
+
+  // DB 비어있으면 초기 데이터 입력
+  if (!data) {
+    const writes = {};
+    INITIAL_TASKS.forEach((t, i) => {
+      const newRef = push(tasksRef);
+      writes[newRef.key] = { ...t, order: i };
+    });
+    // push each individually
+    INITIAL_TASKS.forEach((t, i) => {
+      push(tasksRef, { ...t, order: i });
+    });
+    return;
+  }
+
+  tasks = data;
+
+  if (!isReady) {
+    isReady = true;
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.classList.add('hidden');
+    setTimeout(() => overlay.style.display = 'none', 400);
+  }
+
+  renderFilters();
+  renderCategories();
+  updateProgress();
+  setSyncStatus('synced', '실시간 동기화 중');
+}, (error) => {
+  console.error(error);
+  setSyncStatus('error', '연결 오류');
+});
+
+calcDDay();
+</script>
+</body>
+</html>
