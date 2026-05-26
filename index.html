@@ -54,6 +54,28 @@
   .meta-chip .dot { width:6px;height:6px;border-radius:50%;background:var(--accent); }
   .dday { font-family:'DM Mono',monospace;font-size:13px;font-weight:500;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:6px 14px;border-radius:999px;white-space:nowrap; }
 
+  /* ── Sticky Nav ── */
+  .sticky-nav {
+    position:sticky;top:0;z-index:200;
+    background:rgba(15,17,23,.88);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border);
+    margin:0 -24px;padding:0 24px;
+  }
+  .sticky-nav-inner {
+    max-width:960px;margin:0 auto;
+    display:flex;gap:4px;padding:8px 0;
+  }
+  .snav-btn {
+    font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;
+    padding:7px 18px;border-radius:99px;
+    border:1.5px solid transparent;
+    background:transparent;color:var(--muted);
+    cursor:pointer;transition:all .2s;white-space:nowrap;
+  }
+  .snav-btn:hover { color:var(--text);background:rgba(255,255,255,.06);border-color:var(--border); }
+  .snav-btn.active { color:var(--accent);background:rgba(79,142,247,.12);border-color:rgba(79,142,247,.35); }
+
   /* ── Progress ── */
   .progress-section { max-width:960px;margin:0 auto 28px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 22px;display:flex;align-items:center;gap:20px;flex-wrap:wrap; }
   .progress-label { font-size:13px;color:var(--muted);white-space:nowrap; }
@@ -100,18 +122,14 @@
 
   /* 뷰 탭 + 완료 필터 */
   .list-controls { display:flex;flex-wrap:wrap;gap:8px;align-items:center; }
-  .view-tabs,.done-tabs { display:flex;gap:5px; }
-  .tab-divider { width:1px;height:24px;background:var(--border);align-self:center; }
+  .view-tabs { display:flex;gap:5px; }
   .view-tab,.done-tab {
     font-family:'Pretendard',sans-serif;font-size:13px;font-weight:500;
     padding:6px 14px;border-radius:99px;border:1.5px solid var(--border);
     background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;
   }
-  .view-tab:hover,.done-tab:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.07); }
+  .view-tab:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.07); }
   .view-tab.active { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.12);font-weight:600; }
-  .done-tab.active-all  { border-color:var(--muted); color:var(--text);  background:rgba(255,255,255,.06); font-weight:600; }
-  .done-tab.active-todo { border-color:var(--yellow);color:var(--yellow);background:rgba(245,200,66,.1);  font-weight:600; }
-  .done-tab.active-done { border-color:var(--green); color:var(--green); background:rgba(61,214,140,.1);  font-weight:600; }
 
   /* 카테고리 필터 */
   .filter-section { max-width:960px;margin:0 auto 18px;display:flex;gap:8px;flex-wrap:wrap; }
@@ -492,6 +510,42 @@
   }
   .timeline-loading { color:var(--muted);font-size:13px;padding:20px; }
 
+  /* ── 완료 항목 섹션 ── */
+  .done-section {
+    max-width:960px;margin:20px auto 0;
+    border:1px solid var(--border);border-radius:16px;overflow:hidden;
+  }
+  .done-section-header {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 20px;cursor:pointer;user-select:none;
+    background:var(--surface);transition:background .15s;
+  }
+  .done-section-header:hover { background:var(--surface2); }
+  .done-section-title {
+    display:flex;align-items:center;gap:10px;
+    font-size:15px;font-weight:700;color:var(--green);
+  }
+  .done-section-icon { font-size:16px; }
+  .done-count-badge {
+    font-size:11px;font-weight:700;
+    background:rgba(61,214,140,.15);color:var(--green);
+    border:1px solid rgba(61,214,140,.3);border-radius:99px;
+    padding:1px 9px;font-family:'DM Mono',monospace;
+  }
+  .done-section-toggle {
+    font-size:13px;color:var(--muted);transition:transform .25s;
+  }
+  .done-section.collapsed .done-section-toggle { transform:rotate(-90deg); }
+  .done-section.collapsed .done-section-body   { display:none; }
+  .done-section-body {
+    padding:12px 0 4px;
+    background:rgba(61,214,140,.02);
+    border-top:1px solid var(--border);
+  }
+  /* 완료 항목은 흐릿하게 */
+  #doneContainer .task-item { opacity:.6; }
+  #doneContainer .task-item:hover { opacity:1; }
+
   /* ══════════════════════════════
      ── CONTACTS ──
   ══════════════════════════════ */
@@ -708,6 +762,15 @@
   <div class="dday" id="ddayBadge">D-?</div>
 </div>
 
+<!-- ── Sticky Nav ── -->
+<div class="sticky-nav" id="stickyNav">
+  <div class="sticky-nav-inner">
+    <button class="snav-btn" onclick="navScrollTo('sec-todo')"     id="snav-todo">📋 To Do</button>
+    <button class="snav-btn" onclick="navScrollTo('sec-timeline')" id="snav-timeline">📅 타임라인</button>
+    <button class="snav-btn" onclick="navScrollTo('sec-contacts')" id="snav-contacts">👥 연락처</button>
+  </div>
+</div>
+
 <!-- ── Progress ── -->
 <div class="progress-section">
   <span class="progress-label">전체 진행률</span>
@@ -747,7 +810,7 @@
 </div>
 
 <!-- ══ To Do List ══ -->
-<div class="todo-list-header">
+<div id="sec-todo" class="todo-list-header">
   <div class="todo-list-title">To Do <span>List</span></div>
   <div class="list-controls">
     <!-- 뷰 탭 -->
@@ -756,13 +819,6 @@
       <button class="view-tab"        id="vt-priority" onclick="setView('priority')">🔴 우선순위</button>
       <button class="view-tab"        id="vt-deadline" onclick="setView('deadline')">📅 날짜 임박순</button>
     </div>
-    <div class="tab-divider"></div>
-    <!-- 완료 필터 -->
-    <div class="done-tabs">
-      <button class="done-tab active-all"  id="dt-all"  onclick="setDoneFilter('all')">전체</button>
-      <button class="done-tab"             id="dt-todo" onclick="setDoneFilter('todo')">⏳ 미완</button>
-      <button class="done-tab"             id="dt-done" onclick="setDoneFilter('done')">✅ 완료</button>
-    </div>
   </div>
 </div>
 
@@ -770,8 +826,21 @@
 <div class="agency-filter-section" id="agencyFilterSection"></div>
 <div class="categories" id="catContainer"></div>
 
-<!-- ══ Timeline ══ -->
-<div class="timeline-section" id="timelineSection">
+<!-- ══ 완료 항목 ══ -->
+<div class="done-section" id="doneSection">
+  <div class="done-section-header" onclick="toggleDoneSection()">
+    <div class="done-section-title">
+      <span class="done-section-icon">✅</span>
+      완료된 항목
+      <span class="done-count-badge" id="doneCountBadge">0</span>
+    </div>
+    <div class="done-section-toggle" id="doneSectionToggle">▾</div>
+  </div>
+  <div class="done-section-body" id="doneSectionBody">
+    <div class="categories" id="doneContainer"></div>
+  </div>
+</div>
+<div id="sec-timeline" class="timeline-section" id="timelineSection">
   <div class="timeline-header">
     <div class="timeline-title">📅 <span>타임라인</span></div>
     <div class="timeline-sub">기한이 설정된 항목만 표시됩니다</div>
@@ -782,7 +851,7 @@
 </div>
 
 <!-- ══ Contacts ══ -->
-<div class="contacts-section">
+<div id="sec-contacts" class="contacts-section">
   <div class="contacts-header">
     <div class="contacts-title">👥 <span>참여자 연락처</span></div>
     <div class="contacts-sub">소속별로 정렬됩니다</div>
@@ -885,8 +954,7 @@ const ENTITY_LABEL = { ops:'운영팀', naver:'네이버', upstage:'Upstage', se
 let tasks      = {};
 let activeFilter  = '전체';
 let viewMode      = 'cat';
-let doneFilter    = 'all';
-let agencyFilter  = 'all';   // 'all' | 'ops' | 'naver' | 'upstage' | 'sejong'
+let agencyFilter  = 'all';
 let newAgencies   = [];
 let isReady       = false;
 let seedAttempted = false;
@@ -921,22 +989,9 @@ function updateProgress() {
   document.getElementById('statTodo').textContent = `미완 ${total-done}`;
 }
 
-/* ── 완료 필터 ── */
-window.setDoneFilter = (f) => {
-  doneFilter = f;
-  ['all','todo','done'].forEach(k => {
-    const btn = document.getElementById(`dt-${k}`);
-    btn.className = 'done-tab' + (k===f ? ` active-${k}` : '');
-  });
-  renderAll();
-};
-
+/* ── 메인 리스트: 미완 항목만 + 담당기관 필터 ── */
 function applyDoneFilter(entries) {
-  let result = entries;
-  // 완료 필터
-  if (doneFilter === 'todo') result = result.filter(([,t]) => !t.done);
-  if (doneFilter === 'done') result = result.filter(([,t]) =>  t.done);
-  // 담당기관 필터
+  let result = entries.filter(([,t]) => !t.done);  // 항상 미완만
   result = applyAgencyFilter(result);
   return result;
 }
@@ -1292,9 +1347,64 @@ function renderAll() {
   if      (viewMode==='cat')      renderByCat();
   else if (viewMode==='priority') renderByPriority();
   else if (viewMode==='deadline') renderByDeadline();
+  renderDoneSection();
   renderTimeline();
   renderAgencyFilter();
 }
+
+/* ── 완료 항목 섹션 ── */
+function renderDoneSection() {
+  const container = document.getElementById('doneContainer');
+  const badge     = document.getElementById('doneCountBadge');
+  if (!container) return;
+
+  // 완료된 항목 + 담당기관 필터 적용
+  let doneEntries = Object.entries(tasks)
+    .filter(([,t]) => t.done)
+    .sort(([,a],[,b]) => (b.updatedAt||0) - (a.updatedAt||0));  // 최근 완료순
+  doneEntries = applyAgencyFilter(doneEntries);
+
+  if (badge) badge.textContent = doneEntries.length;
+
+  if (doneEntries.length === 0) {
+    container.innerHTML = '<div class="empty-state">완료된 항목이 없습니다</div>';
+    return;
+  }
+
+  // 카테고리별 그룹핑
+  const grouped = {};
+  doneEntries.forEach(entry => {
+    const cat = entry[1].cat || '기타';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(entry);
+  });
+
+  container.innerHTML = Object.entries(grouped).map(([cat, items]) => {
+    const cfg = CAT_CONFIG[cat] || { icon:'📌', color:'#6b7a9e' };
+    const cid = 'done-cg-' + cat.replace(/[·\s]/g,'-');
+    return `
+    <div class="cat-group" id="${cid}" style="margin:0 0 12px;border-radius:10px;">
+      <div class="cat-header" onclick="toggleCat('${cid}')" style="padding:10px 16px;">
+        <div class="cat-title">
+          <div class="cat-icon" style="background:${cfg.color}22;color:${cfg.color};width:24px;height:24px;">${cfg.icon}</div>
+          <span style="font-size:13px;">${cat}</span>
+        </div>
+        <div class="cat-stats">
+          <span>${items.length}개</span>
+          <span class="collapse-btn">▾</span>
+        </div>
+      </div>
+      <div class="task-list">
+        ${items.map(([k,t]) => renderTask(k, t, true)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── 완료 섹션 접기/펼치기 ── */
+window.toggleDoneSection = () => {
+  document.getElementById('doneSection')?.classList.toggle('collapsed');
+};
 
 /* ══════════════════════════════
    ── TIMELINE ──
@@ -1585,6 +1695,40 @@ onValue(tasksRef, snap => {
 }, err => { console.error(err); setSyncStatus('error','연결 오류'); });
 
 calcDDay();
+
+/* ── Sticky Nav ── */
+window.navScrollTo = (id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const navH = document.getElementById('stickyNav')?.offsetHeight || 52;
+  const top  = el.getBoundingClientRect().top + window.scrollY - navH - 12;
+  window.scroll({ top, behavior:'smooth' });
+};
+
+// IntersectionObserver로 현재 섹션 감지 → active 버튼 업데이트
+const NAV_SECTIONS = [
+  { id:'sec-todo',     btn:'snav-todo' },
+  { id:'sec-timeline', btn:'snav-timeline' },
+  { id:'sec-contacts', btn:'snav-contacts' },
+];
+const setActiveNav = (sectionId) => {
+  NAV_SECTIONS.forEach(({ id, btn }) => {
+    document.getElementById(btn)?.classList.toggle('active', id === sectionId);
+  });
+};
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) setActiveNav(e.target.id);
+  });
+}, { threshold: 0.15, rootMargin: '-60px 0px -60% 0px' });
+// 로딩 완료 후 observe (DOM이 렌더된 뒤)
+setTimeout(() => {
+  NAV_SECTIONS.forEach(({ id }) => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+  setActiveNav('sec-todo');
+}, 1000);
 
 /* ══════════════════════════════
    ── CONTACTS ──
