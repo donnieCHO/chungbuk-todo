@@ -118,6 +118,21 @@
   .filter-btn { font-family:'Pretendard',sans-serif;font-size:13px;padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s; }
   .filter-btn.active,.filter-btn:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08); }
 
+  /* 담당기관 필터 */
+  .agency-filter-section { max-width:960px;margin:0 auto 20px;display:flex;gap:7px;flex-wrap:wrap; }
+  .agency-filter-btn {
+    font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;
+    padding:5px 13px;border-radius:99px;border:1.5px solid var(--border);
+    background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;
+    white-space:nowrap;
+  }
+  .agency-filter-btn:hover { border-color:var(--text);color:var(--text); }
+  .agency-filter-btn.af-all.active { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.1);font-weight:600; }
+  .agency-filter-btn.af-ops.active     { border-color:var(--ops);    color:var(--ops);    background:rgba(232,236,244,.08); font-weight:600; }
+  .agency-filter-btn.af-naver.active   { border-color:var(--naver);  color:var(--naver);  background:rgba(0,199,60,.08);    font-weight:600; }
+  .agency-filter-btn.af-upstage.active { border-color:var(--upstage);color:var(--upstage);background:rgba(139,92,246,.08);  font-weight:600; }
+  .agency-filter-btn.af-sejong.active  { border-color:var(--sejong); color:var(--sejong); background:rgba(195,0,47,.08);    font-weight:600; }
+
   /* ── Category groups ── */
   .categories { max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:20px; }
   .cat-group { background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden; }
@@ -704,6 +719,7 @@
 </div>
 
 <div class="filter-section" id="filterSection"></div>
+<div class="agency-filter-section" id="agencyFilterSection"></div>
 <div class="categories" id="catContainer"></div>
 
 <!-- ══ Timeline ══ -->
@@ -819,12 +835,13 @@ const ENTITY_CLS   = { '운영팀':'ops','네이버':'naver','Upstage':'upstage'
 const ENTITY_LABEL = { ops:'운영팀', naver:'네이버', upstage:'Upstage', sejong:'세종대' };
 
 let tasks      = {};
-let activeFilter = '전체';
-let viewMode   = 'cat';
-let doneFilter = 'all';   // 'all' | 'todo' | 'done'
-let newAgencies = [];
-let isReady    = false;
-let seedAttempted = false;  // 초기 데이터 입력 중복 방지
+let activeFilter  = '전체';
+let viewMode      = 'cat';
+let doneFilter    = 'all';
+let agencyFilter  = 'all';   // 'all' | 'ops' | 'naver' | 'upstage' | 'sejong'
+let newAgencies   = [];
+let isReady       = false;
+let seedAttempted = false;
 
 // 수정 모달 상태
 let editKey      = null;
@@ -867,9 +884,13 @@ window.setDoneFilter = (f) => {
 };
 
 function applyDoneFilter(entries) {
-  if (doneFilter === 'todo') return entries.filter(([,t]) => !t.done);
-  if (doneFilter === 'done') return entries.filter(([,t]) =>  t.done);
-  return entries;
+  let result = entries;
+  // 완료 필터
+  if (doneFilter === 'todo') result = result.filter(([,t]) => !t.done);
+  if (doneFilter === 'done') result = result.filter(([,t]) =>  t.done);
+  // 담당기관 필터
+  result = applyAgencyFilter(result);
+  return result;
 }
 
 /* ── 뷰 탭 ── */
@@ -890,6 +911,42 @@ function renderFilters() {
     ).join('');
 }
 window.setFilter = (cat) => { activeFilter=cat; renderFilters(); renderAll(); updateProgress(); };
+
+/* ── 담당기관 필터 ── */
+const AGENCY_TABS = [
+  { key:'all',     label:'전체',    cls:'af-all' },
+  { key:'ops',     label:'운영팀',  cls:'af-ops' },
+  { key:'naver',   label:'네이버',  cls:'af-naver' },
+  { key:'upstage', label:'Upstage', cls:'af-upstage' },
+  { key:'sejong',  label:'세종대',  cls:'af-sejong' },
+];
+
+function renderAgencyFilter() {
+  const sec = document.getElementById('agencyFilterSection');
+  if (!sec) return;
+  sec.innerHTML = AGENCY_TABS.map(t =>
+    `<button class="agency-filter-btn ${t.cls} ${agencyFilter===t.key?'active':''}"
+       onclick="setAgencyFilter('${t.key}')">${t.label}</button>`
+  ).join('');
+}
+
+window.setAgencyFilter = (key) => {
+  agencyFilter = key;
+  renderAgencyFilter();
+  renderAll();
+};
+
+function applyAgencyFilter(entries) {
+  if (agencyFilter === 'all') return entries;
+  return entries.filter(([,t]) => {
+    const agencies = t.agencies || [];
+    // 소속 키와 ENTITY_CLS 역방향 매핑
+    return agencies.some(a => {
+      const cls = ENTITY_CLS[a] || a;
+      return cls === agencyFilter;
+    });
+  });
+}
 
 /* ── 기한 표시 ── */
 function deadlineDisplay(dl) {
@@ -1130,6 +1187,7 @@ function renderAll() {
   else if (viewMode==='priority') renderByPriority();
   else if (viewMode==='deadline') renderByDeadline();
   renderTimeline();
+  renderAgencyFilter();
 }
 
 /* ══════════════════════════════
