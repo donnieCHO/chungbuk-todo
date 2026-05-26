@@ -202,9 +202,57 @@
   .btn-icon { background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:4px 6px;border-radius:6px;transition:all .15s;line-height:1; }
   .btn-icon:hover { background:var(--surface2); }
   .btn-edit:hover { color:var(--accent); }
+  .btn-link:hover { color:var(--yellow); }
   .btn-del:hover  { color:var(--red); }
 
-  /* ── 메모 영역 (항상 표시, 메모 있으면 자동 펼침) ── */
+  /* ── 링크 영역 ── */
+  .task-links { padding:0 18px 0 18px;display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px; }
+  .task-link-chip {
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:12px;font-weight:500;
+    padding:4px 10px 4px 8px;border-radius:99px;
+    background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);
+    color:var(--accent);text-decoration:none;
+    transition:all .15s;max-width:260px;
+  }
+  .task-link-chip:hover { background:rgba(79,142,247,.2);border-color:var(--accent); }
+  .task-link-chip .link-icon { font-size:11px;flex-shrink:0; }
+  .task-link-chip .link-label { white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .task-link-del {
+    background:none;border:none;cursor:pointer;
+    color:rgba(79,142,247,.5);font-size:12px;padding:0 0 0 3px;
+    line-height:1;transition:color .15s;flex-shrink:0;
+  }
+  .task-link-del:hover { color:var(--red); }
+
+  /* 링크 추가 인라인 폼 */
+  .link-add-row {
+    display:none;align-items:center;gap:7px;
+    padding:6px 18px 8px;flex-wrap:wrap;
+  }
+  .link-add-row.open { display:flex; }
+  .link-inp {
+    font-family:'Pretendard',sans-serif;font-size:12px;
+    background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);border-radius:7px;padding:6px 10px;
+    outline:none;transition:border-color .2s;
+  }
+  .link-inp:focus { border-color:var(--accent); }
+  .link-inp::placeholder { color:var(--muted); }
+  .link-inp.url { flex:2;min-width:160px; }
+  .link-inp.label { flex:1;min-width:80px; }
+  .link-save-btn {
+    font-family:'Pretendard',sans-serif;font-size:12px;font-weight:600;
+    background:rgba(79,142,247,.15);color:var(--accent);
+    border:1px solid rgba(79,142,247,.3);border-radius:7px;
+    padding:6px 13px;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;
+  }
+  .link-save-btn:hover { background:rgba(79,142,247,.28); }
+  .link-cancel-btn {
+    font-family:'Pretendard',sans-serif;font-size:12px;
+    background:none;border:none;color:var(--muted);cursor:pointer;padding:4px 6px;
+  }
+  .link-cancel-btn:hover { color:var(--text); }
   .task-memo-wrap { padding:0 18px 12px 18px; }
   .memo-list { display:flex;flex-direction:column;gap:5px;margin-bottom:10px; }
   .memo-item {
@@ -1003,6 +1051,19 @@ function renderTask(key, t, showCat=false) {
     </div>`;
   }).join('');
 
+  // 링크
+  const links = t.links ? Object.entries(t.links).sort(([,a],[,b])=>(a.ts||0)-(b.ts||0)) : [];
+  const linksHtml = links.length ? `
+    <div class="task-links">
+      ${links.map(([lk,l]) => `
+        <a class="task-link-chip" href="${l.url}" target="_blank" rel="noopener">
+          <span class="link-icon">🔗</span>
+          <span class="link-label">${l.label || l.url}</span>
+        </a>
+        <button class="task-link-del" onclick="deleteLink('${key}','${lk}')" title="링크 삭제">×</button>
+      `).join('')}
+    </div>` : '';
+
   const lastUpd = lastUpdatedStr(t);
 
   return `
@@ -1020,11 +1081,19 @@ function renderTask(key, t, showCat=false) {
         ${dl}
       </div>
       <div class="task-actions">
-        <button class="btn-icon btn-edit" onclick="openEdit('${key}')" title="수정">✏️</button>
-        <button class="btn-icon btn-del"  onclick="deleteTask('${key}')" title="삭제">×</button>
+        <button class="btn-icon btn-link" onclick="toggleLinkForm('${key}')" title="링크 추가">📎</button>
+        <button class="btn-icon btn-edit" onclick="openEdit('${key}')"        title="수정">✏️</button>
+        <button class="btn-icon btn-del"  onclick="deleteTask('${key}')"      title="삭제">×</button>
       </div>
     </div>
     ${lastUpd ? `<div class="task-last-updated">${lastUpd}</div>` : ''}
+    ${linksHtml}
+    <div class="link-add-row" id="lar-${key}">
+      <input class="link-inp url"   id="lu-${key}" placeholder="https://drive.google.com/..." />
+      <input class="link-inp label" id="ll-${key}" placeholder="파일명 (선택)" />
+      <button class="link-save-btn"   onclick="addLink('${key}')">추가</button>
+      <button class="link-cancel-btn" onclick="toggleLinkForm('${key}')">취소</button>
+    </div>
     <div class="task-memo-wrap">
       ${memoListHtml ? `<div class="memo-list">${memoListHtml}</div>` : ''}
       <div class="memo-input-row">
@@ -1041,6 +1110,43 @@ function renderTask(key, t, showCat=false) {
     </div>
   </div>`;
 }
+
+/* ── 링크 폼 토글 ── */
+window.toggleLinkForm = (key) => {
+  const row = document.getElementById(`lar-${key}`);
+  if (!row) return;
+  const isOpen = row.classList.toggle('open');
+  if (isOpen) {
+    const inp = document.getElementById(`lu-${key}`);
+    if (inp) inp.focus();
+  }
+};
+
+/* ── 링크 추가 ── */
+window.addLink = async (key) => {
+  const urlInp   = document.getElementById(`lu-${key}`);
+  const labelInp = document.getElementById(`ll-${key}`);
+  let url = urlInp?.value.trim();
+  if (!url) { urlInp?.focus(); return; }
+  // http 없으면 자동 추가
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  const label = labelInp?.value.trim() || '';
+  setSyncStatus('syncing', '저장 중...');
+  await push(ref(db, `tasks/${key}/links`), { url, label, ts: Date.now() });
+  await update(ref(db, `tasks/${key}`), { updatedAt: Date.now() });
+  if (urlInp)   urlInp.value   = '';
+  if (labelInp) labelInp.value = '';
+  // 폼 닫기
+  document.getElementById(`lar-${key}`)?.classList.remove('open');
+};
+
+/* ── 링크 삭제 ── */
+window.deleteLink = async (taskKey, linkKey) => {
+  if (!confirm('이 링크를 삭제할까요?')) return;
+  setSyncStatus('syncing', '저장 중...');
+  await remove(ref(db, `tasks/${taskKey}/links/${linkKey}`));
+  await update(ref(db, `tasks/${taskKey}`), { updatedAt: Date.now() });
+};
 
 /* ── 메모 추가 ── */
 window.addMemo = async (key) => {
@@ -1449,6 +1555,10 @@ document.getElementById('catContainer').addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.classList.contains('memo-text-inp')) {
     const key = e.target.id.replace('mt-', '');
     window.addMemo(key);
+  }
+  if (e.key === 'Enter' && (e.target.classList.contains('link-inp'))) {
+    const key = e.target.id.replace(/^(lu|ll)-/, '');
+    window.addLink(key);
   }
 });
 
