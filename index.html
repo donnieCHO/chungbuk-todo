@@ -75,6 +75,13 @@
   }
   .snav-btn:hover { color:var(--text);background:rgba(255,255,255,.06);border-color:var(--border); }
   .snav-btn.active { color:var(--accent);background:rgba(79,142,247,.12);border-color:rgba(79,142,247,.35); }
+  .snav-link {
+    text-decoration:none;display:inline-flex;align-items:center;
+    margin-left:auto;
+    color:var(--accent);border-color:rgba(79,142,247,.3);
+    background:rgba(79,142,247,.06);
+  }
+  .snav-link:hover { color:var(--accent);background:rgba(79,142,247,.14);border-color:var(--accent); }
 
   /* ── Progress ── */
   .progress-section { max-width:960px;margin:0 auto 28px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 22px;display:flex;align-items:center;gap:20px;flex-wrap:wrap; }
@@ -782,6 +789,7 @@
     <button class="snav-btn" onclick="navScrollTo('sec-todo')"     id="snav-todo">📋 To Do</button>
     <button class="snav-btn" onclick="navScrollTo('sec-timeline')" id="snav-timeline">📅 타임라인</button>
     <button class="snav-btn" onclick="navScrollTo('sec-contacts')" id="snav-contacts">👥 연락처</button>
+    <a class="snav-btn snav-link" href="timetable.html" target="_blank" rel="noopener">🕐 운영 시간표 ↗</a>
   </div>
 </div>
 
