@@ -131,13 +131,25 @@
   .view-tab:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.07); }
   .view-tab.active { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.12);font-weight:600; }
 
+  /* 필터 행 레이아웃 */
+  .filter-row {
+    max-width:960px;margin:0 auto 12px;
+    display:flex;align-items:flex-start;gap:14px;
+  }
+  .filter-row-label {
+    font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);white-space:nowrap;
+    padding-top:8px;min-width:64px;
+    border-right:1px solid var(--border);padding-right:12px;
+    font-family:'DM Mono',monospace;
+  }
   /* 카테고리 필터 */
-  .filter-section { max-width:960px;margin:0 auto 18px;display:flex;gap:8px;flex-wrap:wrap; }
+  .filter-section { flex:1;display:flex;gap:8px;flex-wrap:wrap;margin:0; }
   .filter-btn { font-family:'Pretendard',sans-serif;font-size:13px;padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s; }
   .filter-btn.active,.filter-btn:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08); }
 
   /* 담당기관 필터 */
-  .agency-filter-section { max-width:960px;margin:0 auto 20px;display:flex;gap:7px;flex-wrap:wrap; }
+  .agency-filter-section { flex:1;display:flex;gap:7px;flex-wrap:wrap;margin:0; }
   .agency-filter-btn {
     font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;
     padding:5px 13px;border-radius:99px;border:1.5px solid var(--border);
@@ -685,6 +697,8 @@
     .contact-form-grid{grid-template-columns:1fr 1fr}
     .contact-form-field.full{grid-column:span 2}
     .contact-card{width:calc(50% - 7px)}
+    .filter-row{flex-direction:column;gap:6px;align-items:stretch;}
+    .filter-row-label{border-right:none;padding-right:0;padding-top:0;min-width:0;}
   }
   @media(max-width:480px){
     .add-grid{grid-template-columns:1fr}.add-field.full{grid-column:span 1}
@@ -822,8 +836,14 @@
   </div>
 </div>
 
-<div class="filter-section" id="filterSection"></div>
-<div class="agency-filter-section" id="agencyFilterSection"></div>
+<div class="filter-row" id="filterRowCat">
+  <span class="filter-row-label">업무 구분</span>
+  <div class="filter-section" id="filterSection"></div>
+</div>
+<div class="filter-row">
+  <span class="filter-row-label">담당 회사</span>
+  <div class="agency-filter-section" id="agencyFilterSection"></div>
+</div>
 <div class="categories" id="catContainer"></div>
 
 <!-- ══ 완료 항목 ══ -->
@@ -1002,7 +1022,8 @@ window.setView = (mode) => {
   ['cat','priority','deadline'].forEach(m => {
     document.getElementById(`vt-${m}`).classList.toggle('active', m===mode);
   });
-  document.getElementById('filterSection').style.display = mode==='cat' ? 'flex' : 'none';
+  // 업무 구분 필터는 cat 뷰에서만 표시 (레이블 포함)
+  document.getElementById('filterRowCat').style.display = mode==='cat' ? 'flex' : 'none';
   renderAll();
 };
 
