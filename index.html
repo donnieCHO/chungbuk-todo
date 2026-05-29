@@ -83,6 +83,115 @@
   }
   .snav-link:hover { color:var(--accent);background:rgba(79,142,247,.14);border-color:var(--accent); }
 
+  /* ── 사용 가이드 아코디언 ── */
+  .guide-section {
+    max-width:960px;margin:0 auto 24px;
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:14px;overflow:hidden;
+    transition:border-color .2s;
+  }
+  .guide-section:hover { border-color:rgba(79,142,247,.3); }
+  .guide-section.open { border-color:rgba(79,142,247,.4); }
+
+  .guide-header {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 20px;cursor:pointer;user-select:none;
+    transition:background .15s;
+  }
+  .guide-header:hover { background:var(--surface2); }
+  .guide-title {
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    font-size:14px;font-weight:700;color:var(--text);
+  }
+  .guide-icon { font-size:18px; }
+  .guide-sub {
+    font-size:12px;font-weight:400;color:var(--muted);
+    margin-left:4px;
+  }
+  .guide-toggle {
+    font-size:13px;color:var(--muted);transition:transform .25s ease;
+    width:20px;text-align:center;
+  }
+  .guide-section.open .guide-toggle { transform:rotate(180deg);color:var(--accent); }
+
+  .guide-body {
+    max-height:0;overflow:hidden;
+    transition:max-height .35s ease;
+  }
+  .guide-section.open .guide-body { max-height:4500px; }
+
+  .guide-grid {
+    padding:6px 20px 22px;
+    display:flex;flex-direction:column;gap:18px;
+    border-top:1px solid var(--border);
+    margin-top:0;padding-top:18px;
+  }
+
+  .guide-card {
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px 20px;
+  }
+  .guide-card-title {
+    font-size:15px;font-weight:700;color:var(--accent);
+    margin-bottom:8px;letter-spacing:-.2px;
+  }
+  .guide-card-desc {
+    font-size:13px;color:var(--text);line-height:1.6;
+    margin-bottom:6px;
+  }
+  .guide-block {
+    margin-top:14px;padding-top:12px;
+    border-top:1px dashed rgba(42,48,80,.7);
+  }
+  .guide-block:first-of-type { margin-top:10px; }
+  .guide-block-title {
+    font-size:13px;font-weight:700;color:var(--text);
+    margin-bottom:6px;
+  }
+  .guide-block p {
+    font-size:13px;color:var(--muted);line-height:1.65;margin:0;
+  }
+  .guide-block p b, .guide-card-desc b { color:var(--text);font-weight:600; }
+  .guide-block ul {
+    list-style:none;padding:0;margin:8px 0 0;
+    display:flex;flex-direction:column;gap:5px;
+  }
+  .guide-block li {
+    font-size:13px;color:var(--muted);line-height:1.55;
+    padding-left:14px;position:relative;
+  }
+  .guide-block li::before {
+    content:'·';position:absolute;left:4px;top:-1px;
+    color:var(--accent);font-weight:700;font-size:16px;
+  }
+  .guide-block li b { color:var(--text);font-weight:600; }
+
+  .dot-inline {
+    display:inline-block;width:9px;height:9px;border-radius:50%;
+    margin-right:5px;vertical-align:middle;
+  }
+
+  .guide-card-tips {
+    background:rgba(79,142,247,.05);
+    border-color:rgba(79,142,247,.25);
+  }
+  .guide-card-tips .guide-card-title { color:var(--yellow); }
+  .guide-card-tips ul {
+    list-style:none;padding:0;margin:0;
+    display:flex;flex-direction:column;gap:7px;
+  }
+  .guide-card-tips li {
+    font-size:13px;color:var(--muted);line-height:1.6;
+    padding-left:16px;position:relative;
+  }
+  .guide-card-tips li::before {
+    content:'✓';position:absolute;left:0;top:0;
+    color:var(--yellow);font-weight:700;
+  }
+  .guide-card-tips li b { color:var(--text);font-weight:600; }
+
   /* ── Progress ── */
   .progress-section { max-width:960px;margin:0 auto 28px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 22px;display:flex;align-items:center;gap:20px;flex-wrap:wrap; }
   .progress-label { font-size:13px;color:var(--muted);white-space:nowrap; }
@@ -793,6 +902,137 @@
   </div>
 </div>
 
+<!-- ── 사용 가이드 (아코디언) ── -->
+<div class="guide-section" id="guideSection">
+  <div class="guide-header" onclick="toggleGuide()">
+    <div class="guide-title">
+      <span class="guide-icon">📖</span>
+      <span>To Do List 사용법</span>
+      <span class="guide-sub">처음이신가요? 클릭해서 펼쳐보세요</span>
+    </div>
+    <span class="guide-toggle" id="guideToggle">▾</span>
+  </div>
+  <div class="guide-body">
+    <div class="guide-grid">
+
+      <div class="guide-card">
+        <div class="guide-card-title">📋 To Do — 할 일 관리</div>
+        <p class="guide-card-desc">충북교육청 AI 교원연수 준비를 위한 협업 To Do List입니다. 모든 변경사항은 실시간으로 모든 참여자에게 공유됩니다.</p>
+
+        <div class="guide-block">
+          <div class="guide-block-title">✏️ 항목 추가</div>
+          <p>맨 위의 <b>"새 항목 추가"</b> 폼에서 작성하세요. 작성자, 카테고리, 우선순위, 기한, 내용을 입력하고 담당 기관은 <b>여러 개 선택</b>도 가능합니다. <b>Enter 키</b>로 빠르게 추가할 수 있어요.</p>
+        </div>
+
+        <div class="guide-block">
+          <div class="guide-block-title">🔍 보기 모드 전환</div>
+          <p>"To Do List" 옆의 탭으로 보기 방식을 바꿀 수 있어요.</p>
+          <ul>
+            <li><b>📂 카테고리</b> — 업무 영역별로 묶어 보기</li>
+            <li><b>🔴 우선순위</b> — 우선 / 보통 / 나중 그룹</li>
+            <li><b>📅 날짜 임박순</b> — 기한이 가까운 순서대로</li>
+          </ul>
+        </div>
+
+        <div class="guide-block">
+          <div class="guide-block-title">🎯 필터 사용하기</div>
+          <p>두 줄로 된 필터로 원하는 항목만 골라볼 수 있어요.</p>
+          <ul>
+            <li><b>업무 구분</b> — 강사·커리큘럼 / 장소·시설 / 운영·물품 / 사후처리</li>
+            <li><b>담당 회사</b> — 운영팀 / 네이버 / Upstage / 세종대</li>
+          </ul>
+        </div>
+
+        <div class="guide-block">
+          <div class="guide-block-title">⚙️ 각 항목에서 할 수 있는 일</div>
+          <ul>
+            <li><b>✓ 완료</b> 버튼 — 완료 처리하면 자동으로 하단 "완료된 항목" 섹션으로 이동합니다</li>
+            <li><b>📎</b> — Google Drive 등의 URL을 첨부합니다. 클릭하면 새 탭으로 열려요</li>
+            <li><b>✏️</b> — 항목 내용을 수정합니다</li>
+            <li><b>×</b> — 항목을 삭제합니다</li>
+          </ul>
+        </div>
+
+        <div class="guide-block">
+          <div class="guide-block-title">💬 메모(댓글) 남기기</div>
+          <p>각 항목 아래의 메모 영역에 진행 상황이나 협의 내용을 댓글처럼 남길 수 있어요. 작성자를 선택하고 내용을 입력한 뒤 <b>Enter</b>를 누르면 추가됩니다. 각 메모 옆 <b>✏️</b>로 수정, <b>×</b>로 삭제할 수 있어요.</p>
+        </div>
+      </div>
+
+      <div class="guide-card">
+        <div class="guide-card-title">📅 타임라인</div>
+        <p class="guide-card-desc">기한이 설정된 모든 할 일을 <b>날짜순으로 한눈에</b> 볼 수 있는 영역입니다. To Do에서 추가한 항목이 자동으로 표시돼요.</p>
+
+        <div class="guide-block">
+          <div class="guide-block-title">🎨 점의 색상으로 긴급도 확인</div>
+          <ul>
+            <li><span class="dot-inline" style="background:#f76f6f"></span> <b>빨강</b> — 기한이 지났습니다</li>
+            <li><span class="dot-inline" style="background:#f5c842"></span> <b>노랑</b> — 7일 이내</li>
+            <li><span class="dot-inline" style="background:#3dd68c"></span> <b>초록</b> — 오늘</li>
+            <li><span class="dot-inline" style="background:#4f8ef7"></span> <b>파랑</b> — 여유 있음</li>
+            <li><span class="dot-inline" style="background:#6b7a9e"></span> <b>회색</b> — 완료된 항목 (흐릿하게 표시)</li>
+          </ul>
+        </div>
+
+        <div class="guide-block">
+          <p>중간의 <b>TODAY 마커</b>를 기준으로 위쪽은 지난 일정, 아래쪽은 다가오는 일정이에요. 기한이 설정되지 않은 항목은 맨 아래 "기한 미설정" 영역에 모입니다.</p>
+        </div>
+      </div>
+
+      <div class="guide-card">
+        <div class="guide-card-title">👥 연락처</div>
+        <p class="guide-card-desc">연수 운영에 참여하는 분들의 연락처를 소속별로 모아두는 곳입니다.</p>
+
+        <div class="guide-block">
+          <div class="guide-block-title">➕ 연락처 추가</div>
+          <p>이름, 소속, 담당 업무, 전화번호, 이메일을 입력하고 추가 버튼을 누르면 됩니다. 소속에 따라 자동으로 그룹화되고 카드 색상이 정해져요.</p>
+        </div>
+
+        <div class="guide-block">
+          <div class="guide-block-title">📞 빠른 연락</div>
+          <p>카드의 <b>📞 전화번호</b>를 클릭하면 전화 앱이 바로 열리고, <b>✉️ 이메일</b>을 클릭하면 메일 앱이 열립니다. 카드 우측 상단의 <b>×</b> 버튼으로 삭제할 수 있어요.</p>
+        </div>
+      </div>
+
+      <div class="guide-card">
+        <div class="guide-card-title">🕐 운영 시간표</div>
+        <p class="guide-card-desc">상단 메뉴의 <b>"🕐 운영 시간표"</b>를 클릭하면 별도 페이지가 열려요. 2박 3일 동안의 일정을 시간 단위로 정리할 수 있습니다.</p>
+
+        <div class="guide-block">
+          <div class="guide-block-title">🖱️ 일정 추가 — 드래그하기</div>
+          <p>시간표의 <b>빈 칸을 마우스로 드래그</b>하면 시간 범위가 선택되고 입력 창이 자동으로 열려요. 제목과 메모를 입력하고 분류(공통/세종대/업스테이지)를 선택하세요.</p>
+        </div>
+
+        <div class="guide-block">
+          <div class="guide-block-title">✏️ 일정 수정·삭제</div>
+          <p>등록된 일정을 <b>클릭</b>하면 편집창이 열립니다. 시간을 바꾸거나 분류를 변경할 수 있고, 하단의 <b>삭제</b> 버튼으로 제거할 수도 있어요.</p>
+        </div>
+
+        <div class="guide-block">
+          <div class="guide-block-title">🎨 분류 색상</div>
+          <ul>
+            <li><span class="dot-inline" style="background:#3dd68c"></span> <b>공통</b> (녹색)</li>
+            <li><span class="dot-inline" style="background:#c3002f"></span> <b>세종대</b> (버건디)</li>
+            <li><span class="dot-inline" style="background:#8b5cf6"></span> <b>업스테이지</b> (보라)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="guide-card guide-card-tips">
+        <div class="guide-card-title">💡 알아두면 좋은 점</div>
+        <ul>
+          <li><b>실시간 공동 편집</b> — 누가 어떤 변경을 해도 모든 참여자에게 즉시 반영됩니다</li>
+          <li><b>동기화 상태</b> — 우하단의 작은 배지에서 연결 상태를 확인할 수 있어요</li>
+          <li><b>D-Day</b> — 상단 우측의 D-Day 뱃지가 연수일까지 남은 일수를 자동으로 보여줍니다</li>
+          <li><b>섹션 이동</b> — 상단 메뉴(📋 To Do / 📅 타임라인 / 👥 연락처)를 클릭하면 해당 위치로 바로 이동합니다</li>
+          <li><b>파일 첨부</b> — 큰 파일은 Google Drive 등에 업로드한 후 📎 버튼으로 링크만 추가하세요</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- ── Progress ── -->
 <div class="progress-section">
   <span class="progress-label">전체 진행률</span>
@@ -1433,6 +1673,11 @@ function renderDoneSection() {
 /* ── 완료 섹션 접기/펼치기 ── */
 window.toggleDoneSection = () => {
   document.getElementById('doneSection')?.classList.toggle('collapsed');
+};
+
+/* ── 사용 가이드 아코디언 ── */
+window.toggleGuide = () => {
+  document.getElementById('guideSection')?.classList.toggle('open');
 };
 
 /* ══════════════════════════════
