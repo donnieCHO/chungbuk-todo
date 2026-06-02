@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>충북교육청 AI 교원연수 준비 현황</title>
+<script>
+  // FOUC 방지 - 가장 먼저 실행
+  (function() {
+    try {
+      var t = localStorage.getItem('cb-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch(e) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
@@ -24,7 +35,62 @@
     --upstage: #8b5cf6;
     --sejong: #c3002f;
     --ops: #e8ecf4;
+    --shadow-strong: 0 4px 14px rgba(0,0,0,.3);
+    --shadow-card: 0 12px 32px rgba(0,0,0,.35);
+    --overlay-bg: rgba(0,0,0,.65);
+    --nav-bg: rgba(15,17,23,.92);
   }
+
+  /* 라이트 모드 */
+  [data-theme="light"] {
+    --bg: #f7f9fc;
+    --surface: #ffffff;
+    --surface2: #f1f4fa;
+    --border: #dbe2ed;
+    --accent: #2563eb;
+    --accent2: #7c3aed;
+    --green: #16a34a;
+    --yellow: #d97706;
+    --red: #dc2626;
+    --text: #1a1f36;
+    --muted: #6b7280;
+    --naver: #03c75a;
+    --upstage: #7c3aed;
+    --sejong: #be0030;
+    --ops: #475569;
+    --shadow-strong: 0 4px 14px rgba(0,0,0,.08);
+    --shadow-card: 0 12px 32px rgba(0,0,0,.1);
+    --overlay-bg: rgba(0,0,0,.35);
+    --nav-bg: rgba(247,249,252,.92);
+  }
+  [data-theme="light"] .add-section input[type=date],
+  [data-theme="light"] input[type=time] { color-scheme: light; }
+
+  /* 라이트 모드 보정 - 태그/카드 배경 명도 조정 */
+  [data-theme="light"] .tag { background:rgba(0,0,0,.04); }
+  [data-theme="light"] .tag.priority-high { background:rgba(220,38,38,.1); }
+  [data-theme="light"] .tag.priority-mid  { background:rgba(217,119,6,.12); }
+  [data-theme="light"] .tag.agency-ops    { background:rgba(71,85,105,.1); color:#334155; }
+  [data-theme="light"] .tag.agency-naver  { background:rgba(3,199,90,.13); }
+  [data-theme="light"] .tag.agency-upstage{ background:rgba(124,58,237,.13); }
+  [data-theme="light"] .tag.agency-sejong { background:rgba(190,0,48,.13); }
+  [data-theme="light"] .tag.confirmed     { background:rgba(22,163,74,.12); }
+
+  /* 다크모드 전용 메모 작성자 색상 보정 */
+  [data-theme="light"] .memo-writer.w-ops { color:#334155; }
+
+  /* 라이트 모드에서 sticky-nav가 흐려 보이지 않게 */
+  [data-theme="light"] .snav-link {
+    color:var(--accent);background:rgba(37,99,235,.08);
+    border-color:rgba(37,99,235,.25);
+  }
+  [data-theme="light"] .snav-btn.active {
+    background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.4);
+  }
+
+  /* 메인 리스트의 완료 항목 어두운 배경에서만 흐릿하게 보이게 */
+  [data-theme="light"] #doneContainer .task-item { opacity:.7; }
+  [data-theme="light"] #doneContainer .task-item:hover { opacity:1; }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Pretendard','Malgun Gothic',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 32px 24px; }
@@ -54,10 +120,29 @@
   .meta-chip .dot { width:6px;height:6px;border-radius:50%;background:var(--accent); }
   .dday { font-family:'DM Mono',monospace;font-size:13px;font-weight:500;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:6px 14px;border-radius:999px;white-space:nowrap; }
 
+  /* 테마 토글 버튼 */
+  .header-right { display:flex;align-items:center;gap:10px; }
+  .theme-toggle {
+    width:36px;height:36px;border-radius:50%;
+    background:var(--surface);border:1.5px solid var(--border);
+    color:var(--text);cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:15px;transition:all .25s;
+    padding:0;line-height:1;
+  }
+  .theme-toggle:hover {
+    border-color:var(--accent);
+    color:var(--accent);
+    transform:rotate(15deg);
+  }
+  .theme-toggle .icon-light { display:none; }
+  [data-theme="light"] .theme-toggle .icon-light { display:inline; }
+  [data-theme="light"] .theme-toggle .icon-dark  { display:none; }
+
   /* ── Sticky Nav ── */
   .sticky-nav {
     position:sticky;top:0;z-index:200;
-    background:rgba(15,17,23,.92);
+    background:var(--nav-bg);
     backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
     border-bottom:1px solid var(--border);
     margin:0 -24px 28px;padding:0 24px;
@@ -468,9 +553,9 @@
   .task-last-updated { font-size:10px;color:var(--muted);padding:0 18px 8px 58px;font-family:'DM Mono',monospace; }
 
   /* ── 수정 모달 ── */
-  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px; }
+  .modal-overlay { position:fixed;inset:0;background:var(--overlay-bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px; }
   .modal-overlay.hidden { display:none; }
-  .modal { background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  .modal { background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;width:100%;max-width:560px;box-shadow:var(--shadow-card); }
   .modal-title { font-size:17px;font-weight:700;margin-bottom:20px;color:var(--accent); }
   .modal-grid { display:flex;flex-direction:column;gap:14px; }
   .modal-field { display:flex;flex-direction:column;gap:5px; }
@@ -750,7 +835,7 @@
     transition:transform .2s,box-shadow .2s;
     display:flex;flex-direction:column;gap:10px;
   }
-  .contact-card:hover { transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.35); }
+  .contact-card:hover { transform:translateY(-3px);box-shadow:var(--shadow-card); }
 
   /* 빈 카드 (placeholder) */
   .contact-card.empty {
@@ -889,7 +974,13 @@
       <span class="meta-chip"><span class="dot" style="background:var(--accent2)"></span>50명 이하</span>
     </div>
   </div>
-  <div class="dday" id="ddayBadge">D-?</div>
+  <div class="header-right">
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="라이트/다크 모드 전환" aria-label="테마 전환">
+      <span class="icon-dark">🌙</span>
+      <span class="icon-light">☀️</span>
+    </button>
+    <div class="dday" id="ddayBadge">D-?</div>
+  </div>
 </div>
 
 <!-- ── Sticky Nav ── -->
@@ -1969,6 +2060,15 @@ onValue(tasksRef, snap => {
 }, err => { console.error(err); setSyncStatus('error','연결 오류'); });
 
 calcDDay();
+
+/* ── 테마 토글 ── */
+window.toggleTheme = () => {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  try { localStorage.setItem('cb-theme', next); } catch(e) {}
+};
 
 /* ── Sticky Nav ── */
 window.navScrollTo = (id) => {
