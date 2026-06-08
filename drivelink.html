@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<!--
+  배포 파일: drivelink.html
+  역할: tasks 노드에 저장된 links 하위 데이터를 한곳에 모아 보여주는 파일 링크 관리 페이지입니다.
+  파일 원본은 Google Drive 등 외부 저장소에 있고, 이 페이지에서는 To Do에 연결된 URL만 관리합니다.
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>충북교육청 AI 교원연수 — 파일 관리</title>
+<style>
+  /* 파일 관리 페이지 전용 스타일: 카드형 파일 목록과 검색/필터 툴바를 구성합니다. */
+  @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+  :root { --bg:#0f1117; --surface:#181c27; --surface2:#1f2437; --border:#2a3050; --accent:#4f8ef7; --accent2:#7c6af7; --green:#3dd68c; --yellow:#f5c842; --red:#f76f6f; --text:#e8ecf4; --muted:#6b7a9e; --naver:#00c73c; --upstage:#8b5cf6; --sejong:#c3002f; --ops:#e8ecf4; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Pretendard','Malgun Gothic',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:26px 20px 80px; }
+  a { color:inherit; }
+  #loadingOverlay { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; z-index:999; transition:opacity .35s; }
+  #loadingOverlay.hidden { opacity:0; pointer-events:none; }
+  .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { color:var(--muted); font-size:14px; }
+  #syncStatus { position:fixed; right:20px; bottom:20px; z-index:100; display:flex; align-items:center; gap:7px; padding:7px 14px; border-radius:99px; background:var(--surface); border:1px solid var(--border); color:var(--muted); font-size:12px; }
+  #syncStatus.syncing { color:var(--yellow); border-color:var(--yellow); } #syncStatus.synced { color:var(--green); border-color:var(--green); } #syncStatus.error { color:var(--red); border-color:var(--red); }
+  .sync-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .page { max-width:1080px; margin:0 auto; }
+  .header { display:flex; justify-content:space-between; align-items:flex-end; gap:18px; flex-wrap:wrap; margin-bottom:18px; }
+  h1 { font-size:28px; letter-spacing:-.8px; line-height:1.2; }
+  h1 span { color:var(--accent); }
+  .desc { color:var(--muted); font-size:14px; line-height:1.65; margin-top:10px; max-width:720px; }
+  .nav { display:flex; gap:8px; flex-wrap:wrap; }
+  .nav a { text-decoration:none; border:1.5px solid var(--border); color:var(--muted); background:var(--surface); border-radius:99px; padding:8px 14px; font-size:13px; font-weight:800; transition:all .15s; }
+  .nav a:hover,.nav a.active { color:var(--accent); border-color:var(--accent); background:rgba(79,142,247,.1); }
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:20px 0; }
+  .stat { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:16px; }
+  .stat b { display:block; font-size:26px; }
+  .stat span { color:var(--muted); font-size:12px; }
+  .toolbar { position:sticky; top:0; z-index:100; background:rgba(15,17,23,.92); backdrop-filter:blur(12px); margin:0 -20px 18px; padding:10px 20px; border-bottom:1px solid var(--border); }
+  .toolbar-inner { max-width:1080px; margin:0 auto; display:grid; grid-template-columns:1fr 150px 160px; gap:10px; }
+  input,select { font-family:'Pretendard','Malgun Gothic',sans-serif; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:12px; padding:11px 12px; outline:none; font-size:13px; }
+  input:focus,select:focus { border-color:var(--accent); }
+  .file-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .file-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:16px; display:grid; grid-template-columns:auto 1fr; gap:14px; transition:transform .14s,border-color .14s; }
+  .file-card:hover { transform:translateY(-2px); border-color:rgba(79,142,247,.45); }
+  .file-icon { width:44px; height:44px; border-radius:14px; background:rgba(79,142,247,.12); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:21px; }
+  .file-title { font-size:15px; font-weight:800; line-height:1.35; margin-bottom:5px; overflow-wrap:anywhere; }
+  .file-url { color:var(--muted); font-family:'DM Mono',monospace; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:10px; }
+  .task-title { color:var(--text); font-size:13px; line-height:1.45; margin:8px 0; opacity:.92; }
+  .tags { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 12px; }
+  .tag { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--border); color:var(--muted); background:rgba(255,255,255,.025); border-radius:99px; padding:3px 8px; font-size:11px; font-weight:700; }
+  .actions { display:flex; gap:7px; flex-wrap:wrap; }
+  .btn { text-decoration:none; border:1px solid var(--border); color:var(--muted); background:var(--surface2); border-radius:10px; padding:8px 10px; font-size:12px; font-weight:800; cursor:pointer; }
+  .btn:hover { color:var(--accent); border-color:var(--accent); }
+  .btn.danger:hover { color:var(--red); border-color:var(--red); }
+  .empty { border:1px dashed var(--border); border-radius:18px; padding:34px; color:var(--muted); text-align:center; grid-column:1/-1; background:rgba(255,255,255,.015); }
+  @media(max-width:820px) { .stats { grid-template-columns:repeat(2,1fr); } .toolbar-inner { grid-template-columns:1fr; } .file-list { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div id="loadingOverlay"><div class="spinner"></div><div class="loading-text">파일 링크 불러오는 중...</div></div>
+<div id="syncStatus"><span class="sync-dot"></span><span id="syncText">연결 중</span></div>
+
+<div class="page">
+  <header class="header">
+    <div>
+      <h1>첨부 <span>파일 링크</span> 관리</h1>
+      <p class="desc">To Do 항목에 📎로 연결된 Google Drive, 문서, 참고 URL을 한곳에 모아봅니다. 파일 원본은 외부 저장소에 두고, 이 페이지는 링크만 정리합니다.</p>
+    </div>
+    <nav class="nav">
+      <a href="index.html">🏠 내 할 일</a>
+      <a href="details.html">📋 상세 관리</a>
+      <a href="timetable.html">🕐 시간표</a>
+      <a class="active" href="drivelink.html">📁 파일 관리</a>
+    </nav>
+  </header>
+  <section class="stats">
+    <div class="stat"><b id="statLinks">0</b><span>전체 링크</span></div>
+    <div class="stat"><b id="statTasks">0</b><span>파일이 있는 업무</span></div>
+    <div class="stat"><b id="statDrive">0</b><span>Google Drive</span></div>
+    <div class="stat"><b id="statRecent">0</b><span>최근 7일 추가</span></div>
+  </section>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <input id="searchInput" placeholder="파일명, URL, 업무명으로 검색" />
+    <select id="ownerFilter"></select>
+    <select id="catFilter"></select>
+  </div>
+</div>
+
+<div class="page">
+  <div class="file-list" id="fileList"></div>
+</div>
+
+<script type="module">
+/*
+  drivelink.html JavaScript 구조
+  1. Firebase tasks 노드를 구독합니다.
+  2. 각 업무의 links 하위 데이터를 평탄화합니다.
+  3. 검색어/담당자/카테고리/URL 파라미터 기준으로 필터링합니다.
+  4. 원본 파일은 건드리지 않고 To Do 링크 노드만 삭제합니다.
+*/
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+/* Firebase 설정: To Do의 links 데이터를 모아 보기 위해 tasks 노드를 사용합니다. */
+const firebaseConfig = {
+  apiKey: "AIzaSyAkHIuEOP0oHZlceCy-lgwjhvT4avyIAFg",
+  authDomain: "chungbuk-ai-training2026.firebaseapp.com",
+  databaseURL: "https://chungbuk-ai-training2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "chungbuk-ai-training2026",
+  storageBucket: "chungbuk-ai-training2026.firebasestorage.app",
+  messagingSenderId: "1089691391533",
+  appId: "1:1089691391533:web:b958819a1084ff29d20aa4"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const tasksRef = ref(db, 'tasks');
+
+const ENTITY = { all:'전체', ops:'운영팀', naver:'네이버', upstage:'Upstage', sejong:'세종대' };
+const NAME_TO_KEY = { '운영팀':'ops','네이버':'naver','Upstage':'upstage','업스테이지':'upstage','세종대':'sejong', ops:'ops',naver:'naver',upstage:'upstage',sejong:'sejong' };
+const CAT_CONFIG = { '강사·커리큘럼':'🎓', '장소·시설':'🏛️', '운영·물품':'⚙️', '사후처리':'📊' };
+let tasks = {};
+let allLinks = [];
+let isReady = false;
+
+function setSyncStatus(state, text) { document.getElementById('syncStatus').className = state; document.getElementById('syncText').textContent = text; }
+
+/* 사용자 입력값 출력 보호 및 안전한 외부 URL 처리 */
+function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function escapeAttr(value) { return escapeHtml(value).replace(/`/g, '&#96;'); }
+function safeExternalUrl(value) {
+  const raw = String(value || '').trim();
+  try {
+    const url = new URL(raw);
+    return ['http:', 'https:'].includes(url.protocol) ? escapeAttr(url.href) : '#';
+  } catch {
+    return '#';
+  }
+}
+window.addEventListener('unhandledrejection', event => {
+  console.error('비동기 처리 오류:', event.reason);
+  setSyncStatus('error','저장/연결 오류');
+});
+function normalizeKey(value) { return NAME_TO_KEY[value] || value || ''; }
+function taskOwner(t) { if (t.owner) return normalizeKey(t.owner); if (t.writer) return normalizeKey(t.writer); const ag = t.agencies || []; return ag.length ? normalizeKey(ag[0]) : 'ops'; }
+function hostOf(url) { try { return new URL(url).hostname.replace(/^www\./,''); } catch { return url; } }
+function iconOf(url) {
+  const host = hostOf(url).toLowerCase();
+  if (host.includes('drive.google')) return '📄';
+  if (host.includes('docs.google')) return '📝';
+  if (host.includes('sheet')) return '📊';
+  if (host.includes('dropbox')) return '📦';
+  if (host.includes('youtube')) return '▶️';
+  return '🔗';
+}
+/* tasks/{taskKey}/links/{linkKey} 구조를 파일 목록 렌더링용 배열로 변환합니다. */
+function flattenLinks() {
+  const arr = [];
+  Object.entries(tasks).forEach(([taskKey,t]) => {
+    const links = t.links || {};
+    Object.entries(links).forEach(([linkKey,l]) => {
+      if (!l || !l.url) return;
+      arr.push({ taskKey, linkKey, url:l.url, label:l.label || '', ts:l.ts || t.updatedAt || 0, taskText:t.text || '', cat:t.cat || '기타', owner:taskOwner(t), deadline:t.deadline || '', done:!!t.done });
+    });
+  });
+  arr.sort((a,b) => (b.ts||0)-(a.ts||0));
+  allLinks = arr;
+}
+function renderFilters() {
+  const owner = document.getElementById('ownerFilter');
+  const prevOwner = owner.value || 'all';
+  owner.innerHTML = Object.entries(ENTITY).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
+  owner.value = ENTITY[prevOwner] ? prevOwner : 'all';
+  const cat = document.getElementById('catFilter');
+  const prevCat = cat.value || '전체';
+  const cats = ['전체', ...Object.keys(CAT_CONFIG)];
+  cat.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  cat.value = cats.includes(prevCat) ? prevCat : '전체';
+}
+function renderStats() {
+  const taskSet = new Set(allLinks.map(l => l.taskKey));
+  const drive = allLinks.filter(l => hostOf(l.url).includes('drive.google') || hostOf(l.url).includes('docs.google')).length;
+  const seven = Date.now() - 7 * 86400000;
+  const recent = allLinks.filter(l => (l.ts || 0) >= seven).length;
+  document.getElementById('statLinks').textContent = allLinks.length;
+  document.getElementById('statTasks').textContent = taskSet.size;
+  document.getElementById('statDrive').textContent = drive;
+  document.getElementById('statRecent').textContent = recent;
+}
+/* 검색어, 담당자, 카테고리, ?task= 파라미터를 적용해 파일 목록을 필터링합니다. */
+function filteredLinks() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const owner = document.getElementById('ownerFilter').value;
+  const cat = document.getElementById('catFilter').value;
+  const param = new URLSearchParams(location.search).get('task');
+  return allLinks.filter(l => {
+    if (param && l.taskKey !== param) return false;
+    if (owner !== 'all' && l.owner !== owner) return false;
+    if (cat !== '전체' && l.cat !== cat) return false;
+    if (q) {
+      const blob = `${l.label} ${l.url} ${l.taskText} ${l.cat} ${ENTITY[l.owner] || l.owner}`.toLowerCase();
+      if (!blob.includes(q)) return false;
+    }
+    return true;
+  });
+}
+function tagHtml(l) {
+  const parts = [];
+  parts.push(`<span class="tag">${CAT_CONFIG[l.cat] || '📌'} ${escapeHtml(l.cat)}</span>`);
+  parts.push(`<span class="tag">👤 ${escapeHtml(ENTITY[l.owner] || l.owner)}</span>`);
+  if (l.deadline) parts.push(`<span class="tag">📅 ${escapeHtml(l.deadline)}</span>`);
+  if (l.done) parts.push('<span class="tag" style="color:var(--green);border-color:rgba(61,214,140,.35)">✓ 완료 업무</span>');
+  return parts.join('');
+}
+function renderFiles() {
+  const list = filteredLinks();
+  const wrap = document.getElementById('fileList');
+  renderStats();
+  if (!list.length) {
+    wrap.innerHTML = '<div class="empty">조건에 맞는 파일 링크가 없습니다.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map(l => `<article class="file-card">
+    <div class="file-icon">${iconOf(l.url)}</div>
+    <div>
+      <div class="file-title">${escapeHtml(l.label || hostOf(l.url))}</div>
+      <div class="file-url">${escapeHtml(hostOf(l.url))} · ${escapeHtml(l.url)}</div>
+      <div class="task-title">연결된 업무: ${escapeHtml(l.taskText || '(업무명 없음)')}</div>
+      <div class="tags">${tagHtml(l)}</div>
+      <div class="actions">
+        <a class="btn" href="${safeExternalUrl(l.url)}" target="_blank" rel="noopener">열기</a>
+        <a class="btn" href="details.html#ti-${l.taskKey}">업무 상세</a>
+        <button class="btn danger" onclick="deleteLink('${l.taskKey}','${l.linkKey}')">링크 삭제</button>
+      </div>
+    </div>
+  </article>`).join('');
+}
+window.deleteLink = async (taskKey, linkKey) => {
+  if (!confirm('이 링크를 삭제할까요? 원본 파일은 삭제되지 않고 To Do의 링크만 제거됩니다.')) return;
+  setSyncStatus('syncing','저장 중...');
+  await remove(ref(db, `tasks/${taskKey}/links/${linkKey}`));
+  await update(ref(db, `tasks/${taskKey}`), { updatedAt:Date.now() });
+};
+['searchInput','ownerFilter','catFilter'].forEach(id => document.getElementById(id).addEventListener('input', renderFiles));
+renderFilters();
+setSyncStatus('syncing','연결 중...');
+onValue(tasksRef, snap => {
+  tasks = snap.val() || {};
+  flattenLinks();
+  renderFilters();
+  renderFiles();
+  if (!isReady) { isReady = true; const ov = document.getElementById('loadingOverlay'); ov.classList.add('hidden'); setTimeout(() => ov.style.display='none', 350); }
+  setSyncStatus('synced','실시간 동기화 중');
+}, err => { console.error(err); setSyncStatus('error','연결 오류'); });
+</script>
+</body>
+</html>

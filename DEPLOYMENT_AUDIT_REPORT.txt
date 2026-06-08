@@ -1,0 +1,24 @@
+SITE: /mnt/data/todo_release_checked
+HTML STATIC CHECK
+- details.html: OK
+- dricelink.html: OK
+- drivelink.html: OK
+- index.html: OK
+- timetable.html: OK
+
+JAVASCRIPT SYNTAX CHECK
+- details.html script 0: OK
+- dricelink.html script 0: OK
+- drivelink.html script 0: OK
+- index.html script 0: OK
+- timetable.html script 0: OK
+
+LOCAL STATIC SERVE CHECK
+- index.html: HTTP 200
+- details.html: HTTP 200
+- timetable.html: HTTP 200
+- drivelink.html: HTTP 200
+- dricelink.html: HTTP 200
+- README.md: HTTP 200
+- DEPLOYMENT_CHECKLIST.md: HTTP 200
+- DEPLOYMENT_AUDIT_REPORT.txt: HTTP 200

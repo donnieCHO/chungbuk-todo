@@ -1,10 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
+<!--
+  배포 파일: timetable.html
+  역할: 2박 3일 운영 시간표를 Google Calendar 스타일의 시간 그리드로 관리합니다.
+  데이터: Firebase Realtime Database의 timetable_events 노드를 사용합니다.
+  연결: index.html, details.html, drivelink.html과 상호 이동합니다.
+-->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>충북교육청 AI 교원연수 — 운영 시간표</title>
 <style>
+  /* 시간표 페이지 전용 스타일: 시간 그리드, 드래그 프리뷰, 일정 편집 모달을 포함합니다. */
   @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
 
@@ -302,7 +309,11 @@
       <span class="meta-chip"><span class="dot" style="background:var(--green)"></span>세종대학교</span>
     </div>
   </div>
-  <a class="back-btn" href="index.html">← 메인으로</a>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <a class="back-btn" href="index.html">← 메인</a>
+    <a class="back-btn" href="details.html">상세 관리</a>
+    <a class="back-btn" href="drivelink.html">파일 관리</a>
+  </div>
 </div>
 
 <!-- 범례 + 안내 -->
@@ -322,10 +333,18 @@
 
 <!-- Firebase -->
 <script type="module">
+/*
+  timetable.html JavaScript 구조
+  1. Firebase timetable_events 노드를 구독합니다.
+  2. 시간/슬롯 변환 헬퍼로 그리드 좌표를 계산합니다.
+  3. 드래그로 신규 일정 범위를 만들고 모달에서 저장합니다.
+  4. 일정 클릭 시 수정/삭제 모달을 엽니다.
+*/
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, update, remove, push, set }
+import { getDatabase, ref, onValue, update, remove, push }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
+/* Firebase 설정: To Do와 같은 프로젝트를 사용하되 timetable_events 노드로 분리합니다. */
 const firebaseConfig = {
   apiKey: "AIzaSyAkHIuEOP0oHZlceCy-lgwjhvT4avyIAFg",
   authDomain: "chungbuk-ai-training2026.firebaseapp.com",
@@ -348,9 +367,14 @@ const DAYS = [
 const START_HOUR = 7;    // 오전 7시 시작
 const END_HOUR   = 23;   // 밤 11시까지
 const SLOT_MIN   = 30;   // 30분 단위
-const ROW_H      = 24;   // 30분 = 24px (CSS와 일치)
 const SLOTS_PER_HOUR = 60 / SLOT_MIN;
 const TOTAL_SLOTS = (END_HOUR - START_HOUR) * SLOTS_PER_HOUR;
+
+// CSS 미디어쿼리에서 --row-h가 바뀔 수 있으므로 JS는 매번 실제 값을 읽습니다.
+function getRowHeight() {
+  const value = getComputedStyle(document.documentElement).getPropertyValue('--row-h').trim();
+  return Number.parseFloat(value) || 24;
+}
 
 /* ── 상태 ── */
 let events = {};
@@ -368,6 +392,11 @@ function setSyncStatus(state, text) {
   document.getElementById('syncText').textContent = text;
 }
 
+window.addEventListener('unhandledrejection', event => {
+  console.error('비동기 처리 오류:', event.reason);
+  setSyncStatus('error','저장/연결 오류');
+});
+
 /* ── 시간 헬퍼 ── */
 function slotToTime(slot) {
   const totalMin = START_HOUR * 60 + slot * SLOT_MIN;
@@ -378,9 +407,6 @@ function slotToTime(slot) {
 function timeToSlot(timeStr) {
   const [h, m] = timeStr.split(':').map(Number);
   return (h - START_HOUR) * SLOTS_PER_HOUR + (m / SLOT_MIN);
-}
-function fmtTimeRange(start, end) {
-  return `${start} ~ ${end}`;
 }
 
 /* ── 그리드 렌더 ── */
@@ -453,8 +479,9 @@ function renderEvents() {
 
     const card = document.createElement('div');
     card.className = `tt-event ${ev.cat || 'common'}`;
-    card.style.top    = `${startSlot * ROW_H + 2}px`;
-    card.style.height = `${duration * ROW_H - 4}px`;
+    const rowH = getRowHeight();
+    card.style.top    = `${startSlot * rowH + 2}px`;
+    card.style.height = `${duration * rowH - 4}px`;
     card.dataset.key = key;
     card.innerHTML = `
       <div class="tt-event-title">${escapeHtml(ev.title || '(제목 없음)')}</div>
@@ -529,8 +556,9 @@ function showDragPreview() {
     dragState.previewEl.className = 'tt-drag-preview';
     colEl.appendChild(dragState.previewEl);
   }
-  dragState.previewEl.style.top = `${minSlot * ROW_H + 2}px`;
-  dragState.previewEl.style.height = `${duration * ROW_H - 4}px`;
+  const rowH = getRowHeight();
+  dragState.previewEl.style.top = `${minSlot * rowH + 2}px`;
+  dragState.previewEl.style.height = `${duration * rowH - 4}px`;
   dragState.previewEl.textContent = `${slotToTime(minSlot)}–${slotToTime(maxSlot)}`;
 }
 
@@ -622,6 +650,9 @@ document.addEventListener('keydown', e => {
 renderGrid();
 initDrag();
 setSyncStatus('syncing','연결 중...');
+
+// 모바일 회전/리사이즈 시 CSS 변수 변경에 맞춰 일정 카드 위치를 다시 계산합니다.
+window.addEventListener('resize', () => renderEvents());
 
 onValue(eventsRef, snap => {
   events = snap.val() || {};
