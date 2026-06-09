@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="ko">
+<!--
+  배포 파일: timetable.html
+  역할: 2박 3일 운영 시간표를 Google Calendar 스타일의 시간 그리드로 관리합니다.
+  데이터: Firebase Realtime Database의 timetable_events, timetable_locations 노드를 사용합니다.
+  연결: index.html, details.html, drivelink.html과 상호 이동합니다.
+  장소: 일정별 locations 배열과 재사용 가능한 장소 태그 목록을 분리해 관리합니다.
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>충북교육청 AI 교원연수 — 운영 시간표</title>
+<style>
+  /* 시간표 페이지 전용 스타일: 시간 그리드, 드래그 프리뷰, 일정 편집 모달을 포함합니다. */
+  @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1f2437;
+    --border: #2a3050;
+    --accent: #4f8ef7;
+    --accent2: #7c6af7;
+    --green: #3dd68c;
+    --yellow: #f5c842;
+    --red: #f76f6f;
+    --text: #e8ecf4;
+    --muted: #6b7a9e;
+
+    /* 일정 카테고리 색상 */
+    --common: #3dd68c;        /* 녹색 */
+    --sejong: #c3002f;        /* 버건디 */
+    --upstage: #8b5cf6;       /* 보라 */
+
+    /* 그리드 설정 */
+    --row-h: 24px;            /* 30분 단위 행 높이 */
+    --time-col-w: 64px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family:'Pretendard','Malgun Gothic',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:24px; }
+
+  /* ── 로딩 / 동기화 ── */
+  #loadingOverlay { position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;transition:opacity .4s; }
+  #loadingOverlay.hidden { opacity:0;pointer-events:none; }
+  .spinner { width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { font-size:14px;color:var(--muted); }
+
+  #syncStatus { position:fixed;bottom:20px;right:20px;font-size:12px;padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:flex;align-items:center;gap:6px;transition:all .3s;z-index:100; }
+  #syncStatus.syncing { border-color:var(--yellow);color:var(--yellow); }
+  #syncStatus.synced  { border-color:var(--green); color:var(--green);  }
+  #syncStatus.error   { border-color:var(--red);   color:var(--red);    }
+  .sync-dot { width:6px;height:6px;border-radius:50%;background:currentColor; }
+  #syncStatus.syncing .sync-dot { animation:pulse 1s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+  /* ── Header ── */
+  .header {
+    max-width:1200px;margin:0 auto 28px;
+    display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;
+  }
+  .header-left h1 { font-size:22px;font-weight:700;letter-spacing:-.5px; }
+  .header-left h1 span { color:var(--accent); }
+  .header-left .meta { margin-top:8px;font-size:13px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap; }
+  .meta-chip { display:flex;align-items:center;gap:5px; }
+  .meta-chip .dot { width:6px;height:6px;border-radius:50%;background:var(--accent); }
+
+  .back-btn {
+    font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;
+    padding:8px 16px;border-radius:99px;border:1.5px solid var(--border);
+    background:transparent;color:var(--muted);text-decoration:none;
+    transition:all .2s;display:inline-flex;align-items:center;gap:5px;
+  }
+  .back-btn:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08); }
+
+  /* ── 범례 + 액션 ── */
+  .toolbar {
+    max-width:1200px;margin:0 auto 16px;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+  }
+  .legend { display:flex;gap:10px;flex-wrap:wrap; }
+  .legend-chip {
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:12px;padding:5px 12px;border-radius:99px;
+    border:1px solid var(--border);background:var(--surface);color:var(--muted);
+  }
+  .legend-dot { width:12px;height:12px;border-radius:4px; }
+
+  .toolbar-actions { display:flex;gap:8px; }
+  .toolbar-hint { font-size:12px;color:var(--muted); }
+
+  /* ── 시간표 그리드 ── */
+  .timetable-wrap {
+    max-width:1200px;margin:0 auto;
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:16px;overflow:hidden;
+  }
+  .timetable {
+    display:grid;
+    grid-template-columns:var(--time-col-w) repeat(3, 1fr);
+    position:relative;
+  }
+
+  /* 헤더 (요일/날짜) */
+  .tt-corner {
+    background:var(--surface2);border-right:1px solid var(--border);border-bottom:1px solid var(--border);
+    padding:14px 8px;
+  }
+  .tt-day-head {
+    background:var(--surface2);border-right:1px solid var(--border);border-bottom:1px solid var(--border);
+    padding:12px 10px;text-align:center;
+  }
+  .tt-day-head:last-child { border-right:none; }
+  .tt-day-num { font-size:18px;font-weight:800;letter-spacing:-.5px; }
+  .tt-day-num span { color:var(--accent);font-size:13px;margin-left:4px;font-weight:600; }
+  .tt-day-label { font-size:11px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace; }
+
+  /* 시간 컬럼 */
+  .tt-time-cell {
+    height:calc(var(--row-h) * 2); /* 1시간 = 30분 두 칸 */
+    border-right:1px solid var(--border);
+    border-bottom:1px solid var(--border);
+    font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;
+    padding:4px 6px;text-align:right;line-height:1;
+  }
+
+  /* 일정 컬럼 (시간 칸) */
+  .tt-col {
+    position:relative;
+    border-right:1px solid var(--border);
+  }
+  .tt-col:last-child { border-right:none; }
+
+  /* 30분 단위 셀 (배경 그리드) */
+  .tt-slot {
+    height:var(--row-h);
+    border-bottom:1px dashed rgba(42,48,80,.55); /* 30분 점선 */
+    cursor:crosshair;
+    transition:background .12s;
+  }
+  .tt-slot.hour { border-bottom:1px solid var(--border); }  /* 정각 실선 */
+  .tt-slot:hover { background:rgba(79,142,247,.06); }
+  .tt-slot.last { border-bottom:1px solid var(--border); }  /* 마지막 줄 */
+
+  /* 일정 카드 */
+  .tt-event {
+    position:absolute;
+    left:4px;right:4px;
+    border-radius:7px;
+    padding:5px 8px 4px;
+    cursor:pointer;
+    overflow:hidden;
+    transition:transform .12s, box-shadow .12s, opacity .12s;
+    border-left:3px solid;
+    font-size:11px;
+    z-index:2;
+    user-select:none;
+  }
+  .tt-event:hover { box-shadow:0 4px 14px rgba(0,0,0,.4); z-index:3; }
+  .tt-event.common  { background:rgba(61,214,140,.18); border-left-color:var(--common);  color:var(--common); }
+  .tt-event.sejong  { background:rgba(195,0,47,.22);  border-left-color:var(--sejong);  color:#ff6f80; }
+  .tt-event.upstage { background:rgba(139,92,246,.22); border-left-color:var(--upstage); color:#c4b5fd; }
+  .tt-event-title { font-weight:700;line-height:1.25;color:var(--text);font-size:12px;margin-bottom:1px; }
+  .tt-event-time  { font-family:'DM Mono',monospace;font-size:10px;opacity:.85; }
+  .tt-event-location { display:flex;flex-wrap:wrap;gap:3px;margin-top:3px; }
+  .tt-location-chip-mini {
+    display:inline-flex;align-items:center;gap:2px;
+    font-family:'Pretendard',sans-serif;font-size:9px;font-weight:700;line-height:1.2;
+    padding:1px 5px;border-radius:99px;border:1px solid rgba(79,142,247,.36);
+    background:rgba(79,142,247,.12);color:#a9c8ff;max-width:100%;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* 드래그 중인 placeholder */
+  .tt-drag-preview {
+    position:absolute;
+    left:4px;right:4px;
+    background:rgba(79,142,247,.18);
+    border:1.5px dashed var(--accent);
+    border-radius:7px;
+    pointer-events:none;
+    z-index:5;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;
+  }
+
+  /* ── 일정 편집 모달 ── */
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px; }
+  .modal-overlay.hidden { display:none; }
+  .modal {
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:18px;padding:26px;width:100%;max-width:540px;
+    max-height:calc(100vh - 40px);overflow:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+  }
+  .modal-title { font-size:17px;font-weight:700;margin-bottom:18px;color:var(--accent); }
+  .modal-grid { display:flex;flex-direction:column;gap:14px; }
+  .modal-field { display:flex;flex-direction:column;gap:5px; }
+  .modal-field label { font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);text-transform:uppercase; }
+  .modal-field input,.modal-field select,.modal-field textarea {
+    font-family:'Pretendard',sans-serif;font-size:14px;
+    background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);border-radius:9px;padding:9px 12px;outline:none;
+    transition:border-color .2s;width:100%;
+  }
+  .modal-field textarea { resize:vertical;min-height:60px;font-family:'Pretendard',sans-serif; }
+  .modal-field input:focus,.modal-field select:focus,.modal-field textarea:focus { border-color:var(--accent); }
+  .modal-field select option { background:var(--surface2); }
+
+  .modal-field-row { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+
+  .cat-btn-group { display:flex;gap:7px;flex-wrap:wrap; }
+  .cat-btn {
+    font-family:'Pretendard',sans-serif;font-size:12px;font-weight:600;
+    padding:7px 14px;border-radius:99px;border:1.5px solid var(--border);
+    background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .cat-btn-dot { width:10px;height:10px;border-radius:3px;flex-shrink:0; }
+  .cat-btn.active-common  { border-color:var(--common);  color:var(--common);  background:rgba(61,214,140,.12); }
+  .cat-btn.active-sejong  { border-color:var(--sejong);  color:#ff6f80;        background:rgba(195,0,47,.15); }
+  .cat-btn.active-upstage { border-color:var(--upstage); color:#c4b5fd;        background:rgba(139,92,246,.15); }
+
+  /* 장소 태그 선택/관리 UI */
+  .location-panel {
+    background:rgba(79,142,247,.04);border:1px solid var(--border);
+    border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:10px;
+  }
+  .location-tags { display:flex;gap:7px;flex-wrap:wrap;min-height:31px;align-items:center; }
+  .location-empty { font-size:12px;color:var(--muted);padding:4px 2px; }
+  .loc-chip {
+    font-family:'Pretendard',sans-serif;font-size:12px;font-weight:700;
+    padding:7px 12px;border-radius:99px;border:1.5px solid var(--border);
+    background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;
+    display:inline-flex;align-items:center;gap:5px;max-width:100%;
+  }
+  .loc-chip:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08); }
+  .loc-chip.active { border-color:var(--accent);color:#a9c8ff;background:rgba(79,142,247,.16); }
+  .loc-chip-check { opacity:.25;font-size:11px; }
+  .loc-chip.active .loc-chip-check { opacity:1;color:var(--green); }
+  .location-add-row { display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:0; }
+  .location-add-row input {
+    flex:1;min-width:190px;font-family:'Pretendard',sans-serif;font-size:13px;
+    background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);border-radius:9px;padding:8px 11px;outline:none;
+    transition:border-color .2s;
+  }
+  .location-add-row input:focus { border-color:var(--accent); }
+  .btn-mini {
+    font-family:'Pretendard',sans-serif;font-size:12px;font-weight:700;
+    background:rgba(79,142,247,.16);color:var(--accent);border:1px solid rgba(79,142,247,.35);
+    border-radius:9px;padding:8px 12px;cursor:pointer;transition:all .15s;white-space:nowrap;
+  }
+  .btn-mini:hover { background:rgba(79,142,247,.26);border-color:var(--accent); }
+  .btn-mini.ghost { background:transparent;color:var(--muted);border-color:var(--border); }
+  .btn-mini.ghost:hover { color:var(--text);border-color:var(--text);background:rgba(255,255,255,.05); }
+  .field-help { font-size:11px;color:var(--muted);line-height:1.5; }
+  .location-manage-list { display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto;padding-right:4px; }
+  .location-manage-item {
+    display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;
+    background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:8px;
+  }
+  .location-manage-item input {
+    min-width:0;font-family:'Pretendard',sans-serif;font-size:13px;
+    background:var(--surface);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:8px 10px;outline:none;
+  }
+  .location-manage-item input:focus { border-color:var(--accent); }
+  .btn-save-mini,.btn-danger-mini {
+    font-family:'Pretendard',sans-serif;font-size:12px;font-weight:700;
+    border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s;white-space:nowrap;
+  }
+  .btn-save-mini { background:rgba(61,214,140,.12);color:var(--green);border:1px solid rgba(61,214,140,.32); }
+  .btn-save-mini:hover { background:rgba(61,214,140,.22); }
+  .btn-danger-mini { background:rgba(247,111,111,.10);color:var(--red);border:1px solid rgba(247,111,111,.30); }
+  .btn-danger-mini:hover { background:rgba(247,111,111,.20); }
+
+  .modal-footer { display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:10px; }
+  .modal-footer-left,.modal-footer-right { display:flex;gap:8px; }
+  .btn-cancel { font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:9px;padding:9px 18px;cursor:pointer;transition:all .15s; }
+  .btn-cancel:hover { border-color:var(--text);color:var(--text); }
+  .btn-save { font-family:'Pretendard',sans-serif;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:9px;padding:9px 22px;cursor:pointer;transition:opacity .2s; }
+  .btn-save:hover { opacity:.88; }
+  .btn-del-event {
+    font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;
+    background:rgba(247,111,111,.12);color:var(--red);
+    border:1px solid rgba(247,111,111,.3);border-radius:9px;padding:9px 16px;cursor:pointer;transition:all .15s;
+  }
+  .btn-del-event:hover { background:rgba(247,111,111,.22); }
+
+  /* 반응형 */
+  @media(max-width:700px){
+    body{padding:16px 12px;}
+    .timetable { font-size:12px; }
+    :root { --time-col-w:48px; --row-h:22px; }
+    .tt-day-num{font-size:15px;}
+    .tt-event-title{font-size:11px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">시간표 불러오는 중...</div>
+</div>
+
+<div id="syncStatus"><span class="sync-dot"></span><span id="syncText">연결 중</span></div>
+
+<!-- 일정 편집 모달 -->
+<div class="modal-overlay hidden" id="eventModal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">➕ 새 일정</div>
+    <div class="modal-grid">
+      <div class="modal-field">
+        <label>제목</label>
+        <input type="text" id="ev-title" placeholder="예: 개회식, AI 기초 강의 등" />
+      </div>
+      <div class="modal-field-row">
+        <div class="modal-field">
+          <label>날짜</label>
+          <select id="ev-day">
+            <option value="2026-08-12">8월 12일 (수)</option>
+            <option value="2026-08-13">8월 13일 (목)</option>
+            <option value="2026-08-14">8월 14일 (금)</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label>분류</label>
+          <div class="cat-btn-group">
+            <button class="cat-btn" id="cat-common"  onclick="setCat('common')"><span class="cat-btn-dot" style="background:var(--common)"></span>공통</button>
+            <button class="cat-btn" id="cat-sejong"  onclick="setCat('sejong')"><span class="cat-btn-dot" style="background:var(--sejong)"></span>세종대</button>
+            <button class="cat-btn" id="cat-upstage" onclick="setCat('upstage')"><span class="cat-btn-dot" style="background:var(--upstage)"></span>업스테이지</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-field-row">
+        <div class="modal-field">
+          <label>시작 시간</label>
+          <input type="time" id="ev-start" step="1800" />
+        </div>
+        <div class="modal-field">
+          <label>종료 시간</label>
+          <input type="time" id="ev-end" step="1800" />
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>장소</label>
+        <div class="location-panel">
+          <div class="location-tags" id="ev-location-tags">
+            <span class="location-empty">장소 태그를 불러오는 중...</span>
+          </div>
+          <div class="location-add-row">
+            <input type="text" id="ev-location-new" placeholder="새 장소 입력 후 추가: 예) 군자관 4층" />
+            <button class="btn-mini" type="button" onclick="addLocationTagFromModal()">+ 태그 추가</button>
+            <button class="btn-mini ghost" type="button" onclick="openLocationManager()">장소 관리</button>
+          </div>
+          <div class="field-help">여러 장소를 선택할 수 있습니다. 새로 추가한 장소는 다음 일정에서도 재사용됩니다.</div>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>메모 (선택)</label>
+        <textarea id="ev-memo" placeholder="강사, 준비물, 운영 비고 등"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-footer-left">
+        <button class="btn-del-event" id="btnDelEvent" onclick="deleteEvent()" style="display:none">삭제</button>
+      </div>
+      <div class="modal-footer-right">
+        <button class="btn-cancel" onclick="closeModal()">취소</button>
+        <button class="btn-save"   onclick="saveEvent()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 장소 태그 관리 모달: 일정 모달과 별도로 열어 재사용 장소 목록을 편집합니다. -->
+<div class="modal-overlay hidden" id="locationModal">
+  <div class="modal">
+    <div class="modal-title">📍 장소 태그 관리</div>
+    <div class="modal-grid">
+      <div class="modal-field">
+        <label>새 장소 추가</label>
+        <div class="location-add-row">
+          <input type="text" id="lm-new-label" placeholder="예: 군자관 4층" />
+          <button class="btn-mini" type="button" onclick="addLocationFromManager()">+ 추가</button>
+        </div>
+        <div class="field-help">장소 이름을 수정하면 기존 일정의 장소 표시도 자동으로 바뀝니다.</div>
+      </div>
+      <div class="modal-field">
+        <label>등록된 장소</label>
+        <div class="location-manage-list" id="locationManageList">
+          <div class="location-empty">장소 목록을 불러오는 중...</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div></div>
+      <div class="modal-footer-right">
+        <button class="btn-cancel" type="button" onclick="closeLocationManager()">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Header ── -->
+<div class="header">
+  <div class="header-left">
+    <h1>충북교육청 <span>AI 교원연수</span> 운영 시간표</h1>
+    <div class="meta">
+      <span class="meta-chip"><span class="dot"></span>2026년 8월 12~14일 · 2박 3일</span>
+      <span class="meta-chip"><span class="dot" style="background:var(--green)"></span>세종대학교</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <a class="back-btn" href="index.html">← 메인</a>
+    <a class="back-btn" href="details.html">상세 관리</a>
+    <a class="back-btn" href="drivelink.html">파일 관리</a>
+  </div>
+</div>
+
+<!-- 범례 + 안내 -->
+<div class="toolbar">
+  <div class="legend">
+    <span class="legend-chip"><span class="legend-dot" style="background:var(--common)"></span>공통</span>
+    <span class="legend-chip"><span class="legend-dot" style="background:var(--sejong)"></span>세종대</span>
+    <span class="legend-chip"><span class="legend-dot" style="background:var(--upstage)"></span>업스테이지</span>
+  </div>
+  <div class="toolbar-actions">
+    <button class="back-btn" type="button" onclick="openLocationManager()">📍 장소 관리</button>
+    <span class="toolbar-hint">💡 빈 칸을 드래그하면 새 일정, 일정을 클릭하면 편집할 수 있어요</span>
+  </div>
+</div>
+
+<!-- 시간표 그리드 -->
+<div class="timetable-wrap">
+  <div class="timetable" id="timetable"></div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+/*
+  timetable.html JavaScript 구조
+  1. Firebase timetable_events 노드를 구독합니다.
+  2. 시간/슬롯 변환 헬퍼로 그리드 좌표를 계산합니다.
+  3. 드래그로 신규 일정 범위를 만들고 모달에서 저장합니다.
+  4. 일정 클릭 시 수정/삭제 모달을 엽니다.
+  5. timetable_locations 노드로 재사용 가능한 장소 태그를 관리합니다.
+*/
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, update, remove, push, set }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+/* Firebase 설정: To Do와 같은 프로젝트를 사용하되 timetable_events 노드로 분리합니다. */
+const firebaseConfig = {
+  apiKey: "AIzaSyAkHIuEOP0oHZlceCy-lgwjhvT4avyIAFg",
+  authDomain: "chungbuk-ai-training2026.firebaseapp.com",
+  databaseURL: "https://chungbuk-ai-training2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "chungbuk-ai-training2026",
+  storageBucket: "chungbuk-ai-training2026.firebasestorage.app",
+  messagingSenderId: "1089691391533",
+  appId: "1:1089691391533:web:b958819a1084ff29d20aa4"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+const eventsRef = ref(db, 'timetable_events');
+const locationsRef = ref(db, 'timetable_locations');
+
+/* ── 설정 ── */
+const DAYS = [
+  { key:'2026-08-12', label:'8월 12일', weekday:'수' },
+  { key:'2026-08-13', label:'8월 13일', weekday:'목' },
+  { key:'2026-08-14', label:'8월 14일', weekday:'금' },
+];
+const START_HOUR = 7;    // 오전 7시 시작
+const END_HOUR   = 23;   // 밤 11시까지
+const SLOT_MIN   = 30;   // 30분 단위
+const SLOTS_PER_HOUR = 60 / SLOT_MIN;
+const TOTAL_SLOTS = (END_HOUR - START_HOUR) * SLOTS_PER_HOUR;
+
+// 기본 장소 태그: Firebase가 비어 있을 때 최초 1회 자동 등록됩니다.
+const DEFAULT_LOCATIONS = [
+  { key:'gunjagwan_4f', label:'군자관 4층', order:1 },
+  { key:'gunjagwan_6f_restaurant', label:'군자관 6층 식당', order:2 },
+  { key:'daeyang_ai_banquet', label:'대양AI관 만찬장', order:3 },
+];
+
+// CSS 미디어쿼리에서 --row-h가 바뀔 수 있으므로 JS는 매번 실제 값을 읽습니다.
+function getRowHeight() {
+  const value = getComputedStyle(document.documentElement).getPropertyValue('--row-h').trim();
+  return Number.parseFloat(value) || 24;
+}
+
+/* ── 상태 ── */
+let events = {};
+let locations = {};
+let isReady = false;
+let editKey = null;       // 현재 편집 중인 이벤트 키 (null = 신규)
+let currentCat = 'common'; // 모달에서 선택된 분류
+let selectedLocations = []; // 모달에서 선택된 장소 태그 key 배열
+let locationSeedAttempted = false;
+
+// 드래그 상태
+let dragState = null;     // { dayKey, startSlot, currentSlot, previewEl }
+
+/* ── 동기화 상태 ── */
+function setSyncStatus(state, text) {
+  const el = document.getElementById('syncStatus');
+  el.className = state; el.style.display = 'flex';
+  document.getElementById('syncText').textContent = text;
+}
+
+window.addEventListener('unhandledrejection', event => {
+  console.error('비동기 처리 오류:', event.reason);
+  setSyncStatus('error','저장/연결 오류');
+});
+
+/* ── 시간 헬퍼 ── */
+function slotToTime(slot) {
+  const totalMin = START_HOUR * 60 + slot * SLOT_MIN;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+function timeToSlot(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  return (h - START_HOUR) * SLOTS_PER_HOUR + (m / SLOT_MIN);
+}
+
+/* ── 그리드 렌더 ── */
+function renderGrid() {
+  const tt = document.getElementById('timetable');
+  tt.innerHTML = '';
+
+  // CSS grid 구조: 1열 = 시간, 2~4열 = 날짜
+  // 1행 = 헤더, 2행~ = 시간 슬롯
+  tt.style.gridTemplateRows = `auto repeat(${TOTAL_SLOTS}, var(--row-h))`;
+
+  // 헤더 행: 좌상단 코너 + 요일 헤더
+  tt.appendChild(elFromHtml('<div class="tt-corner" style="grid-column:1;grid-row:1;"></div>'));
+  DAYS.forEach((d, idx) => {
+    tt.appendChild(elFromHtml(`
+      <div class="tt-day-head" style="grid-column:${idx+2};grid-row:1;">
+        <div class="tt-day-num">${d.label}<span>(${d.weekday})</span></div>
+      </div>`));
+  });
+
+  // 시간 셀 (1시간씩, 두 슬롯 차지)
+  for (let h = START_HOUR; h < END_HOUR; h++) {
+    const startRow = 2 + (h - START_HOUR) * SLOTS_PER_HOUR;
+    const cell = elFromHtml(`<div class="tt-time-cell" style="grid-column:1;grid-row:${startRow} / span ${SLOTS_PER_HOUR};">${String(h).padStart(2,'0')}:00</div>`);
+    tt.appendChild(cell);
+  }
+
+  // 날짜 컬럼: 슬롯을 absolute로 배치할 컨테이너
+  DAYS.forEach((d, dayIdx) => {
+    const col = document.createElement('div');
+    col.className = 'tt-col';
+    col.id = `col-${d.key}`;
+    col.dataset.day = d.key;
+    col.style.gridColumn = (dayIdx + 2);
+    col.style.gridRow = `2 / span ${TOTAL_SLOTS}`;
+    col.style.position = 'relative';
+
+    // 30분 단위 슬롯 (배경 그리드)
+    for (let s = 0; s < TOTAL_SLOTS; s++) {
+      const isHourEnd = (s % SLOTS_PER_HOUR === SLOTS_PER_HOUR - 1);
+      const isLast = (s === TOTAL_SLOTS - 1);
+      const slot = document.createElement('div');
+      slot.className = 'tt-slot' + (isHourEnd && !isLast ? ' hour' : '') + (isLast ? ' last' : '');
+      slot.dataset.day = d.key;
+      slot.dataset.slot = s;
+      col.appendChild(slot);
+    }
+    tt.appendChild(col);
+  });
+}
+
+function elFromHtml(html) {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = html.trim();
+  return tpl.content.firstChild;
+}
+
+/* ── 일정 렌더 ── */
+function renderEvents() {
+  // 기존 이벤트 카드 제거
+  document.querySelectorAll('.tt-event').forEach(el => el.remove());
+
+  Object.entries(events).forEach(([key, ev]) => {
+    const col = document.getElementById(`col-${ev.day}`);
+    if (!col) return;
+    const startSlot = timeToSlot(ev.start);
+    const endSlot   = timeToSlot(ev.end);
+    const duration  = endSlot - startSlot;
+    if (duration <= 0) return;
+
+    const card = document.createElement('div');
+    card.className = `tt-event ${ev.cat || 'common'}`;
+    const rowH = getRowHeight();
+    card.style.top    = `${startSlot * rowH + 2}px`;
+    card.style.height = `${duration * rowH - 4}px`;
+    card.dataset.key = key;
+    const locationLabels = getEventLocationLabels(ev);
+    const locationHtml = locationLabels.length ? `
+      <div class="tt-event-location">
+        ${locationLabels.slice(0, 2).map(label => `<span class="tt-location-chip-mini">📍 ${escapeHtml(label)}</span>`).join('')}
+        ${locationLabels.length > 2 ? `<span class="tt-location-chip-mini">+${locationLabels.length - 2}</span>` : ''}
+      </div>` : '';
+    card.innerHTML = `
+      <div class="tt-event-title">${escapeHtml(ev.title || '(제목 없음)')}</div>
+      <div class="tt-event-time">${ev.start}–${ev.end}</div>
+      ${locationHtml}
+      ${ev.memo ? `<div class="tt-event-time" style="opacity:.7;margin-top:2px">${escapeHtml(ev.memo).slice(0,40)}</div>` : ''}
+    `;
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openEditModal(key, ev);
+    });
+    col.appendChild(card);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s) {
+  return escapeHtml(s).replace(/`/g, '&#96;');
+}
+
+/* ── 장소 태그 헬퍼 ── */
+function orderedLocationEntries() {
+  return Object.entries(locations).sort(([,a],[,b]) => {
+    const ao = Number(a.order || 0);
+    const bo = Number(b.order || 0);
+    if (ao !== bo) return ao - bo;
+    return String(a.label || '').localeCompare(String(b.label || ''), 'ko');
+  });
+}
+
+function normalizeLocationLabel(label) {
+  return String(label || '').replace(/\s+/g, ' ').trim();
+}
+
+function findLocationKeyByLabel(label) {
+  const normalized = normalizeLocationLabel(label);
+  const found = Object.entries(locations).find(([,loc]) => normalizeLocationLabel(loc.label) === normalized);
+  return found ? found[0] : null;
+}
+
+function normalizeLocationArray(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.filter(Boolean).map(String);
+  if (typeof raw === 'string') return raw ? [raw] : [];
+  if (typeof raw === 'object') return Object.values(raw).filter(Boolean).map(String);
+  return [];
+}
+
+function resolveLocationKey(value) {
+  const str = String(value || '');
+  if (locations[str]) return str;
+  return findLocationKeyByLabel(str) || str;
+}
+
+function getEventLocationKeys(ev) {
+  const raw = ev.locations ?? ev.location ?? ev.place ?? [];
+  return [...new Set(normalizeLocationArray(raw).map(resolveLocationKey))];
+}
+
+function getLocationLabel(keyOrLabel) {
+  return locations[keyOrLabel]?.label || keyOrLabel;
+}
+
+function getEventLocationLabels(ev) {
+  return getEventLocationKeys(ev).map(getLocationLabel).filter(Boolean);
+}
+
+function renderLocationPicker() {
+  const wrap = document.getElementById('ev-location-tags');
+  if (!wrap) return;
+  const entries = orderedLocationEntries();
+  if (entries.length === 0) {
+    wrap.innerHTML = '<span class="location-empty">등록된 장소가 없습니다. 아래 입력창에서 새 장소를 추가하세요.</span>';
+    return;
+  }
+  wrap.innerHTML = entries.map(([key, loc]) => {
+    const active = selectedLocations.includes(key);
+    return `
+      <button class="loc-chip ${active ? 'active' : ''}" type="button" onclick="toggleLocationSelection('${escapeAttr(key)}')">
+        <span class="loc-chip-check">✓</span>${escapeHtml(loc.label || key)}
+      </button>`;
+  }).join('');
+}
+
+window.toggleLocationSelection = (key) => {
+  selectedLocations = selectedLocations.includes(key)
+    ? selectedLocations.filter(item => item !== key)
+    : [...selectedLocations, key];
+  renderLocationPicker();
+};
+
+async function createLocationTag(label) {
+  const normalized = normalizeLocationLabel(label);
+  if (!normalized) return null;
+
+  const existingKey = findLocationKeyByLabel(normalized);
+  if (existingKey) return existingKey;
+
+  const newRef = push(locationsRef);
+  const payload = { label: normalized, order: Date.now(), createdAt: Date.now(), updatedAt: Date.now() };
+  setSyncStatus('syncing', '장소 저장 중...');
+  await set(newRef, payload);
+
+  // onValue 반영 전에도 사용자가 즉시 선택 상태를 볼 수 있게 로컬 상태를 보강합니다.
+  locations[newRef.key] = payload;
+  return newRef.key;
+}
+
+window.addLocationTagFromModal = async () => {
+  const input = document.getElementById('ev-location-new');
+  const key = await createLocationTag(input?.value || '');
+  if (!key) { input?.focus(); return; }
+  if (!selectedLocations.includes(key)) selectedLocations = [...selectedLocations, key];
+  if (input) input.value = '';
+  renderLocationPicker();
+  renderLocationManageList();
+};
+
+window.openLocationManager = () => {
+  renderLocationManageList();
+  document.getElementById('locationModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('lm-new-label')?.focus(), 50);
+};
+
+window.closeLocationManager = () => {
+  document.getElementById('locationModal').classList.add('hidden');
+};
+
+window.addLocationFromManager = async () => {
+  const input = document.getElementById('lm-new-label');
+  const key = await createLocationTag(input?.value || '');
+  if (!key) { input?.focus(); return; }
+  if (input) input.value = '';
+  renderLocationPicker();
+  renderLocationManageList();
+};
+
+function renderLocationManageList() {
+  const wrap = document.getElementById('locationManageList');
+  if (!wrap) return;
+  const entries = orderedLocationEntries();
+  if (entries.length === 0) {
+    wrap.innerHTML = '<div class="location-empty">등록된 장소가 없습니다.</div>';
+    return;
+  }
+  wrap.innerHTML = entries.map(([key, loc]) => `
+    <div class="location-manage-item">
+      <input type="text" id="lm-${escapeAttr(key)}" value="${escapeAttr(loc.label || '')}" aria-label="장소 이름" />
+      <button class="btn-save-mini" type="button" onclick="saveManagedLocation('${escapeAttr(key)}')">저장</button>
+      <button class="btn-danger-mini" type="button" onclick="deleteManagedLocation('${escapeAttr(key)}')">삭제</button>
+    </div>`).join('');
+}
+
+window.saveManagedLocation = async (key) => {
+  const input = document.getElementById(`lm-${key}`);
+  const label = normalizeLocationLabel(input?.value || '');
+  if (!label) { input?.focus(); return; }
+  const duplicatedKey = findLocationKeyByLabel(label);
+  if (duplicatedKey && duplicatedKey !== key) {
+    alert('이미 같은 이름의 장소가 있습니다.');
+    input?.focus();
+    return;
+  }
+  setSyncStatus('syncing','장소 저장 중...');
+  await update(ref(db, `timetable_locations/${key}`), { label, updatedAt: Date.now() });
+  locations[key] = { ...(locations[key] || {}), label, updatedAt: Date.now() };
+  renderLocationPicker();
+  renderLocationManageList();
+};
+
+window.deleteManagedLocation = async (key) => {
+  const label = getLocationLabel(key);
+  if (!confirm(`'${label}' 장소 태그를 삭제할까요?\n이 장소가 지정된 일정에서는 해당 장소 표시도 함께 제거됩니다.`)) return;
+  const updates = {};
+  updates[`timetable_locations/${key}`] = null;
+  Object.entries(events).forEach(([eventKey, ev]) => {
+    const locs = getEventLocationKeys(ev);
+    if (locs.includes(key)) {
+      updates[`timetable_events/${eventKey}/locations`] = locs.filter(item => item !== key);
+      updates[`timetable_events/${eventKey}/updatedAt`] = Date.now();
+    }
+  });
+  setSyncStatus('syncing','장소 삭제 중...');
+  await update(ref(db), updates);
+  selectedLocations = selectedLocations.filter(item => item !== key);
+  delete locations[key];
+  renderLocationPicker();
+  renderLocationManageList();
+};
+
+async function seedDefaultLocations() {
+  if (locationSeedAttempted) return;
+  locationSeedAttempted = true;
+  const updates = {};
+  DEFAULT_LOCATIONS.forEach(loc => {
+    updates[`timetable_locations/${loc.key}`] = {
+      label: loc.label,
+      order: loc.order,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+  });
+  setSyncStatus('syncing','기본 장소 등록 중...');
+  await update(ref(db), updates);
+}
+
+/* ── 드래그로 새 일정 ── */
+function initDrag() {
+  const tt = document.getElementById('timetable');
+
+  tt.addEventListener('mousedown', (e) => {
+    const slot = e.target.closest('.tt-slot');
+    if (!slot) return;
+    const col = slot.closest('.tt-col');
+    if (!col) return;
+    e.preventDefault();
+    const startSlotIdx = parseInt(slot.dataset.slot, 10);
+    dragState = {
+      dayKey: col.dataset.day,
+      colEl: col,
+      startSlot: startSlotIdx,
+      currentSlot: startSlotIdx,
+      previewEl: null,
+    };
+    showDragPreview();
+  });
+
+  tt.addEventListener('mousemove', (e) => {
+    if (!dragState) return;
+    const slot = e.target.closest('.tt-slot');
+    if (!slot) return;
+    const col = slot.closest('.tt-col');
+    if (!col || col.dataset.day !== dragState.dayKey) return;
+    dragState.currentSlot = parseInt(slot.dataset.slot, 10);
+    showDragPreview();
+  });
+
+  window.addEventListener('mouseup', (e) => {
+    if (!dragState) return;
+    const ds = dragState;
+    const minSlot = Math.min(ds.startSlot, ds.currentSlot);
+    const maxSlot = Math.max(ds.startSlot, ds.currentSlot) + 1; // 클릭한 슬롯 포함
+    if (ds.previewEl) ds.previewEl.remove();
+    dragState = null;
+
+    // 신규 일정 모달 열기
+    openNewModal(ds.dayKey, slotToTime(minSlot), slotToTime(maxSlot));
+  });
+}
+
+function showDragPreview() {
+  if (!dragState) return;
+  const { colEl, startSlot, currentSlot } = dragState;
+  const minSlot = Math.min(startSlot, currentSlot);
+  const maxSlot = Math.max(startSlot, currentSlot) + 1;
+  const duration = maxSlot - minSlot;
+
+  if (!dragState.previewEl) {
+    dragState.previewEl = document.createElement('div');
+    dragState.previewEl.className = 'tt-drag-preview';
+    colEl.appendChild(dragState.previewEl);
+  }
+  const rowH = getRowHeight();
+  dragState.previewEl.style.top = `${minSlot * rowH + 2}px`;
+  dragState.previewEl.style.height = `${duration * rowH - 4}px`;
+  dragState.previewEl.textContent = `${slotToTime(minSlot)}–${slotToTime(maxSlot)}`;
+}
+
+/* ── 모달 ── */
+function openNewModal(dayKey, startTime, endTime) {
+  editKey = null;
+  currentCat = 'common';
+  selectedLocations = [];
+  document.getElementById('modalTitle').textContent = '➕ 새 일정';
+  document.getElementById('ev-title').value = '';
+  document.getElementById('ev-day').value   = dayKey;
+  document.getElementById('ev-start').value = startTime;
+  document.getElementById('ev-end').value   = endTime;
+  document.getElementById('ev-memo').value  = '';
+  document.getElementById('ev-location-new').value = '';
+  document.getElementById('btnDelEvent').style.display = 'none';
+  refreshCatBtns();
+  renderLocationPicker();
+  document.getElementById('eventModal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('ev-title').focus(), 50);
+}
+
+function openEditModal(key, ev) {
+  editKey = key;
+  currentCat = ev.cat || 'common';
+  selectedLocations = getEventLocationKeys(ev);
+  document.getElementById('modalTitle').textContent = '✏️ 일정 편집';
+  document.getElementById('ev-title').value = ev.title || '';
+  document.getElementById('ev-day').value   = ev.day;
+  document.getElementById('ev-start').value = ev.start;
+  document.getElementById('ev-end').value   = ev.end;
+  document.getElementById('ev-memo').value  = ev.memo || '';
+  document.getElementById('ev-location-new').value = '';
+  document.getElementById('btnDelEvent').style.display = '';
+  refreshCatBtns();
+  renderLocationPicker();
+  document.getElementById('eventModal').classList.remove('hidden');
+}
+
+window.setCat = (cat) => {
+  currentCat = cat;
+  refreshCatBtns();
+};
+
+function refreshCatBtns() {
+  ['common','sejong','upstage'].forEach(c => {
+    const btn = document.getElementById(`cat-${c}`);
+    if (btn) btn.className = 'cat-btn' + (currentCat === c ? ` active-${c}` : '');
+  });
+}
+
+window.closeModal = () => {
+  document.getElementById('eventModal').classList.add('hidden');
+  editKey = null;
+  selectedLocations = [];
+};
+
+window.saveEvent = async () => {
+  const title = document.getElementById('ev-title').value.trim();
+  const day   = document.getElementById('ev-day').value;
+  const start = document.getElementById('ev-start').value;
+  const end   = document.getElementById('ev-end').value;
+  const memo  = document.getElementById('ev-memo').value.trim();
+  if (!title) { document.getElementById('ev-title').focus(); return; }
+  if (!start || !end || start >= end) { alert('시간을 올바르게 입력해주세요'); return; }
+
+  setSyncStatus('syncing','저장 중...');
+  const payload = {
+    title, day, start, end, memo,
+    locations: [...selectedLocations],
+    cat: currentCat,
+    updatedAt: Date.now(),
+  };
+  if (editKey) {
+    await update(ref(db, `timetable_events/${editKey}`), payload);
+  } else {
+    payload.createdAt = Date.now();
+    await push(eventsRef, payload);
+  }
+  closeModal();
+};
+
+window.deleteEvent = async () => {
+  if (!editKey) return;
+  if (!confirm('이 일정을 삭제할까요?')) return;
+  setSyncStatus('syncing','저장 중...');
+  await remove(ref(db, `timetable_events/${editKey}`));
+  closeModal();
+};
+
+// 모달 바깥 클릭 시 닫기
+document.getElementById('eventModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('eventModal')) closeModal();
+});
+document.getElementById('locationModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('locationModal')) closeLocationManager();
+});
+
+// Enter로 장소 태그 빠른 추가
+document.getElementById('ev-location-new').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    window.addLocationTagFromModal();
+  }
+});
+document.getElementById('lm-new-label').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    window.addLocationFromManager();
+  }
+});
+
+// Esc로 모달 닫기: 장소 관리 모달이 열려 있으면 우선 닫습니다.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!document.getElementById('locationModal').classList.contains('hidden')) {
+    closeLocationManager();
+    return;
+  }
+  if (!document.getElementById('eventModal').classList.contains('hidden')) closeModal();
+});
+
+/* ── 초기화 ── */
+renderGrid();
+initDrag();
+setSyncStatus('syncing','연결 중...');
+
+// 모바일 회전/리사이즈 시 CSS 변수 변경에 맞춰 일정 카드 위치를 다시 계산합니다.
+window.addEventListener('resize', () => renderEvents());
+
+// 장소 태그 목록은 일정과 별도 노드로 관리합니다.
+onValue(locationsRef, snap => {
+  const data = snap.val();
+  if (!data) {
+    seedDefaultLocations().catch(err => {
+      console.error('location seed error:', err);
+      setSyncStatus('error','장소 등록 오류');
+    });
+    locations = {};
+  } else {
+    locations = data;
+  }
+  renderLocationPicker();
+  renderLocationManageList();
+  renderEvents();
+}, err => {
+  console.error('locations error:', err);
+  setSyncStatus('error','장소 연결 오류');
+});
+
+onValue(eventsRef, snap => {
+  events = snap.val() || {};
+  if (!isReady) {
+    isReady = true;
+    const ov = document.getElementById('loadingOverlay');
+    ov.classList.add('hidden');
+    setTimeout(() => ov.style.display = 'none', 400);
+  }
+  renderEvents();
+  setSyncStatus('synced','실시간 동기화 중');
+}, err => {
+  console.error(err);
+  setSyncStatus('error','연결 오류');
+});
+</script>
+</body>
+</html>
