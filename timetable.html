@@ -3,8 +3,9 @@
 <!--
   배포 파일: timetable.html
   역할: 2박 3일 운영 시간표를 Google Calendar 스타일의 시간 그리드로 관리합니다.
-  데이터: Firebase Realtime Database의 timetable_events 노드를 사용합니다.
+  데이터: Firebase Realtime Database의 timetable_events, timetable_locations 노드를 사용합니다.
   연결: index.html, details.html, drivelink.html과 상호 이동합니다.
+  장소: 일정별 locations 배열과 재사용 가능한 장소 태그 목록을 분리해 관리합니다.
 -->
 <head>
 <meta charset="UTF-8">
@@ -164,6 +165,14 @@
   .tt-event.upstage { background:rgba(139,92,246,.22); border-left-color:var(--upstage); color:#c4b5fd; }
   .tt-event-title { font-weight:700;line-height:1.25;color:var(--text);font-size:12px;margin-bottom:1px; }
   .tt-event-time  { font-family:'DM Mono',monospace;font-size:10px;opacity:.85; }
+  .tt-event-location { display:flex;flex-wrap:wrap;gap:3px;margin-top:3px; }
+  .tt-location-chip-mini {
+    display:inline-flex;align-items:center;gap:2px;
+    font-family:'Pretendard',sans-serif;font-size:9px;font-weight:700;line-height:1.2;
+    padding:1px 5px;border-radius:99px;border:1px solid rgba(79,142,247,.36);
+    background:rgba(79,142,247,.12);color:#a9c8ff;max-width:100%;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
 
   /* 드래그 중인 placeholder */
   .tt-drag-preview {
@@ -183,7 +192,8 @@
   .modal-overlay.hidden { display:none; }
   .modal {
     background:var(--surface);border:1px solid var(--border);
-    border-radius:18px;padding:26px;width:100%;max-width:480px;
+    border-radius:18px;padding:26px;width:100%;max-width:540px;
+    max-height:calc(100vh - 40px);overflow:auto;
     box-shadow:0 20px 60px rgba(0,0,0,.5);
   }
   .modal-title { font-size:17px;font-weight:700;margin-bottom:18px;color:var(--accent); }
@@ -213,6 +223,60 @@
   .cat-btn.active-common  { border-color:var(--common);  color:var(--common);  background:rgba(61,214,140,.12); }
   .cat-btn.active-sejong  { border-color:var(--sejong);  color:#ff6f80;        background:rgba(195,0,47,.15); }
   .cat-btn.active-upstage { border-color:var(--upstage); color:#c4b5fd;        background:rgba(139,92,246,.15); }
+
+  /* 장소 태그 선택/관리 UI */
+  .location-panel {
+    background:rgba(79,142,247,.04);border:1px solid var(--border);
+    border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:10px;
+  }
+  .location-tags { display:flex;gap:7px;flex-wrap:wrap;min-height:31px;align-items:center; }
+  .location-empty { font-size:12px;color:var(--muted);padding:4px 2px; }
+  .loc-chip {
+    font-family:'Pretendard',sans-serif;font-size:12px;font-weight:700;
+    padding:7px 12px;border-radius:99px;border:1.5px solid var(--border);
+    background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;
+    display:inline-flex;align-items:center;gap:5px;max-width:100%;
+  }
+  .loc-chip:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08); }
+  .loc-chip.active { border-color:var(--accent);color:#a9c8ff;background:rgba(79,142,247,.16); }
+  .loc-chip-check { opacity:.25;font-size:11px; }
+  .loc-chip.active .loc-chip-check { opacity:1;color:var(--green); }
+  .location-add-row { display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:0; }
+  .location-add-row input {
+    flex:1;min-width:190px;font-family:'Pretendard',sans-serif;font-size:13px;
+    background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);border-radius:9px;padding:8px 11px;outline:none;
+    transition:border-color .2s;
+  }
+  .location-add-row input:focus { border-color:var(--accent); }
+  .btn-mini {
+    font-family:'Pretendard',sans-serif;font-size:12px;font-weight:700;
+    background:rgba(79,142,247,.16);color:var(--accent);border:1px solid rgba(79,142,247,.35);
+    border-radius:9px;padding:8px 12px;cursor:pointer;transition:all .15s;white-space:nowrap;
+  }
+  .btn-mini:hover { background:rgba(79,142,247,.26);border-color:var(--accent); }
+  .btn-mini.ghost { background:transparent;color:var(--muted);border-color:var(--border); }
+  .btn-mini.ghost:hover { color:var(--text);border-color:var(--text);background:rgba(255,255,255,.05); }
+  .field-help { font-size:11px;color:var(--muted);line-height:1.5; }
+  .location-manage-list { display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto;padding-right:4px; }
+  .location-manage-item {
+    display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;
+    background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:8px;
+  }
+  .location-manage-item input {
+    min-width:0;font-family:'Pretendard',sans-serif;font-size:13px;
+    background:var(--surface);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:8px 10px;outline:none;
+  }
+  .location-manage-item input:focus { border-color:var(--accent); }
+  .btn-save-mini,.btn-danger-mini {
+    font-family:'Pretendard',sans-serif;font-size:12px;font-weight:700;
+    border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s;white-space:nowrap;
+  }
+  .btn-save-mini { background:rgba(61,214,140,.12);color:var(--green);border:1px solid rgba(61,214,140,.32); }
+  .btn-save-mini:hover { background:rgba(61,214,140,.22); }
+  .btn-danger-mini { background:rgba(247,111,111,.10);color:var(--red);border:1px solid rgba(247,111,111,.30); }
+  .btn-danger-mini:hover { background:rgba(247,111,111,.20); }
 
   .modal-footer { display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:10px; }
   .modal-footer-left,.modal-footer-right { display:flex;gap:8px; }
@@ -284,8 +348,22 @@
         </div>
       </div>
       <div class="modal-field">
+        <label>장소</label>
+        <div class="location-panel">
+          <div class="location-tags" id="ev-location-tags">
+            <span class="location-empty">장소 태그를 불러오는 중...</span>
+          </div>
+          <div class="location-add-row">
+            <input type="text" id="ev-location-new" placeholder="새 장소 입력 후 추가: 예) 군자관 4층" />
+            <button class="btn-mini" type="button" onclick="addLocationTagFromModal()">+ 태그 추가</button>
+            <button class="btn-mini ghost" type="button" onclick="openLocationManager()">장소 관리</button>
+          </div>
+          <div class="field-help">여러 장소를 선택할 수 있습니다. 새로 추가한 장소는 다음 일정에서도 재사용됩니다.</div>
+        </div>
+      </div>
+      <div class="modal-field">
         <label>메모 (선택)</label>
-        <textarea id="ev-memo" placeholder="장소, 강사, 비고 등"></textarea>
+        <textarea id="ev-memo" placeholder="강사, 준비물, 운영 비고 등"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -295,6 +373,35 @@
       <div class="modal-footer-right">
         <button class="btn-cancel" onclick="closeModal()">취소</button>
         <button class="btn-save"   onclick="saveEvent()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 장소 태그 관리 모달: 일정 모달과 별도로 열어 재사용 장소 목록을 편집합니다. -->
+<div class="modal-overlay hidden" id="locationModal">
+  <div class="modal">
+    <div class="modal-title">📍 장소 태그 관리</div>
+    <div class="modal-grid">
+      <div class="modal-field">
+        <label>새 장소 추가</label>
+        <div class="location-add-row">
+          <input type="text" id="lm-new-label" placeholder="예: 군자관 4층" />
+          <button class="btn-mini" type="button" onclick="addLocationFromManager()">+ 추가</button>
+        </div>
+        <div class="field-help">장소 이름을 수정하면 기존 일정의 장소 표시도 자동으로 바뀝니다.</div>
+      </div>
+      <div class="modal-field">
+        <label>등록된 장소</label>
+        <div class="location-manage-list" id="locationManageList">
+          <div class="location-empty">장소 목록을 불러오는 중...</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div></div>
+      <div class="modal-footer-right">
+        <button class="btn-cancel" type="button" onclick="closeLocationManager()">닫기</button>
       </div>
     </div>
   </div>
@@ -323,7 +430,10 @@
     <span class="legend-chip"><span class="legend-dot" style="background:var(--sejong)"></span>세종대</span>
     <span class="legend-chip"><span class="legend-dot" style="background:var(--upstage)"></span>업스테이지</span>
   </div>
-  <span class="toolbar-hint">💡 빈 칸을 드래그하면 새 일정, 일정을 클릭하면 편집할 수 있어요</span>
+  <div class="toolbar-actions">
+    <button class="back-btn" type="button" onclick="openLocationManager()">📍 장소 관리</button>
+    <span class="toolbar-hint">💡 빈 칸을 드래그하면 새 일정, 일정을 클릭하면 편집할 수 있어요</span>
+  </div>
 </div>
 
 <!-- 시간표 그리드 -->
@@ -339,9 +449,10 @@
   2. 시간/슬롯 변환 헬퍼로 그리드 좌표를 계산합니다.
   3. 드래그로 신규 일정 범위를 만들고 모달에서 저장합니다.
   4. 일정 클릭 시 수정/삭제 모달을 엽니다.
+  5. timetable_locations 노드로 재사용 가능한 장소 태그를 관리합니다.
 */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, update, remove, push }
+import { getDatabase, ref, onValue, update, remove, push, set }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 /* Firebase 설정: To Do와 같은 프로젝트를 사용하되 timetable_events 노드로 분리합니다. */
@@ -357,6 +468,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 const eventsRef = ref(db, 'timetable_events');
+const locationsRef = ref(db, 'timetable_locations');
 
 /* ── 설정 ── */
 const DAYS = [
@@ -370,6 +482,13 @@ const SLOT_MIN   = 30;   // 30분 단위
 const SLOTS_PER_HOUR = 60 / SLOT_MIN;
 const TOTAL_SLOTS = (END_HOUR - START_HOUR) * SLOTS_PER_HOUR;
 
+// 기본 장소 태그: Firebase가 비어 있을 때 최초 1회 자동 등록됩니다.
+const DEFAULT_LOCATIONS = [
+  { key:'gunjagwan_4f', label:'군자관 4층', order:1 },
+  { key:'gunjagwan_6f_restaurant', label:'군자관 6층 식당', order:2 },
+  { key:'daeyang_ai_banquet', label:'대양AI관 만찬장', order:3 },
+];
+
 // CSS 미디어쿼리에서 --row-h가 바뀔 수 있으므로 JS는 매번 실제 값을 읽습니다.
 function getRowHeight() {
   const value = getComputedStyle(document.documentElement).getPropertyValue('--row-h').trim();
@@ -378,9 +497,12 @@ function getRowHeight() {
 
 /* ── 상태 ── */
 let events = {};
+let locations = {};
 let isReady = false;
 let editKey = null;       // 현재 편집 중인 이벤트 키 (null = 신규)
 let currentCat = 'common'; // 모달에서 선택된 분류
+let selectedLocations = []; // 모달에서 선택된 장소 태그 key 배열
+let locationSeedAttempted = false;
 
 // 드래그 상태
 let dragState = null;     // { dayKey, startSlot, currentSlot, previewEl }
@@ -483,9 +605,16 @@ function renderEvents() {
     card.style.top    = `${startSlot * rowH + 2}px`;
     card.style.height = `${duration * rowH - 4}px`;
     card.dataset.key = key;
+    const locationLabels = getEventLocationLabels(ev);
+    const locationHtml = locationLabels.length ? `
+      <div class="tt-event-location">
+        ${locationLabels.slice(0, 2).map(label => `<span class="tt-location-chip-mini">📍 ${escapeHtml(label)}</span>`).join('')}
+        ${locationLabels.length > 2 ? `<span class="tt-location-chip-mini">+${locationLabels.length - 2}</span>` : ''}
+      </div>` : '';
     card.innerHTML = `
       <div class="tt-event-title">${escapeHtml(ev.title || '(제목 없음)')}</div>
       <div class="tt-event-time">${ev.start}–${ev.end}</div>
+      ${locationHtml}
       ${ev.memo ? `<div class="tt-event-time" style="opacity:.7;margin-top:2px">${escapeHtml(ev.memo).slice(0,40)}</div>` : ''}
     `;
     card.addEventListener('click', (e) => {
@@ -498,6 +627,195 @@ function renderEvents() {
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s) {
+  return escapeHtml(s).replace(/`/g, '&#96;');
+}
+
+/* ── 장소 태그 헬퍼 ── */
+function orderedLocationEntries() {
+  return Object.entries(locations).sort(([,a],[,b]) => {
+    const ao = Number(a.order || 0);
+    const bo = Number(b.order || 0);
+    if (ao !== bo) return ao - bo;
+    return String(a.label || '').localeCompare(String(b.label || ''), 'ko');
+  });
+}
+
+function normalizeLocationLabel(label) {
+  return String(label || '').replace(/\s+/g, ' ').trim();
+}
+
+function findLocationKeyByLabel(label) {
+  const normalized = normalizeLocationLabel(label);
+  const found = Object.entries(locations).find(([,loc]) => normalizeLocationLabel(loc.label) === normalized);
+  return found ? found[0] : null;
+}
+
+function normalizeLocationArray(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.filter(Boolean).map(String);
+  if (typeof raw === 'string') return raw ? [raw] : [];
+  if (typeof raw === 'object') return Object.values(raw).filter(Boolean).map(String);
+  return [];
+}
+
+function resolveLocationKey(value) {
+  const str = String(value || '');
+  if (locations[str]) return str;
+  return findLocationKeyByLabel(str) || str;
+}
+
+function getEventLocationKeys(ev) {
+  const raw = ev.locations ?? ev.location ?? ev.place ?? [];
+  return [...new Set(normalizeLocationArray(raw).map(resolveLocationKey))];
+}
+
+function getLocationLabel(keyOrLabel) {
+  return locations[keyOrLabel]?.label || keyOrLabel;
+}
+
+function getEventLocationLabels(ev) {
+  return getEventLocationKeys(ev).map(getLocationLabel).filter(Boolean);
+}
+
+function renderLocationPicker() {
+  const wrap = document.getElementById('ev-location-tags');
+  if (!wrap) return;
+  const entries = orderedLocationEntries();
+  if (entries.length === 0) {
+    wrap.innerHTML = '<span class="location-empty">등록된 장소가 없습니다. 아래 입력창에서 새 장소를 추가하세요.</span>';
+    return;
+  }
+  wrap.innerHTML = entries.map(([key, loc]) => {
+    const active = selectedLocations.includes(key);
+    return `
+      <button class="loc-chip ${active ? 'active' : ''}" type="button" onclick="toggleLocationSelection('${escapeAttr(key)}')">
+        <span class="loc-chip-check">✓</span>${escapeHtml(loc.label || key)}
+      </button>`;
+  }).join('');
+}
+
+window.toggleLocationSelection = (key) => {
+  selectedLocations = selectedLocations.includes(key)
+    ? selectedLocations.filter(item => item !== key)
+    : [...selectedLocations, key];
+  renderLocationPicker();
+};
+
+async function createLocationTag(label) {
+  const normalized = normalizeLocationLabel(label);
+  if (!normalized) return null;
+
+  const existingKey = findLocationKeyByLabel(normalized);
+  if (existingKey) return existingKey;
+
+  const newRef = push(locationsRef);
+  const payload = { label: normalized, order: Date.now(), createdAt: Date.now(), updatedAt: Date.now() };
+  setSyncStatus('syncing', '장소 저장 중...');
+  await set(newRef, payload);
+
+  // onValue 반영 전에도 사용자가 즉시 선택 상태를 볼 수 있게 로컬 상태를 보강합니다.
+  locations[newRef.key] = payload;
+  return newRef.key;
+}
+
+window.addLocationTagFromModal = async () => {
+  const input = document.getElementById('ev-location-new');
+  const key = await createLocationTag(input?.value || '');
+  if (!key) { input?.focus(); return; }
+  if (!selectedLocations.includes(key)) selectedLocations = [...selectedLocations, key];
+  if (input) input.value = '';
+  renderLocationPicker();
+  renderLocationManageList();
+};
+
+window.openLocationManager = () => {
+  renderLocationManageList();
+  document.getElementById('locationModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('lm-new-label')?.focus(), 50);
+};
+
+window.closeLocationManager = () => {
+  document.getElementById('locationModal').classList.add('hidden');
+};
+
+window.addLocationFromManager = async () => {
+  const input = document.getElementById('lm-new-label');
+  const key = await createLocationTag(input?.value || '');
+  if (!key) { input?.focus(); return; }
+  if (input) input.value = '';
+  renderLocationPicker();
+  renderLocationManageList();
+};
+
+function renderLocationManageList() {
+  const wrap = document.getElementById('locationManageList');
+  if (!wrap) return;
+  const entries = orderedLocationEntries();
+  if (entries.length === 0) {
+    wrap.innerHTML = '<div class="location-empty">등록된 장소가 없습니다.</div>';
+    return;
+  }
+  wrap.innerHTML = entries.map(([key, loc]) => `
+    <div class="location-manage-item">
+      <input type="text" id="lm-${escapeAttr(key)}" value="${escapeAttr(loc.label || '')}" aria-label="장소 이름" />
+      <button class="btn-save-mini" type="button" onclick="saveManagedLocation('${escapeAttr(key)}')">저장</button>
+      <button class="btn-danger-mini" type="button" onclick="deleteManagedLocation('${escapeAttr(key)}')">삭제</button>
+    </div>`).join('');
+}
+
+window.saveManagedLocation = async (key) => {
+  const input = document.getElementById(`lm-${key}`);
+  const label = normalizeLocationLabel(input?.value || '');
+  if (!label) { input?.focus(); return; }
+  const duplicatedKey = findLocationKeyByLabel(label);
+  if (duplicatedKey && duplicatedKey !== key) {
+    alert('이미 같은 이름의 장소가 있습니다.');
+    input?.focus();
+    return;
+  }
+  setSyncStatus('syncing','장소 저장 중...');
+  await update(ref(db, `timetable_locations/${key}`), { label, updatedAt: Date.now() });
+  locations[key] = { ...(locations[key] || {}), label, updatedAt: Date.now() };
+  renderLocationPicker();
+  renderLocationManageList();
+};
+
+window.deleteManagedLocation = async (key) => {
+  const label = getLocationLabel(key);
+  if (!confirm(`'${label}' 장소 태그를 삭제할까요?\n이 장소가 지정된 일정에서는 해당 장소 표시도 함께 제거됩니다.`)) return;
+  const updates = {};
+  updates[`timetable_locations/${key}`] = null;
+  Object.entries(events).forEach(([eventKey, ev]) => {
+    const locs = getEventLocationKeys(ev);
+    if (locs.includes(key)) {
+      updates[`timetable_events/${eventKey}/locations`] = locs.filter(item => item !== key);
+      updates[`timetable_events/${eventKey}/updatedAt`] = Date.now();
+    }
+  });
+  setSyncStatus('syncing','장소 삭제 중...');
+  await update(ref(db), updates);
+  selectedLocations = selectedLocations.filter(item => item !== key);
+  delete locations[key];
+  renderLocationPicker();
+  renderLocationManageList();
+};
+
+async function seedDefaultLocations() {
+  if (locationSeedAttempted) return;
+  locationSeedAttempted = true;
+  const updates = {};
+  DEFAULT_LOCATIONS.forEach(loc => {
+    updates[`timetable_locations/${loc.key}`] = {
+      label: loc.label,
+      order: loc.order,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+  });
+  setSyncStatus('syncing','기본 장소 등록 중...');
+  await update(ref(db), updates);
 }
 
 /* ── 드래그로 새 일정 ── */
@@ -566,14 +884,17 @@ function showDragPreview() {
 function openNewModal(dayKey, startTime, endTime) {
   editKey = null;
   currentCat = 'common';
+  selectedLocations = [];
   document.getElementById('modalTitle').textContent = '➕ 새 일정';
   document.getElementById('ev-title').value = '';
   document.getElementById('ev-day').value   = dayKey;
   document.getElementById('ev-start').value = startTime;
   document.getElementById('ev-end').value   = endTime;
   document.getElementById('ev-memo').value  = '';
+  document.getElementById('ev-location-new').value = '';
   document.getElementById('btnDelEvent').style.display = 'none';
   refreshCatBtns();
+  renderLocationPicker();
   document.getElementById('eventModal').classList.remove('hidden');
   setTimeout(()=>document.getElementById('ev-title').focus(), 50);
 }
@@ -581,14 +902,17 @@ function openNewModal(dayKey, startTime, endTime) {
 function openEditModal(key, ev) {
   editKey = key;
   currentCat = ev.cat || 'common';
+  selectedLocations = getEventLocationKeys(ev);
   document.getElementById('modalTitle').textContent = '✏️ 일정 편집';
   document.getElementById('ev-title').value = ev.title || '';
   document.getElementById('ev-day').value   = ev.day;
   document.getElementById('ev-start').value = ev.start;
   document.getElementById('ev-end').value   = ev.end;
   document.getElementById('ev-memo').value  = ev.memo || '';
+  document.getElementById('ev-location-new').value = '';
   document.getElementById('btnDelEvent').style.display = '';
   refreshCatBtns();
+  renderLocationPicker();
   document.getElementById('eventModal').classList.remove('hidden');
 }
 
@@ -607,6 +931,7 @@ function refreshCatBtns() {
 window.closeModal = () => {
   document.getElementById('eventModal').classList.add('hidden');
   editKey = null;
+  selectedLocations = [];
 };
 
 window.saveEvent = async () => {
@@ -619,7 +944,12 @@ window.saveEvent = async () => {
   if (!start || !end || start >= end) { alert('시간을 올바르게 입력해주세요'); return; }
 
   setSyncStatus('syncing','저장 중...');
-  const payload = { title, day, start, end, memo, cat: currentCat, updatedAt: Date.now() };
+  const payload = {
+    title, day, start, end, memo,
+    locations: [...selectedLocations],
+    cat: currentCat,
+    updatedAt: Date.now(),
+  };
   if (editKey) {
     await update(ref(db, `timetable_events/${editKey}`), payload);
   } else {
@@ -641,9 +971,32 @@ window.deleteEvent = async () => {
 document.getElementById('eventModal').addEventListener('click', e => {
   if (e.target === document.getElementById('eventModal')) closeModal();
 });
-// Esc로 닫기
+document.getElementById('locationModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('locationModal')) closeLocationManager();
+});
+
+// Enter로 장소 태그 빠른 추가
+document.getElementById('ev-location-new').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    window.addLocationTagFromModal();
+  }
+});
+document.getElementById('lm-new-label').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    window.addLocationFromManager();
+  }
+});
+
+// Esc로 모달 닫기: 장소 관리 모달이 열려 있으면 우선 닫습니다.
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && !document.getElementById('eventModal').classList.contains('hidden')) closeModal();
+  if (e.key !== 'Escape') return;
+  if (!document.getElementById('locationModal').classList.contains('hidden')) {
+    closeLocationManager();
+    return;
+  }
+  if (!document.getElementById('eventModal').classList.contains('hidden')) closeModal();
 });
 
 /* ── 초기화 ── */
@@ -653,6 +1006,26 @@ setSyncStatus('syncing','연결 중...');
 
 // 모바일 회전/리사이즈 시 CSS 변수 변경에 맞춰 일정 카드 위치를 다시 계산합니다.
 window.addEventListener('resize', () => renderEvents());
+
+// 장소 태그 목록은 일정과 별도 노드로 관리합니다.
+onValue(locationsRef, snap => {
+  const data = snap.val();
+  if (!data) {
+    seedDefaultLocations().catch(err => {
+      console.error('location seed error:', err);
+      setSyncStatus('error','장소 등록 오류');
+    });
+    locations = {};
+  } else {
+    locations = data;
+  }
+  renderLocationPicker();
+  renderLocationManageList();
+  renderEvents();
+}, err => {
+  console.error('locations error:', err);
+  setSyncStatus('error','장소 연결 오류');
+});
 
 onValue(eventsRef, snap => {
   events = snap.val() || {};
