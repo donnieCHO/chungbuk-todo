@@ -48,13 +48,15 @@
 
 ### `timetable.html` — 운영 시간표
 
-`tasks`와 분리된 `timetable_events` 노드를 사용합니다.
+`tasks`와 분리된 `timetable_events`, `timetable_locations` 노드를 사용합니다.
 
 - 2026년 8월 12~14일 시간표
 - 30분 단위 그리드
 - 드래그로 일정 추가
 - 일정 클릭으로 수정/삭제
 - 공통/세종대/업스테이지 분류 색상
+- 장소 태그 선택/추가/수정/삭제
+- 기본 장소 태그: 군자관 4층, 군자관 6층 식당, 대양AI관 만찬장
 
 ### `drivelink.html` — 파일 링크 관리
 
@@ -106,14 +108,21 @@ Realtime Database
 │       ├── phone
 │       ├── email
 │       └── order
-└── timetable_events
-    └── {eventKey}
-        ├── title
-        ├── day
-        ├── start
-        ├── end
-        ├── cat
-        ├── memo
+├── timetable_events
+│   └── {eventKey}
+│       ├── title
+│       ├── day
+│       ├── start
+│       ├── end
+│       ├── cat
+│       ├── locations
+│       ├── memo
+│       ├── createdAt
+│       └── updatedAt
+└── timetable_locations
+    └── {locationKey}
+        ├── label
+        ├── order
         ├── createdAt
         └── updatedAt
 ```
@@ -150,5 +159,6 @@ Realtime Database
 - 비동기 저장 오류 발생 시 동기화 배지에 오류 표시
 - `details.html#ti-...` 직접 진입 시 Firebase 렌더링 후 해당 업무로 스크롤
 - `timetable.html` 모바일 행 높이 계산 오류 방지
+- `timetable.html` 장소 태그 선택/추가/수정/삭제 기능 추가
 - 주요 HTML/CSS/JS 섹션 주석 보강
 

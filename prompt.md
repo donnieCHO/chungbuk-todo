@@ -386,7 +386,7 @@ function normalizeTask(task) {
 
 # 7. timetable.html 요구사항 — 운영 시간표
 
-`timetable.html`은 `timetable_events` 노드를 사용한다.
+`timetable.html`은 `timetable_events` 노드로 일정 데이터를, `timetable_locations` 노드로 재사용 가능한 장소 태그 목록을 관리한다.
 
 필수 기능:
 
@@ -418,7 +418,16 @@ function normalizeTask(task) {
   - 시작 시간
   - 종료 시간
   - 분류
+  - 장소 태그 배열(locations)
   - 메모
+
+- 장소 태그
+  - 기본값: 군자관 4층, 군자관 6층 식당, 대양AI관 만찬장
+  - 일정 모달에서 여러 장소를 태그 형태로 선택
+  - 사용자가 새 장소를 입력하면 timetable_locations에 저장하고 즉시 선택
+  - 장소 관리 모달에서 장소 이름 수정/삭제 가능
+  - 장소 이름을 수정하면 기존 일정 표시도 자동 반영
+  - 장소 삭제 시 해당 장소가 지정된 일정에서는 해당 장소 key를 제거
 
 - 카테고리 색상
   - 공통
@@ -429,6 +438,7 @@ function normalizeTask(task) {
   - Esc로 모달 닫기
   - 모달 바깥 클릭으로 닫기
   - 모바일에서 CSS row height와 JS 위치 계산이 어긋나지 않도록 실제 CSS 변수 값을 읽어 계산
+  - 일정 카드에는 시간 아래에 장소 태그를 작게 표시
 ```
 
 ---

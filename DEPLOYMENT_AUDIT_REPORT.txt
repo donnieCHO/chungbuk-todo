@@ -1,5 +1,14 @@
-SITE: /mnt/data/todo_release_checked
-HTML STATIC CHECK
+SITE: /mnt/data/todo_release_location_tags
+FILE EXISTENCE CHECK
+- index.html: OK
+- details.html: OK
+- timetable.html: OK
+- drivelink.html: OK
+- dricelink.html: OK
+- README.md: OK
+- DEPLOYMENT_CHECKLIST.md: OK
+
+ENCODING / HTML STATIC CHECK
 - details.html: OK
 - dricelink.html: OK
 - drivelink.html: OK
@@ -22,3 +31,10 @@ LOCAL STATIC SERVE CHECK
 - README.md: HTTP 200
 - DEPLOYMENT_CHECKLIST.md: HTTP 200
 - DEPLOYMENT_AUDIT_REPORT.txt: HTTP 200
+
+FEATURE CHECKLIST NOTE
+- timetable.html: 장소 태그 UI, timetable_locations 노드, locations 배열 저장 로직 포함
+- Firebase 실제 읽기/쓰기 권한은 배포 URL에서 수동 테스트 필요
+
+RESULT
+PASS
