@@ -1,166 +1,298 @@
 #!/usr/bin/env python3
-"""정적 배포 점검 스크립트.
+"""
+Static deployment audit for the two-tier To Do management service.
 
-HTML/MD 인코딩, 기본 메타, 내부 링크, 중복 id, 내장 JavaScript 문법을 확인합니다.
-외부 Firebase 연결 자체는 브라우저/운영 DB 권한이 필요하므로 수동 점검 항목으로 남깁니다.
+이 스크립트는 GitHub Pages에 업로드하기 전 로컬 정적 검수를 수행합니다.
+브라우저 기반 Firebase 실제 읽기/쓰기는 수동 테스트가 필요하지만,
+배포 전 발견 가능한 인코딩, 링크, ID, JS 문법, inline handler 누락 문제는
+여기서 최대한 자동으로 잡습니다.
 """
 from __future__ import annotations
 
-import http.client
+import codecs
+import html.parser
+import http.server
 import os
 import re
+import socketserver
 import subprocess
 import sys
 import tempfile
 import threading
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+import time
+import urllib.request
+from collections import Counter
+from datetime import datetime
 from pathlib import Path
-from typing import Iterable
 
 ROOT = Path(__file__).resolve().parent
-HTML_FILES = sorted(ROOT.glob('*.html'))
-TEXT_FILES = sorted([*ROOT.glob('*.html'), *ROOT.glob('*.md'), *ROOT.glob('*.txt')])
-REQUIRED_FILES = [
-    'index.html',
-    'details.html',
-    'timetable.html',
-    'drivelink.html',
-    'dricelink.html',
-    'README.md',
-    'DEPLOYMENT_CHECKLIST.md',
-]
+HTML_FILES = ["index.html", "details.html", "timetable.html", "drivelink.html", "contact.html", "dricelink.html"]
+DOC_FILES = ["README.md", "DEPLOYMENT_CHECKLIST.md", "CHANGELOG.md", "prompt.md", "CODE_REVIEW_REPORT.md"]
+REQUIRED_FILES = HTML_FILES + DOC_FILES
+REQUIRED_LINKS = {
+    "index.html": ["details.html", "drivelink.html", "timetable.html", "contact.html"],
+    "details.html": ["index.html", "drivelink.html", "timetable.html", "contact.html"],
+    "drivelink.html": ["index.html", "details.html", "timetable.html", "contact.html"],
+    "timetable.html": ["index.html", "details.html", "drivelink.html", "contact.html"],
+    "dricelink.html": ["drivelink.html"],
+}
+REQUIRED_DB_STRINGS = {
+    "index.html": ["tasks", "actions"],
+    "details.html": ["tasks", "actions", "migrateLegacyTasks"],
+    "drivelink.html": ["tasks", "links"],
+    "timetable.html": ["timetable_events", "timetable_locations"],
+    "contact.html": ["contacts", "addContact", "saveContactEdit"],
+}
 
 
-def ok(condition: bool, message: str, errors: list[str]) -> None:
-    if not condition:
-        errors.append(message)
+class MiniHTMLParser(html.parser.HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.ids: list[str] = []
+        self.links: list[tuple[str, str, str]] = []
+        self.handlers: list[tuple[str, str, str]] = []
+        self.comments: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        for attr, value in attrs:
+            if value is None:
+                continue
+            if attr == "id":
+                self.ids.append(value)
+            if attr in {"href", "src"}:
+                self.links.append((tag, attr, value))
+            if attr.startswith("on"):
+                self.handlers.append((tag, attr, value))
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+
+    def handle_comment(self, data: str) -> None:
+        self.comments.append(data)
 
 
-def check_encoding(path: Path, errors: list[str]) -> None:
-    raw = path.read_bytes()
-    ok(not raw.startswith(b'\xef\xbb\xbf'), f'{path.name}: BOM이 있습니다.', errors)
-    try:
-        raw.decode('utf-8')
-    except UnicodeDecodeError as exc:
-        errors.append(f'{path.name}: UTF-8 decode 실패: {exc}')
-    ok(b'\r\n' not in raw and b'\r' not in raw, f'{path.name}: LF가 아닌 줄바꿈이 있습니다.', errors)
+def read_bytes(name: str) -> bytes:
+    return (ROOT / name).read_bytes()
 
 
-def check_html(path: Path, errors: list[str]) -> None:
-    html = path.read_text(encoding='utf-8')
-    low = html.lower()
-    ok(low.startswith('<!doctype html>'), f'{path.name}: DOCTYPE 누락', errors)
-    ok('<html lang="ko"' in low or "<html lang='ko'" in low, f'{path.name}: lang="ko" 누락', errors)
-    ok('charset="utf-8"' in low or "charset='utf-8'" in low, f'{path.name}: charset UTF-8 누락', errors)
-    ok('name="viewport"' in low or "name='viewport'" in low, f'{path.name}: viewport 누락', errors)
+def read_text(name: str) -> str:
+    return read_bytes(name).decode("utf-8")
 
-    html_for_id_check = re.sub(r'<script[^>]*>[\s\S]*?</script>', '', html, flags=re.IGNORECASE)
-    html_for_id_check = re.sub(r'<style[^>]*>[\s\S]*?</style>', '', html_for_id_check, flags=re.IGNORECASE)
-    ids = re.findall(r'\bid=["\']([^"\']+)["\']', html_for_id_check)
-    duplicates = sorted({item for item in ids if ids.count(item) > 1})
-    ok(not duplicates, f'{path.name}: 중복 id 발견: {duplicates}', errors)
 
-    # HTML 파일 간 상대 링크 확인. 앵커/쿼리/외부 링크는 제외하고 루트 파일 존재만 확인합니다.
-    for href in re.findall(r'\bhref=["\']([^"\']+)["\']', html):
-        if href.startswith(('http://', 'https://', 'mailto:', 'tel:', '#')):
+def parse_html(name: str) -> MiniHTMLParser:
+    parser = MiniHTMLParser()
+    parser.feed(read_text(name))
+    return parser
+
+
+def status_line(errors: list[str]) -> list[str]:
+    return ["- OK"] if not errors else [f"- FAIL: {err}" for err in errors]
+
+
+def check_files() -> list[str]:
+    errors: list[str] = []
+    for name in REQUIRED_FILES:
+        if not (ROOT / name).exists():
+            errors.append(f"missing file: {name}")
+    return errors
+
+
+def check_encoding_and_html() -> list[str]:
+    errors: list[str] = []
+    for name in REQUIRED_FILES:
+        path = ROOT / name
+        if not path.exists():
             continue
-        target = href.split('#', 1)[0].split('?', 1)[0]
-        if not target:
-            continue
-        if target.endswith(('.html', '.md', '.txt')):
-            ok((ROOT / target).exists(), f'{path.name}: 내부 링크 대상 없음: {href}', errors)
-
-
-def extract_scripts(path: Path) -> Iterable[str]:
-    html = path.read_text(encoding='utf-8')
-    return re.findall(r'<script[^>]*>([\s\S]*?)</script>', html, flags=re.IGNORECASE)
-
-
-def check_js(path: Path, report: list[str], errors: list[str]) -> None:
-    for idx, script in enumerate(extract_scripts(path)):
-        suffix = '.mjs' if 'import ' in script else '.js'
-        with tempfile.NamedTemporaryFile('w', suffix=suffix, delete=False, encoding='utf-8') as tmp:
-            tmp.write(script)
-            tmp_path = Path(tmp.name)
+        data = path.read_bytes()
+        if data.startswith(codecs.BOM_UTF8):
+            errors.append(f"{name}: BOM detected")
+        if b"\r\n" in data:
+            errors.append(f"{name}: CRLF line endings detected")
         try:
-            result = subprocess.run(['node', '--check', str(tmp_path)], capture_output=True, text=True)
-            if result.returncode == 0:
-                report.append(f'- {path.name} script {idx}: OK')
-            else:
-                report.append(f'- {path.name} script {idx}: FAIL')
-                errors.append(f'{path.name} script {idx}: {result.stderr.strip()}')
-        finally:
-            tmp_path.unlink(missing_ok=True)
+            text = data.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            errors.append(f"{name}: not UTF-8 ({exc})")
+            continue
+        if name.endswith(".html"):
+            lower = text.lower()
+            if "<!doctype html>" not in lower:
+                errors.append(f"{name}: missing DOCTYPE")
+            if 'lang="ko"' not in lower:
+                errors.append(f"{name}: missing lang=ko")
+            if 'charset="utf-8"' not in lower:
+                errors.append(f"{name}: missing charset")
+            if 'name="viewport"' not in lower:
+                errors.append(f"{name}: missing viewport")
+            if "http://" in lower:
+                errors.append(f"{name}: insecure http:// resource found")
+    return errors
 
 
-def check_http(report: list[str], errors: list[str]) -> None:
-    class Quiet(SimpleHTTPRequestHandler):
+def check_duplicate_ids() -> list[str]:
+    errors: list[str] = []
+    for name in HTML_FILES:
+        parser = parse_html(name)
+        dupes = [item for item, count in Counter(parser.ids).items() if count > 1]
+        if dupes:
+            errors.append(f"{name}: duplicate id values: {', '.join(dupes)}")
+    return errors
+
+
+def check_internal_links() -> list[str]:
+    errors: list[str] = []
+    existing = {p.name for p in ROOT.iterdir() if p.is_file()}
+    for name in HTML_FILES:
+        parser = parse_html(name)
+        found_links = [value for _, _, value in parser.links]
+        for link in found_links:
+            if "${" in link:
+                continue
+            if link.startswith(("http://", "https://", "mailto:", "tel:", "#", "data:")):
+                continue
+            target = link.split("#", 1)[0].split("?", 1)[0]
+            if target and target not in existing:
+                errors.append(f"{name}: broken local link -> {link}")
+        for required in REQUIRED_LINKS.get(name, []):
+            if not any(required in link for link in found_links):
+                errors.append(f"{name}: expected navigation link missing -> {required}")
+    return errors
+
+
+def extract_inline_scripts(html: str) -> list[tuple[str, str]]:
+    scripts: list[tuple[str, str]] = []
+    for match in re.finditer(r"<script([^>]*)>(.*?)</script>", html, flags=re.S | re.I):
+        attrs = match.group(1)
+        body = match.group(2).strip()
+        if not body or "src=" in attrs.lower():
+            continue
+        scripts.append((attrs, body))
+    return scripts
+
+
+def check_js_syntax() -> list[str]:
+    errors: list[str] = []
+    node = subprocess.run(["bash", "-lc", "command -v node"], capture_output=True, text=True)
+    if node.returncode != 0:
+        return ["node is not available; skipped JS syntax check"]
+    with tempfile.TemporaryDirectory() as td:
+        tmpdir = Path(td)
+        for name in HTML_FILES:
+            for idx, (attrs, script) in enumerate(extract_inline_scripts(read_text(name))):
+                suffix = ".mjs" if "module" in attrs.lower() else ".js"
+                js_path = tmpdir / f"{name}.{idx}{suffix}"
+                js_path.write_text(script, encoding="utf-8")
+                result = subprocess.run(["node", "--check", str(js_path)], capture_output=True, text=True)
+                if result.returncode != 0:
+                    errors.append(f"{name} script {idx}: {result.stderr.strip()}")
+    return errors
+
+
+def check_inline_handlers() -> list[str]:
+    errors: list[str] = []
+    call_pattern = re.compile(r"^\s*([A-Za-z_$][\w$]*)\s*\(")
+    for name in HTML_FILES:
+        text = read_text(name)
+        parser = parse_html(name)
+        for _tag, attr, code in parser.handlers:
+            match = call_pattern.match(code)
+            if not match:
+                continue
+            fn = match.group(1)
+            if f"window.{fn}" not in text and f"function {fn}" not in text:
+                errors.append(f"{name}: inline {attr} calls undefined function {fn}()")
+    return errors
+
+
+def check_required_strings() -> list[str]:
+    errors: list[str] = []
+    for name, strings in REQUIRED_DB_STRINGS.items():
+        text = read_text(name)
+        for needle in strings:
+            if needle not in text:
+                errors.append(f"{name}: expected implementation marker missing -> {needle}")
+    return errors
+
+
+def check_usage_guides_and_comments() -> list[str]:
+    errors: list[str] = []
+    for name in ["index.html", "details.html", "drivelink.html", "timetable.html", "contact.html"]:
+        text = read_text(name)
+        if "사용법" not in text:
+            errors.append(f"{name}: usage guide text not found")
+        comment_count = len(re.findall(r"<!--|/\*|// ", text))
+        minimum = 15 if name != "timetable.html" else 20
+        if comment_count < minimum:
+            errors.append(f"{name}: comment count looks low ({comment_count})")
+    return errors
+
+
+def check_static_serve() -> list[str]:
+    errors: list[str] = []
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
         def log_message(self, format: str, *args: object) -> None:
             pass
 
     cwd = os.getcwd()
     os.chdir(ROOT)
-    server = ThreadingHTTPServer(('127.0.0.1', 0), Quiet)
-    port = server.server_port
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
     try:
-        for name in REQUIRED_FILES + ['DEPLOYMENT_AUDIT_REPORT.txt']:
-            conn = http.client.HTTPConnection('127.0.0.1', port, timeout=5)
-            conn.request('GET', f'/{name}')
-            res = conn.getresponse()
-            res.read()
-            conn.close()
-            if res.status == 200:
-                report.append(f'- {name}: HTTP 200')
-            else:
-                report.append(f'- {name}: HTTP {res.status}')
-                errors.append(f'{name}: HTTP {res.status}')
+        with socketserver.TCPServer(("127.0.0.1", 0), Handler) as httpd:
+            port = httpd.server_address[1]
+            thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+            thread.start()
+            time.sleep(0.1)
+            for name in REQUIRED_FILES:
+                try:
+                    with urllib.request.urlopen(f"http://127.0.0.1:{port}/{name}", timeout=5) as resp:
+                        _ = resp.read()
+                        if resp.status != 200:
+                            errors.append(f"{name}: HTTP {resp.status}")
+                except Exception as exc:  # noqa: BLE001
+                    errors.append(f"{name}: HTTP check failed ({exc})")
+            httpd.shutdown()
     finally:
-        server.shutdown()
         os.chdir(cwd)
+    return errors
 
 
 def main() -> int:
-    errors: list[str] = []
-    report: list[str] = [f'SITE: {ROOT}']
+    sections = [
+        ("FILE EXISTENCE CHECK", check_files),
+        ("ENCODING / HTML STATIC CHECK", check_encoding_and_html),
+        ("DUPLICATE ID CHECK", check_duplicate_ids),
+        ("INTERNAL LINK / NAVIGATION CHECK", check_internal_links),
+        ("INLINE HANDLER CHECK", check_inline_handlers),
+        ("JAVASCRIPT SYNTAX CHECK", check_js_syntax),
+        ("REQUIRED FEATURE MARKER CHECK", check_required_strings),
+        ("USAGE GUIDE / COMMENT CHECK", check_usage_guides_and_comments),
+        ("LOCAL STATIC SERVE CHECK", check_static_serve),
+    ]
+    all_errors: list[str] = []
+    report_lines: list[str] = [
+        "DEPLOYMENT AUDIT REPORT",
+        f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Root: {ROOT}",
+        "",
+    ]
+    for title, fn in sections:
+        errors = fn()
+        report_lines.append(title)
+        report_lines.extend(status_line(errors))
+        report_lines.append("")
+        all_errors.extend(errors)
 
-    report.append('FILE EXISTENCE CHECK')
-    for name in REQUIRED_FILES:
-        exists = (ROOT / name).exists()
-        report.append(f'- {name}: {"OK" if exists else "MISSING"}')
-        ok(exists, f'{name}: 파일 없음', errors)
+    report_lines.append("SUMMARY")
+    report_lines.append("PASS" if not all_errors else "FAIL")
+    if not all_errors:
+        report_lines.append("Static deployment checks passed. Firebase live read/write still requires browser-based manual verification after deployment.")
+    else:
+        report_lines.append(f"{len(all_errors)} issue(s) found. Fix before deployment.")
 
-    report.append('\nENCODING / HTML STATIC CHECK')
-    for path in TEXT_FILES:
-        check_encoding(path, errors)
-    for path in HTML_FILES:
-        before = len(errors)
-        check_html(path, errors)
-        report.append(f'- {path.name}: {"OK" if len(errors) == before else "CHECK"}')
-
-    report.append('\nJAVASCRIPT SYNTAX CHECK')
-    for path in HTML_FILES:
-        check_js(path, report, errors)
-
-    report.append('\nLOCAL STATIC SERVE CHECK')
-    check_http(report, errors)
-
-    report.append('\nFEATURE CHECKLIST NOTE')
-    report.append('- timetable.html: 장소 태그 UI, timetable_locations 노드, locations 배열 저장 로직 포함')
-    report.append('- Firebase 실제 읽기/쓰기 권한은 배포 URL에서 수동 테스트 필요')
-
-    report.append('\nRESULT')
-    report.append('PASS' if not errors else 'FAIL')
-    if errors:
-        report.append('\nERRORS')
-        report.extend(f'- {e}' for e in errors)
-
-    text = '\n'.join(report) + '\n'
-    (ROOT / 'DEPLOYMENT_AUDIT_REPORT.txt').write_text(text, encoding='utf-8')
-    print(text)
-    return 0 if not errors else 1
+    report = "\n".join(report_lines) + "\n"
+    print(report)
+    (ROOT / "DEPLOYMENT_AUDIT_REPORT.txt").write_text(report, encoding="utf-8")
+    return 0 if not all_errors else 1
 
 
-if __name__ == '__main__':
-    raise SystemExit(main())
+if __name__ == "__main__":
+    sys.exit(main())

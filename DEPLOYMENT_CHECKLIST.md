@@ -1,101 +1,87 @@
-# 배포 전/후 점검 체크리스트
+# 배포 전 체크리스트
 
-## A. 파일 구조
+## 1. 파일 구조
 
-- [ ] 배포 루트에 `index.html`이 있다.
-- [ ] 배포 루트에 `details.html`이 있다.
-- [ ] 배포 루트에 `timetable.html`이 있다.
-- [ ] 배포 루트에 `drivelink.html`이 있다.
-- [ ] 오타 호환용 `dricelink.html`이 있다.
-- [ ] 모든 내부 링크가 상대 경로로 연결되어 있다.
+- [ ] `index.html` 존재
+- [ ] `details.html` 존재
+- [ ] `drivelink.html` 존재
+- [ ] `timetable.html` 존재
+- [ ] `contact.html` 존재
+- [ ] `dricelink.html` 존재
+- [ ] `README.md`, `DEPLOYMENT_CHECKLIST.md`, `CHANGELOG.md`, `prompt.md` 포함
 
-## B. 인코딩/언어/메타
+## 2. 메인 화면 UI
 
-- [ ] 모든 HTML/MD 파일이 UTF-8이다.
-- [ ] BOM이 없다.
-- [ ] 줄바꿈은 LF이다.
-- [ ] 모든 HTML 파일에 `<!DOCTYPE html>`이 있다.
-- [ ] 모든 HTML 파일에 `<html lang="ko">`가 있다.
-- [ ] 모든 HTML 파일에 `<meta charset="UTF-8">`가 있다.
-- [ ] 모든 HTML 파일에 viewport 메타가 있다.
+- [ ] 첫 화면 타이틀이 `충북교육청 AI 교원연수` / `To Do List management sheet` 줄바꿈으로 표시됨
+- [ ] D-Day가 우측에서 크게 보임
+- [ ] 전체 완료율이 숫자 `%`와 가로형 막대로 표시됨
+- [ ] 사용법 안내가 처음에는 펼쳐져 있고, 버튼으로 접고 펼칠 수 있음
+- [ ] 완료된 Action Item 섹션이 기본 접힘 상태임
+- [ ] 완료된 Action Item 섹션 우측 버튼으로 펼치기/접기가 가능함
 
-## C. 페이지 이동
+## 3. 2단계 To Do 구조
 
-- [ ] `index.html → details.html` 이동이 된다.
-- [ ] `index.html → timetable.html` 이동이 된다.
-- [ ] `index.html → drivelink.html` 이동이 된다.
-- [ ] `details.html → index.html` 이동이 된다.
-- [ ] `details.html → drivelink.html` 이동이 된다.
-- [ ] `details.html → timetable.html` 이동이 된다.
-- [ ] `timetable.html → index/details/drivelink` 이동이 된다.
-- [ ] `drivelink.html → index/details/timetable` 이동이 된다.
-- [ ] `dricelink.html` 접근 시 `drivelink.html`로 이동한다.
+- [ ] `details.html`에서 카테고리를 선택할 수 있음
+- [ ] 카테고리 값이 `강사커리큘럼`, `장소시설`, `운영물품`, `사후처리`로 고정됨
+- [ ] 카테고리 아래에 주요 과제가 묶여 보임
+- [ ] 주요 과제 안에 Action Item을 추가할 수 있음
+- [ ] Action Item 완료/수정/삭제가 가능함
+- [ ] Action Item 단위 메모/링크가 가능함
+- [ ] 기존 평면형 데이터 변환 패널이 필요 시 표시됨
 
-## D. Firebase 연결
+## 4. 페이지 연결
 
-- [ ] 모든 HTML 파일의 `firebaseConfig`가 같은 프로젝트를 가리킨다.
-- [ ] `index.html`, `details.html`, `drivelink.html`은 `tasks` 노드를 사용한다.
-- [ ] `details.html`은 `contacts` 노드를 사용한다.
-- [ ] `timetable.html`은 `timetable_events` 노드를 사용한다.
-- [ ] `timetable.html`은 장소 태그 관리를 위해 `timetable_locations` 노드를 사용한다.
-- [ ] 우하단 동기화 배지가 `연결 중 → 실시간 동기화 중`으로 바뀐다.
-- [ ] 저장 실패 시 오류 상태가 표시된다.
+- [ ] 모든 페이지에서 `index.html`로 이동 가능
+- [ ] 모든 페이지에서 `details.html`로 이동 가능
+- [ ] 모든 페이지에서 `drivelink.html`로 이동 가능
+- [ ] 모든 페이지에서 `timetable.html`로 이동 가능
+- [ ] 운영 시간표 다음 메뉴로 `contact.html`이 표시됨
+- [ ] `dricelink.html`은 `drivelink.html`로 이동함
 
-## E. 주요 기능 수동 테스트
+## 5. Contact 페이지
 
-### index.html
+- [ ] `contact.html`에서 연락처 목록이 보임
+- [ ] 담당자 이름/소속/담당 업무/전화번호/이메일/메모를 추가할 수 있음
+- [ ] 연락처 수정이 가능함
+- [ ] 연락처 삭제가 가능함
+- [ ] 전화번호는 `tel:` 링크로 열림
+- [ ] 이메일은 `mailto:` 링크로 열림
 
-- [ ] 담당자 탭이 정상 동작한다.
-- [ ] 빠른 업무 추가가 된다.
-- [ ] 업무 완료/미완료 토글이 된다.
-- [ ] 업무 카드를 클릭하면 상세 모달이 열린다.
-- [ ] 모달에서 상태 변경이 된다.
-- [ ] 모달에서 메모 추가가 된다.
-- [ ] 모달에서 링크 추가가 된다.
+## 6. 시간표
 
-### details.html
+- [ ] 빈 칸 드래그로 일정 추가 가능
+- [ ] 일정 클릭으로 수정/삭제 가능
+- [ ] 장소 태그 선택 가능
+- [ ] 기본 장소 태그가 보임: `군자관 4층`, `군자관 6층 식당`, `대양AI관 만찬장`
+- [ ] 장소 태그 추가/수정/삭제 가능
+- [ ] 시간표 세로 간격이 제목/시간/장소를 읽기에 충분함
 
-- [ ] 카테고리/우선순위/날짜 임박순 보기 전환이 된다.
-- [ ] 담당기관 필터가 된다.
-- [ ] 업무 추가/수정/삭제가 된다.
-- [ ] 링크 추가/삭제가 된다.
-- [ ] 메모 추가/수정/삭제가 된다.
-- [ ] 완료된 항목 섹션 접기/펼치기가 된다.
-- [ ] 연락처 추가/삭제가 된다.
-- [ ] `details.html#ti-{taskKey}` 형태로 접근하면 해당 업무로 이동한다.
+## 7. Firebase
 
-### timetable.html
+- [ ] 모든 HTML의 `firebaseConfig`가 같은 프로젝트를 바라봄
+- [ ] Realtime Database가 생성되어 있음
+- [ ] `tasks` 읽기/쓰기 가능
+- [ ] `contacts` 읽기/쓰기 가능
+- [ ] `timetable_events` 읽기/쓰기 가능
+- [ ] `timetable_locations` 읽기/쓰기 가능
 
-- [ ] 빈 시간 칸 드래그로 새 일정 모달이 열린다.
-- [ ] 일정 저장이 된다.
-- [ ] 일정 클릭으로 수정 모달이 열린다.
-- [ ] 일정 모달에서 장소 태그를 선택해 저장할 수 있다.
-- [ ] 새 장소를 입력하면 장소 태그 목록에 추가된다.
-- [ ] 장소 관리 모달에서 장소 이름 수정/삭제가 된다.
-- [ ] 일정 삭제가 된다.
-- [ ] 모바일 폭에서 일정 카드 위치가 어긋나지 않는다.
+## 8. 정적 배포 점검
 
-### drivelink.html
+- [ ] UTF-8 인코딩
+- [ ] BOM 없음
+- [ ] LF 줄바꿈
+- [ ] HTML `DOCTYPE`, `lang="ko"`, `charset="UTF-8"`, `viewport` 확인
+- [ ] 중복 ID 없음
+- [ ] JavaScript 문법 오류 없음
+- [ ] 내부 링크 깨짐 없음
+- [ ] `python3 deployment_audit.py` 결과 PASS
 
-- [ ] To Do에 연결된 링크가 모아 보인다.
-- [ ] 검색이 된다.
-- [ ] 담당자 필터가 된다.
-- [ ] 카테고리 필터가 된다.
-- [ ] `?task={taskKey}` 파라미터로 특정 업무 링크만 볼 수 있다.
-- [ ] 링크 삭제 시 원본 파일이 아니라 To Do의 링크만 제거된다.
+## 9. 배포 후 브라우저 수동 테스트
 
-## F. 보안/운영
-
-- [ ] Firebase Realtime Database 규칙이 운영 목적에 맞게 설정되어 있다.
-- [ ] 외부 공개 URL로 운영한다면 인증 또는 쓰기 제한을 검토했다.
-- [ ] 파일 원본은 Firebase DB에 넣지 않고 외부 저장소 URL만 저장한다.
-- [ ] 실제 개인정보가 들어가는 연락처는 공유 범위를 확인했다.
-- [ ] 브라우저 콘솔에 치명적인 오류가 없다.
-
-## G. 배포 후 확인
-
-- [ ] 배포 URL에서 `index.html`이 기본으로 열린다.
-- [ ] 새로고침해도 라우팅 문제가 없다.
-- [ ] 모바일 사파리/크롬에서 폰트와 레이아웃이 깨지지 않는다.
-- [ ] 다른 사용자 브라우저에서 실시간 동기화가 반영된다.
-- [ ] 배포 URL을 QR 또는 짧은 링크로 공유할 준비가 되었다.
+- [ ] `index.html`에서 빠른 Action 추가 후 Firebase에 저장됨
+- [ ] `details.html`에서 같은 Action Item 확인 가능
+- [ ] `details.html`에서 메모/링크 추가 가능
+- [ ] `drivelink.html`에서 추가한 링크가 보임
+- [ ] `timetable.html`에서 일정과 장소 태그가 저장됨
+- [ ] `contact.html`에서 연락처 추가/수정/삭제가 저장됨
+- [ ] 다른 브라우저나 다른 기기에서 실시간 반영됨

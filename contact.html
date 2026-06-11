@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<!--
+  배포 파일: contact.html
+  역할: 담당자 연락처를 Firebase Realtime Database의 contacts 노드에서 읽고, 추가/수정/삭제하는 독립 페이지입니다.
+  연결: index.html, details.html, drivelink.html, timetable.html과 동일한 프로젝트 메뉴를 공유합니다.
+  주의: 전화번호와 이메일은 개인정보가 될 수 있으므로, Firebase Rules와 공유 범위를 운영 환경에 맞게 확인해야 합니다.
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>충북교육청 AI 교원연수 — Contact</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#0f1117; --surface:#181c27; --surface2:#1f2437; --surface3:#252b40;
+    --border:#2a3050; --accent:#4f8ef7; --accent2:#7c6af7;
+    --green:#3dd68c; --yellow:#f5c842; --red:#f76f6f;
+    --text:#e8ecf4; --muted:#6b7a9e;
+    --naver:#00c73c; --upstage:#8b5cf6; --sejong:#c3002f; --ops:#e8ecf4; --education:#f5c842;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard','Malgun Gothic',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:28px 22px 90px;}
+  button,input,select,textarea{font-family:inherit}
+  a{color:inherit}
+
+  #loadingOverlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .35s;}
+  #loadingOverlay.hidden{opacity:0;pointer-events:none}
+  .spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-size:13px;color:var(--muted)}
+  #syncStatus{position:fixed;right:20px;bottom:20px;z-index:300;display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:99px;border:1px solid var(--border);background:rgba(24,28,39,.94);color:var(--muted);font-size:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  #syncStatus.syncing{color:var(--yellow);border-color:rgba(245,200,66,.45)}
+  #syncStatus.synced{color:var(--green);border-color:rgba(61,214,140,.45)}
+  #syncStatus.error{color:var(--red);border-color:rgba(247,111,111,.45)}
+  .sync-dot{width:6px;height:6px;background:currentColor;border-radius:50%}
+  #syncStatus.syncing .sync-dot{animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .shell{max-width:1120px;margin:0 auto}
+  .nav{position:sticky;top:0;z-index:100;margin:0 -22px 24px;padding:8px 22px;background:rgba(15,17,23,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+  .nav-inner{max-width:1120px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap}
+  .nav a{text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:99px;border:1px solid var(--border);color:var(--muted);background:rgba(255,255,255,.02);font-size:13px;font-weight:800;transition:all .15s}
+  .nav a:hover,.nav a.active{color:var(--accent);border-color:rgba(79,142,247,.48);background:rgba(79,142,247,.1)}
+
+  .hero{position:relative;overflow:hidden;display:flex;justify-content:space-between;gap:24px;align-items:flex-end;margin:6px 0 18px;padding:30px;border:1px solid rgba(79,142,247,.34);border-radius:28px;background:radial-gradient(circle at 8% 0%, rgba(79,142,247,.22), transparent 34%),radial-gradient(circle at 90% 10%, rgba(124,106,247,.20), transparent 30%),linear-gradient(135deg, rgba(24,28,39,.98), rgba(18,22,34,.95));box-shadow:0 24px 70px rgba(0,0,0,.36)}
+  .hero h1{font-size:clamp(30px,4.6vw,54px);line-height:1.02;letter-spacing:-2px;font-weight:900}
+  .hero h1 span{display:block;margin-top:8px;color:transparent;background:linear-gradient(135deg,#e8ecf4,#8fb9ff,#c7bfff);-webkit-background-clip:text;background-clip:text;font-size:clamp(22px,3vw,34px)}
+  .hero p{margin-top:14px;color:#b9c3d8;line-height:1.7;font-size:14px;max-width:720px}
+  .hero-stat{min-width:180px;border:1px solid rgba(255,255,255,.10);border-radius:22px;background:rgba(15,17,23,.44);padding:18px;text-align:right}
+  .hero-stat-label{color:var(--muted);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+  .hero-stat-value{margin-top:8px;font-family:'DM Mono',monospace;font-size:38px;color:var(--accent);font-weight:600}
+
+  .usage-guide{background:rgba(79,142,247,.045);border:1px solid rgba(79,142,247,.22);border-radius:20px;padding:18px;margin-bottom:18px;box-shadow:0 12px 34px rgba(0,0,0,.18)}
+  .usage-heading{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+  .usage-heading h2{font-size:18px;font-weight:900;letter-spacing:-.4px}
+  .usage-heading p{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.6}
+  .usage-toggle-btn{flex-shrink:0;border:1px solid rgba(79,142,247,.42);background:rgba(79,142,247,.10);color:var(--accent);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer}
+  .usage-body{display:block;margin-top:14px}
+  .usage-guide:not(.is-open) .usage-body{display:none}
+  .usage-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .usage-card{background:rgba(24,28,39,.72);border:1px solid var(--border);border-radius:14px;padding:13px 14px}
+  .usage-card h3{font-size:13px;font-weight:900;margin-bottom:7px;color:var(--accent)}
+  .usage-card li{font-size:12px;line-height:1.55;color:var(--muted);margin-left:16px}
+  .usage-card b{color:var(--text)}
+
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:18px;margin-bottom:18px;box-shadow:0 12px 34px rgba(0,0,0,.2)}
+  .panel-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .panel-title h2{font-size:18px;letter-spacing:-.4px}.panel-title p{color:var(--muted);font-size:12px}
+  .form-grid{display:grid;grid-template-columns:repeat(4,1fr) auto;gap:10px;align-items:end}
+  .field{display:flex;flex-direction:column;gap:6px}.field.wide{grid-column:span 2}.field label{font-size:11px;color:#8794b7;letter-spacing:.08em;text-transform:uppercase;font-weight:900}
+  input,select,textarea{width:100%;padding:10px 12px;border-radius:11px;background:var(--surface2);border:1px solid var(--border);color:var(--text);outline:none;font-size:13px;transition:border-color .16s}
+  select{appearance:none;-webkit-appearance:none;padding-right:38px!important;background-image:linear-gradient(45deg,transparent 50%, var(--accent) 50%),linear-gradient(135deg,var(--accent) 50%, transparent 50%);background-position:calc(100% - 18px) 52%, calc(100% - 12px) 52%;background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+  input:hover,select:hover,textarea:hover{border-color:rgba(79,142,247,.34)} input:focus,select:focus,textarea:focus{border-color:var(--accent)} select option{background:var(--surface2)}
+  .btn{border:none;border-radius:11px;padding:10px 15px;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));font-weight:900;font-size:13px;white-space:nowrap;transition:opacity .15s,transform .15s}.btn:hover{opacity:.9;transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn.danger{background:rgba(247,111,111,.12);color:var(--red);border:1px solid rgba(247,111,111,.32)}.btn.small{padding:7px 10px;font-size:12px}
+  .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}.search-row{display:grid;grid-template-columns:1fr 220px;gap:10px}
+  .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.summary-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px}.summary-label{font-size:12px;color:var(--muted);margin-bottom:8px}.summary-value{font-family:'DM Mono',monospace;font-size:24px;color:var(--text);font-weight:600}.summary-card.highlight .summary-value{color:var(--accent)}.summary-card.good .summary-value{color:var(--green)}
+  .contact-groups{display:flex;flex-direction:column;gap:18px}.org-section{border:1px solid rgba(79,142,247,.24);border-radius:22px;overflow:hidden;background:linear-gradient(135deg,rgba(79,142,247,.035),rgba(24,28,39,.95))}.org-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.07)}.org-title{display:flex;align-items:center;gap:10px;font-weight:900}.org-dot{width:12px;height:12px;border-radius:5px}.org-count{font-size:12px;color:var(--muted)}
+  .contact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px}.contact-card{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:18px;background:rgba(255,255,255,.025);padding:18px;min-height:168px;display:flex;flex-direction:column;gap:10px}.contact-card:hover{border-color:rgba(79,142,247,.35)}.card-stripe{position:absolute;left:0;right:0;top:0;height:4px}.card-top{display:flex;align-items:center;gap:12px}.avatar{width:42px;height:42px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#fff}.name{font-size:16px;font-weight:900}.role{margin-top:2px;font-size:12px;color:var(--muted);line-height:1.4}.contact-line{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);line-height:1.45;word-break:break-all}.contact-line a{text-decoration:none}.contact-line a:hover{color:var(--text)}.memo{margin-top:auto;font-size:12px;color:var(--muted);line-height:1.5;border-top:1px dashed rgba(42,48,80,.7);padding-top:9px}.card-actions{position:absolute;right:10px;top:10px;display:flex;gap:4px}.icon-btn{border:1px solid var(--border);background:rgba(15,17,23,.48);color:var(--muted);border-radius:9px;padding:5px 7px;cursor:pointer}.icon-btn:hover{color:var(--accent);border-color:rgba(79,142,247,.44)}.icon-btn.delete:hover{color:var(--red);border-color:rgba(247,111,111,.4)}.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--border);border-radius:16px;background:rgba(255,255,255,.015)}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}.modal-overlay.hidden{display:none}.modal{width:100%;max-width:620px;background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.42)}.modal-title{font-size:18px;font-weight:900;color:var(--accent);margin-bottom:16px}.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.modal-grid .full{grid-column:span 2}.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+  @media(max-width:900px){.hero{flex-direction:column;align-items:stretch}.form-grid,.toolbar,.search-row{grid-template-columns:1fr 1fr}.form-grid .btn{grid-column:span 2}.contact-grid{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:1fr 1fr}.usage-steps{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){body{padding:20px 14px 90px}.nav{margin-left:-14px;margin-right:-14px;padding-left:14px;padding-right:14px}.form-grid,.toolbar,.search-row,.contact-grid,.summary-grid,.usage-steps,.modal-grid{grid-template-columns:1fr}.field.wide,.modal-grid .full,.form-grid .btn{grid-column:auto}.hero{padding:22px;border-radius:24px}.hero-stat{text-align:left}}
+</style>
+</head>
+<body>
+<div id="loadingOverlay"><div class="spinner"></div><div class="loading-text">연락처 데이터를 불러오는 중...</div></div>
+<div id="syncStatus" class="syncing"><span class="sync-dot"></span><span id="syncText">연결 중</span></div>
+<!-- 공통 메뉴: 모든 페이지를 같은 순서로 연결합니다. -->
+<nav class="nav" aria-label="주요 메뉴"><div class="nav-inner"><a href="index.html">🏠 내 Action</a><a href="details.html">🧩 상세 관리</a><a href="drivelink.html">📁 파일 관리</a><a href="timetable.html">🕐 운영 시간표</a><a class="active" href="contact.html">👥 Contact</a></div></nav>
+<!-- 본문 컨테이너: Contact 전용 관리 화면입니다. -->
+<main class="shell">
+  <!-- Hero: 연락처 페이지의 역할과 등록 현황을 한눈에 보여줍니다. -->
+  <header class="hero" aria-label="Contact 개요"><div><h1>충북교육청 AI 교원연수<span>Contact management</span></h1><p>운영팀, 네이버, Upstage, 세종대, 교육청 담당자 연락처를 소속별로 관리합니다. 전화와 이메일은 카드에서 바로 열 수 있습니다.</p></div><aside class="hero-stat"><div class="hero-stat-label">Total Contacts</div><div class="hero-stat-value" id="totalContacts">0</div></aside></header>
+  <!-- 사용법: 처음에는 펼쳐진 상태이며 필요 시 접을 수 있습니다. -->
+  <section class="usage-guide is-open" id="usageGuide"><div class="usage-heading"><div><h2>📖 Contact 사용법</h2><p>담당자 연락처를 추가하고, 카드의 수정 버튼으로 최신 정보로 업데이트합니다.</p></div><button class="usage-toggle-btn" id="usageToggleBtn" onclick="toggleUsageGuide()" type="button" aria-expanded="true">접기 ▴</button></div><div class="usage-body"><div class="usage-steps"><div class="usage-card"><h3>1. 연락처 추가</h3><ul><li>이름과 소속은 필수입니다.</li><li>전화번호와 이메일은 필요한 경우만 입력합니다.</li></ul></div><div class="usage-card"><h3>2. 소속별 확인</h3><ul><li>Contact는 소속별 섹션으로 자동 정렬됩니다.</li><li>검색어와 소속 필터를 함께 사용할 수 있습니다.</li></ul></div><div class="usage-card"><h3>3. 업데이트</h3><ul><li>카드 우측 상단의 <b>✏️</b> 버튼으로 수정합니다.</li><li>삭제는 Firebase의 contacts 노드에서 해당 항목만 제거합니다.</li></ul></div><div class="usage-card"><h3>4. 빠른 연락</h3><ul><li>전화번호는 <b>tel:</b>, 이메일은 <b>mailto:</b> 링크로 연결됩니다.</li></ul></div></div></div></section>
+  <!-- 요약 카드: 연락처 전체/소속별/이메일 등록 현황을 표시합니다. -->
+  <section class="summary-grid"><div class="summary-card highlight"><div class="summary-label">전체</div><div class="summary-value" id="sumAll">0</div></div><div class="summary-card"><div class="summary-label">운영팀</div><div class="summary-value" id="sumOps">0</div></div><div class="summary-card"><div class="summary-label">협력기관</div><div class="summary-value" id="sumPartners">0</div></div><div class="summary-card good"><div class="summary-label">이메일 등록</div><div class="summary-value" id="sumEmail">0</div></div></section>
+  <!-- 입력 폼: 새 담당자를 contacts 노드에 추가합니다. -->
+  <section class="panel"><div class="panel-title"><h2>+ 담당자 추가</h2><p>담당자 정보는 Firebase contacts 노드에 저장됩니다.</p></div><div class="form-grid"><div class="field"><label for="ctName">이름</label><input id="ctName" type="text" placeholder="홍길동"></div><div class="field"><label for="ctOrg">소속</label><select id="ctOrg"></select></div><div class="field"><label for="ctRole">담당 업무</label><input id="ctRole" type="text" placeholder="커리큘럼 설계"></div><div class="field"><label for="ctPhone">전화번호</label><input id="ctPhone" type="text" placeholder="010-0000-0000"></div><div class="field wide"><label for="ctEmail">이메일</label><input id="ctEmail" type="text" placeholder="name@example.com"></div><div class="field wide"><label for="ctMemo">메모</label><input id="ctMemo" type="text" placeholder="비상 연락, 담당 범위 등"></div><button class="btn" id="btnAddContact" onclick="addContact()">추가</button></div></section>
+  <!-- 검색/필터: 소속과 키워드로 Contact 목록을 좁혀 봅니다. -->
+  <section class="panel"><div class="panel-title"><h2>보기·검색</h2><p>소속이나 이름, 담당 업무, 전화번호, 이메일로 찾을 수 있습니다.</p></div><div class="toolbar"><div class="field"><label for="orgFilter">소속 필터</label><select id="orgFilter" onchange="setOrgFilter(this.value)"></select></div><div class="field"><label for="searchInput">검색</label><input id="searchInput" type="text" placeholder="이름, 담당 업무, 연락처 검색" oninput="setSearchQuery(this.value)"></div></div></section>
+  <!-- 목록: 소속별로 그룹화된 연락처 카드가 렌더링됩니다. -->
+  <section class="contact-groups" id="contactGroups"></section>
+</main>
+<!-- 수정 모달: 기존 연락처의 최신 정보를 업데이트합니다. -->
+<div class="modal-overlay hidden" id="editModal"><div class="modal"><div class="modal-title">✏️ Contact 수정</div><input type="hidden" id="editKey"><div class="modal-grid"><div class="field"><label for="editName">이름</label><input id="editName" type="text"></div><div class="field"><label for="editOrg">소속</label><select id="editOrg"></select></div><div class="field full"><label for="editRole">담당 업무</label><input id="editRole" type="text"></div><div class="field"><label for="editPhone">전화번호</label><input id="editPhone" type="text"></div><div class="field"><label for="editEmail">이메일</label><input id="editEmail" type="text"></div><div class="field full"><label for="editMemo">메모</label><textarea id="editMemo" rows="3"></textarea></div></div><div class="modal-footer"><button class="btn ghost" onclick="closeEditModal()">취소</button><button class="btn" onclick="saveContactEdit()">저장</button></div></div></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// Firebase 설정: 다른 페이지와 동일한 프로젝트를 사용합니다.
+const firebaseConfig = {
+  apiKey: "AIzaSyAkHIuEOP0oHZlceCy-lgwjhvT4avyIAFg",
+  authDomain: "chungbuk-ai-training2026.firebaseapp.com",
+  databaseURL: "https://chungbuk-ai-training2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "chungbuk-ai-training2026",
+  storageBucket: "chungbuk-ai-training2026.firebasestorage.app",
+  messagingSenderId: "1089691391533",
+  appId: "1:1089691391533:web:b958819a1084ff29d20aa4"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const contactsRef = ref(db, 'contacts');
+
+// 소속 설정: 화면 색상, 필터, 카드 그룹 렌더링에 공통으로 사용합니다.
+const ORG_CONFIG = {
+  all:{ label:'전체', color:'#4f8ef7' },
+  ops:{ label:'운영팀', color:'#e8ecf4' },
+  naver:{ label:'네이버', color:'#00c73c' },
+  upstage:{ label:'Upstage', color:'#8b5cf6' },
+  sejong:{ label:'세종대', color:'#c3002f' },
+  education:{ label:'교육청', color:'#f5c842' }
+};
+const ORG_ORDER = ['ops','naver','upstage','sejong','education'];
+const ORG_ALIASES = { '운영팀':'ops', '네이버':'naver', 'Upstage':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
+let contacts = {};
+let orgFilter = localStorage.getItem('todo.contact.orgFilter') || 'all';
+let searchQuery = '';
+let isReady = false;
+
+// 동기화 상태 배지는 Firebase 읽기/쓰기 흐름을 사용자에게 알려줍니다.
+function setSyncStatus(state, text){const el=document.getElementById('syncStatus');el.className=state;document.getElementById('syncText').textContent=text;}
+function hideLoading(){if(isReady)return;isReady=true;const ov=document.getElementById('loadingOverlay');ov.classList.add('hidden');setTimeout(()=>{ov.style.display='none'},360);}
+window.addEventListener('unhandledrejection', event => { console.error(event.reason); setSyncStatus('error','저장/동기화 오류'); });
+// 사용자 입력값은 HTML 출력 전에 이스케이프합니다.
+function escapeHtml(value){return String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function escapeAttr(value){return escapeHtml(value).replace(/`/g,'&#96;');}
+function normalizeOrg(value){return ORG_CONFIG[value] ? value : (ORG_ALIASES[value] || 'ops');}
+function orgOptionsHtml(includeAll=false){const keys=includeAll?['all',...ORG_ORDER]:ORG_ORDER;return keys.map(k=>`<option value="${k}">${ORG_CONFIG[k].label}</option>`).join('');}
+function getInitial(name){return (name || '?').trim().charAt(0).toUpperCase() || '?';}
+function cleanPhone(phone){return String(phone||'').replace(/[^0-9+]/g,'');}
+function renderSafeLink(url, label, type){if(!url)return '';const href=type==='tel'?`tel:${cleanPhone(url)}`:`mailto:${encodeURIComponent(url).replace(/%40/g,'@')}`;return `<div class="contact-line"><span>${type==='tel'?'📞':'✉️'}</span><a href="${href}">${escapeHtml(label || url)}</a></div>`;}
+function buildStaticOptions(){document.getElementById('ctOrg').innerHTML=orgOptionsHtml(false);document.getElementById('editOrg').innerHTML=orgOptionsHtml(false);document.getElementById('orgFilter').innerHTML=orgOptionsHtml(true);document.getElementById('orgFilter').value=orgFilter;}
+function setSummary(){const list=Object.values(contacts);document.getElementById('totalContacts').textContent=list.length;document.getElementById('sumAll').textContent=list.length;document.getElementById('sumOps').textContent=list.filter(c=>normalizeOrg(c.org)==='ops').length;document.getElementById('sumPartners').textContent=list.filter(c=>normalizeOrg(c.org)!=='ops'&&normalizeOrg(c.org)!=='education').length;document.getElementById('sumEmail').textContent=list.filter(c=>c.email).length;}
+function contactMatches(c){const org=normalizeOrg(c.org);if(orgFilter!=='all'&&org!==orgFilter)return false;const q=searchQuery.trim().toLowerCase();if(!q)return true;return `${c.name||''} ${ORG_CONFIG[org]?.label||''} ${c.role||''} ${c.phone||''} ${c.email||''} ${c.memo||''}`.toLowerCase().includes(q);}
+// 연락처 카드 렌더링: 전화/메일 링크와 수정/삭제 버튼을 포함합니다.
+function renderContactCard(key,c){const org=normalizeOrg(c.org);const cfg=ORG_CONFIG[org]||ORG_CONFIG.ops;return `<article class="contact-card"><div class="card-stripe" style="background:${cfg.color}"></div><div class="card-actions"><button class="icon-btn" onclick="openContactEdit('${key}')" title="수정">✏️</button><button class="icon-btn delete" onclick="deleteContact('${key}')" title="삭제">×</button></div><div class="card-top"><div class="avatar" style="background:${cfg.color};color:${org==='ops'?'#0f1117':'#fff'}">${escapeHtml(getInitial(c.name))}</div><div><div class="name">${escapeHtml(c.name||'이름 없음')}</div><div class="role">${escapeHtml(c.role||'담당 업무 미입력')}</div></div></div>${renderSafeLink(c.phone,c.phone,'tel')}${renderSafeLink(c.email,c.email,'mail')}${c.memo?`<div class="memo">${escapeHtml(c.memo)}</div>`:''}</article>`;}
+// 연락처 목록 렌더링: 검색어와 소속 필터를 적용한 뒤 소속별로 그룹화합니다.
+function renderContacts(){const grouped={};ORG_ORDER.forEach(k=>grouped[k]=[]);Object.entries(contacts).sort(([,a],[,b])=>(a.order||0)-(b.order||0)).forEach(([key,c])=>{if(contactMatches(c)) grouped[normalizeOrg(c.org)].push([key,c]);});const html=ORG_ORDER.map(org=>{const items=grouped[org];if(orgFilter!=='all'&&org!==orgFilter)return '';const cfg=ORG_CONFIG[org];return `<section class="org-section"><div class="org-head"><div class="org-title"><span class="org-dot" style="background:${cfg.color}"></span>${cfg.label}</div><span class="org-count">${items.length}명</span></div><div class="contact-grid">${items.length?items.map(([key,c])=>renderContactCard(key,c)).join(''):'<div class="empty">표시할 연락처가 없습니다.</div>'}</div></section>`;}).filter(Boolean).join('');document.getElementById('contactGroups').innerHTML=html||'<div class="empty">연락처가 없습니다.</div>';setSummary();}
+window.toggleUsageGuide=()=>{const guide=document.getElementById('usageGuide');const btn=document.getElementById('usageToggleBtn');const open=guide.classList.toggle('is-open');btn.textContent=open?'접기 ▴':'펼치기 ▾';btn.setAttribute('aria-expanded',String(open));};
+window.setOrgFilter=(value)=>{orgFilter=value;localStorage.setItem('todo.contact.orgFilter',value);renderContacts();};
+window.setSearchQuery=(value)=>{searchQuery=value;renderContacts();};
+// 연락처 추가: 입력 폼 내용을 contacts 노드에 저장합니다.
+window.addContact=async()=>{const name=document.getElementById('ctName').value.trim();const org=document.getElementById('ctOrg').value;if(!name){document.getElementById('ctName').focus();return;}const payload={name,org,role:document.getElementById('ctRole').value.trim(),phone:document.getElementById('ctPhone').value.trim(),email:document.getElementById('ctEmail').value.trim(),memo:document.getElementById('ctMemo').value.trim(),order:Date.now(),createdAt:Date.now(),updatedAt:Date.now()};setSyncStatus('syncing','저장 중...');await push(contactsRef,payload);['ctName','ctRole','ctPhone','ctEmail','ctMemo'].forEach(id=>document.getElementById(id).value='');};
+// 연락처 수정: 모달에 기존 값을 채운 뒤 업데이트합니다.
+window.openContactEdit=(key)=>{const c=contacts[key];if(!c)return;document.getElementById('editKey').value=key;document.getElementById('editName').value=c.name||'';document.getElementById('editOrg').value=normalizeOrg(c.org);document.getElementById('editRole').value=c.role||'';document.getElementById('editPhone').value=c.phone||'';document.getElementById('editEmail').value=c.email||'';document.getElementById('editMemo').value=c.memo||'';document.getElementById('editModal').classList.remove('hidden');};
+window.closeEditModal=()=>{document.getElementById('editModal').classList.add('hidden');document.getElementById('editKey').value='';};
+window.saveContactEdit=async()=>{const key=document.getElementById('editKey').value;if(!key)return;const name=document.getElementById('editName').value.trim();if(!name){document.getElementById('editName').focus();return;}setSyncStatus('syncing','저장 중...');await update(ref(db,`contacts/${key}`),{name,org:document.getElementById('editOrg').value,role:document.getElementById('editRole').value.trim(),phone:document.getElementById('editPhone').value.trim(),email:document.getElementById('editEmail').value.trim(),memo:document.getElementById('editMemo').value.trim(),updatedAt:Date.now()});window.closeEditModal();};
+window.deleteContact=async(key)=>{if(!confirm('이 연락처를 삭제할까요?'))return;setSyncStatus('syncing','저장 중...');await remove(ref(db,`contacts/${key}`));};
+document.getElementById('editModal').addEventListener('click',e=>{if(e.target===document.getElementById('editModal'))window.closeEditModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('editModal').classList.contains('hidden'))window.closeEditModal();});
+['ctName','ctRole','ctPhone','ctEmail','ctMemo'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')// 연락처 추가: 입력 폼 내용을 contacts 노드에 저장합니다.
+window.addContact();}));
+buildStaticOptions();
+// Firebase 실시간 구독: contacts 노드 변경을 즉시 화면에 반영합니다.
+onValue(contactsRef,snap=>{contacts=snap.val()||{};hideLoading();renderContacts();setSyncStatus('synced','실시간 동기화 중');},err=>{console.error(err);hideLoading();setSyncStatus('error','연결 오류');});
+</script>
+</body>
+</html>
