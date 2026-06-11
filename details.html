@@ -240,14 +240,13 @@
   .owner-tag.sejong, .wait-tag.sejong { border-color:rgba(195,0,47,.38); color:#ff8a9b; background:rgba(195,0,47,.055); }
   .owner-tag.sejong.active, .wait-tag.sejong.active { border-color:var(--sejong); color:#ff8a9b; background:rgba(195,0,47,.15); }
 
-  /* 완료 버튼은 체크 아이콘만 있는 형태보다 명확하게 “완료 처리” 문구를 노출합니다. */
+  /* 완료 버튼은 리스트 밀도를 낮추기 위해 글자 없이 원형 체크만 사용합니다. */
   .check.complete-btn {
-    width:auto; min-width:92px; height:34px; padding:0 12px;
-    display:inline-flex; align-items:center; justify-content:center; gap:6px;
-    border-radius:999px; font-size:12px; color:var(--muted); font-weight:900;
+    width:30px; height:30px; min-width:30px; padding:0; margin-top:1px;
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius:999px; font-size:13px; color:rgba(255,255,255,.25); font-weight:900;
   }
   .check.complete-btn .check-mark { font-size:13px; line-height:1; }
-  .check.complete-btn .check-text { line-height:1; white-space:nowrap; }
   .check.complete-btn:hover { border-color:var(--green); color:var(--green); background:rgba(61,214,140,.10); }
   .action-card.done .check.complete-btn { border-color:var(--green); color:var(--green); background:rgba(61,214,140,.15); }
 
@@ -416,7 +415,7 @@
     <div class="usage-heading">
       <div>
         <h2 id="usage-details-title">📖 상세 관리 사용법</h2>
-        <p>주요 과제를 만들고, 각 주요 과제 안에 실제 실행 단위인 Action Item을 추가·수정·완료 처리합니다.</p>
+        <p>주요 과제를 만들고, 각 주요 과제 안에 실제 실행 단위인 Action Item을 추가·수정합니다. 왼쪽 원형 체크를 누르면 완료 상태로 전환됩니다.</p>
       </div>
       <span class="usage-pill">Details Guide</span>
     </div>
@@ -1136,7 +1135,7 @@ function renderActionCard(major, actionKey, action) {
   const agencyTags = (action.agencies || []).filter(a => a !== action.owner).map(ownerTag).join('');
   return `<div class="action-card ${action.done ? 'done' : ''}" id="action-${major.key}-${actionKey}">
     <div class="action-main">
-      <button class="check complete-btn" onclick="toggleAction('${major.key}','${actionKey}')" title="누르면 완료 처리됩니다"><span class="check-mark">✓</span><span class="check-text">${action.done ? '완료됨' : '완료 처리'}</span></button>
+      <button class="check complete-btn" onclick="toggleAction('${major.key}','${actionKey}')" title="왼쪽 원형 체크를 누르면 완료됩니다" aria-label="Action Item 완료 전환"><span class="check-mark">✓</span></button>
       <div>
         <div class="action-title">${escapeHtml(action.text)}</div>
         <div class="action-meta">${ownerTag(action.owner)}${agencyTags}${priorityTag(action.priority)}${deadlineTag(action.deadline)}${waitingDisplay(action.waitingFor) ? `<span class="tag waiting">회신: ${escapeHtml(waitingDisplay(action.waitingFor))}</span>` : ''}${formatTs(action.updatedAt) ? `<span class="tag">수정 ${formatTs(action.updatedAt)}</span>` : ''}</div>

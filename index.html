@@ -178,10 +178,14 @@
   .wait-tag.sejong { border-color:rgba(195,0,47,.38); color:#ff8a9b; background:rgba(195,0,47,.055); }
   .wait-tag.sejong.active { border-color:var(--sejong); color:#ff8a9b; background:rgba(195,0,47,.15); }
 
-  /* 완료 버튼은 원형 체크 아이콘과 작은 라벨을 분리해, 글자가 동그라미보다 과하게 커 보이지 않게 합니다. */
-  .complete-btn { width:auto; min-width:74px; height:28px; display:inline-flex; align-items:center; gap:5px; padding:0 8px 0 4px; border-radius:999px; }
-  .complete-btn > span:first-child { width:20px; height:20px; flex:0 0 20px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid currentColor; font-size:10px; line-height:1; }
-  .complete-btn .check-text { font-size:9px; line-height:1; font-weight:850; letter-spacing:-.02em; white-space:nowrap; }
+  /* 완료 버튼은 글자 없이 원형 체크만 노출합니다.
+     동작 안내는 사용법 영역에 두어 리스트 UI를 가볍게 유지합니다. */
+  .complete-btn {
+    width:28px; height:28px; min-width:28px; padding:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius:999px; font-size:12px; line-height:1;
+  }
+  .complete-btn > span { display:inline-flex; align-items:center; justify-content:center; line-height:1; }
 
   .empty { padding:26px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:16px; background:rgba(255,255,255,.015); }
   .legacy-alert { border-color:rgba(245,200,66,.42); background:rgba(245,200,66,.06); }
@@ -367,7 +371,7 @@
         </div>
         <div class="usage-card">
           <h3>4. 현황과 완료 확인</h3>
-          <ul><li>전체 현황은 상단 대시보드에서 확인합니다.</li><li>완료된 Action Item은 기본적으로 접혀 있고, 우측 <b>펼치기</b> 버튼으로 볼 수 있습니다.</li></ul>
+          <ul><li>전체 현황은 상단 대시보드에서 확인합니다.</li><li><b>왼쪽 원형 체크를 누르면 완료가 됩니다.</b> 완료된 Action Item은 기본적으로 접혀 있고, 우측 <b>펼치기</b> 버튼으로 볼 수 있습니다.</li></ul>
         </div>
       </div>
       <div class="usage-note"><b>입력 원칙:</b> “업무명”보다 “다음 행동”을 Action Item으로 적으면, 메인 화면에서 오늘 해야 할 일이 훨씬 선명하게 보입니다. 예: “숙박 후보 3곳 견적 비교표 만들기”.</div>
@@ -941,7 +945,7 @@ function renderActionRow(major, actionKey, action) {
   const linkCount = Object.keys(action.links || {}).length;
   const memoCount = Object.keys(action.memos || {}).length;
   return `<div class="action-row ${action.done ? 'done' : ''}" id="action-${major.key}-${actionKey}">
-    <button class="check complete-btn" onclick="toggleAction('${major.key}','${actionKey}')" title="누르면 완료 처리됩니다"><span>✓</span><span class="check-text">${action.done ? '완료됨' : '완료'}</span></button>
+    <button class="check complete-btn" onclick="toggleAction('${major.key}','${actionKey}')" title="왼쪽 원형 체크를 누르면 완료됩니다" aria-label="Action Item 완료 전환"><span>✓</span></button>
     <div class="action-body">
       <div class="action-text">${escapeHtml(action.text)}</div>
       <div class="action-meta">
