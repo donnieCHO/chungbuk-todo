@@ -403,14 +403,17 @@ const tasksRef = ref(db, 'tasks');
 // ─────────────────────────────────────────────────────────────
 const OWNER_CONFIG = {
   all:{ label:'전체', color:'#4f8ef7', cls:'' },
-  ops:{ label:'운영팀', color:'#e8ecf4', cls:'ops' },
+  ops:{ label:'NSD', color:'#e8ecf4', cls:'ops' },
   naver:{ label:'네이버', color:'#00c73c', cls:'naver' },
   upstage:{ label:'Upstage', color:'#8b5cf6', cls:'upstage' },
   sejong:{ label:'세종대', color:'#c3002f', cls:'sejong' },
   education:{ label:'교육청', color:'#f5c842', cls:'education' }
 };
 const OWNER_ORDER = ['all','ops','naver','upstage','sejong','education'];
-const OWNER_ALIASES = { '운영팀':'ops', '네이버':'naver', 'Upstage':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
+const OWNER_ALIASES = { 'NSD':'ops', '네이버':'naver', 'Upstage':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
+
+const LEGACY_OPS_LABEL = '\uC6B4\uC601\uD300';
+OWNER_ALIASES[LEGACY_OPS_LABEL] = 'ops';
 const STATUS_LABEL = { todo:'해야 함', doing:'진행 중', review:'확인 필요', waiting:'대기 중', done:'완료' };
 const PRIORITY_LABEL = { high:'우선', mid:'보통', low:'나중' };
 const PRIORITY_SCORE = { high:3, mid:2, low:1 };
@@ -518,7 +521,12 @@ function normalizeOwner(value) {
   return OWNER_CONFIG[value] ? value : (OWNER_ALIASES[value] || 'ops');
 }
 function ownerLabel(key) {
-  return OWNER_CONFIG[normalizeOwner(key)]?.label || key || '운영팀';
+  return OWNER_CONFIG[normalizeOwner(key)]?.label || key || 'NSD';
+}
+function displayOwnerName(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '?';
+  return (OWNER_CONFIG[raw] || OWNER_ALIASES[raw]) ? ownerLabel(raw) : raw;
 }
 function ownerTag(key) {
   const normalized = normalizeOwner(key);
@@ -842,7 +850,7 @@ function renderActionCard(major, actionKey, action) {
 }
 function renderMemo(majorKey, actionKey, memoKey, memo) {
   return `<div class="memo-item">
-    <span class="memo-writer">${escapeHtml(memo.writer || '?')}</span>
+    <span class="memo-writer">${escapeHtml(displayOwnerName(memo.writer))}</span>
     <span class="memo-text">${escapeHtml(memo.text || '')}</span>
     <button class="btn small ghost" onclick="deleteMemo('${majorKey}','${actionKey}','${memoKey}')" title="메모 삭제">×</button>
     <span></span><span class="memo-date">${formatTs(memo.ts)}</span><span></span>

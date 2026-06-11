@@ -299,7 +299,7 @@
       <div class="usage-steps">
         <div class="usage-card">
           <h3>1. 내 담당자 선택</h3>
-          <ul><li><b>내 보기</b>에서 운영팀, 네이버, Upstage, 세종대, 교육청 또는 전체를 선택합니다.</li><li>담당자로 지정된 Action Item과 협업기관에 포함된 항목이 함께 보입니다.</li></ul>
+          <ul><li><b>내 보기</b>에서 NSD, 네이버, Upstage, 세종대, 교육청 또는 전체를 선택합니다.</li><li>담당자로 지정된 Action Item과 협업기관에 포함된 항목이 함께 보입니다.</li></ul>
         </div>
         <div class="usage-card">
           <h3>2. 2단계 구조 이해</h3>
@@ -441,14 +441,17 @@ const tasksRef = ref(db, 'tasks');
 // ─────────────────────────────────────────────────────────────
 const OWNER_CONFIG = {
   all:{ label:'전체', color:'#4f8ef7', cls:'' },
-  ops:{ label:'운영팀', color:'#e8ecf4', cls:'ops' },
+  ops:{ label:'NSD', color:'#e8ecf4', cls:'ops' },
   naver:{ label:'네이버', color:'#00c73c', cls:'naver' },
   upstage:{ label:'Upstage', color:'#8b5cf6', cls:'upstage' },
   sejong:{ label:'세종대', color:'#c3002f', cls:'sejong' },
   education:{ label:'교육청', color:'#f5c842', cls:'education' }
 };
 const OWNER_ORDER = ['all','ops','naver','upstage','sejong','education'];
-const OWNER_ALIASES = { '운영팀':'ops', '네이버':'naver', 'Upstage':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
+const OWNER_ALIASES = { 'NSD':'ops', '네이버':'naver', 'Upstage':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
+
+const LEGACY_OPS_LABEL = '\uC6B4\uC601\uD300';
+OWNER_ALIASES[LEGACY_OPS_LABEL] = 'ops';
 const STATUS_LABEL = { todo:'해야 함', doing:'진행 중', review:'확인 필요', waiting:'대기 중', done:'완료' };
 const PRIORITY_LABEL = { high:'우선', mid:'보통', low:'나중' };
 const PRIORITY_SCORE = { high:3, mid:2, low:1 };
@@ -546,7 +549,7 @@ function normalizeOwner(value) {
   return OWNER_CONFIG[value] ? value : (OWNER_ALIASES[value] || 'ops');
 }
 function ownerLabel(key) {
-  return OWNER_CONFIG[normalizeOwner(key)]?.label || key || '운영팀';
+  return OWNER_CONFIG[normalizeOwner(key)]?.label || key || 'NSD';
 }
 function ownerTag(key) {
   const normalized = normalizeOwner(key);

@@ -1,5 +1,14 @@
 # 변경 이력
 
+
+## 2026-06-11 — NSD 명칭 통일
+
+### Changed
+
+- 담당자/기관 화면 표시명을 `NSD`로 통일
+- 메인 대시보드, 상세 관리, 파일 관리, Contact, prompt 문서의 담당자 표기 업데이트
+- 기존 Firebase 데이터 호환을 위해 내부 key `ops`는 유지
+
 ## 2026-06-11 — Hero / Category / Contact 개편
 
 ### Added

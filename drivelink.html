@@ -191,9 +191,11 @@ const tasksRef = ref(db, 'tasks');
 // 필터/표시 설정
 // 담당자 라벨과 기존 한글 작성자명을 키 값으로 변환하는 alias를 관리합니다.
 // ─────────────────────────────────────────────────────────────
-const OWNER_CONFIG = { all:{label:'전체',cls:''}, ops:{label:'운영팀',cls:'ops'}, naver:{label:'네이버',cls:'naver'}, upstage:{label:'Upstage',cls:'upstage'}, sejong:{label:'세종대',cls:'sejong'}, education:{label:'교육청',cls:'education'} };
+const OWNER_CONFIG = { all:{label:'전체',cls:''}, ops:{label:'NSD',cls:'ops'}, naver:{label:'네이버',cls:'naver'}, upstage:{label:'Upstage',cls:'upstage'}, sejong:{label:'세종대',cls:'sejong'}, education:{label:'교육청',cls:'education'} };
 const OWNER_ORDER = ['all','ops','naver','upstage','sejong','education'];
-const OWNER_ALIASES = { '운영팀':'ops', '네이버':'naver', 'Upstage':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
+const OWNER_ALIASES = { 'NSD':'ops', '네이버':'naver', 'Upstage':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
+const LEGACY_OPS_LABEL = '\uC6B4\uC601\uD300';
+OWNER_ALIASES[LEGACY_OPS_LABEL] = 'ops';
 // ─────────────────────────────────────────────────────────────
 // 런타임 상태
 // rawTasks는 Firebase 원본, links는 화면에 표시할 링크 행 배열입니다.
@@ -215,7 +217,7 @@ function hideLoading(){ if(isReady) return; isReady = true; const ov = document.
 function escapeHtml(value){ return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escapeAttr(value){ return escapeHtml(value).replace(/`/g, '&#96;'); }
 function normalizeOwner(value){ if(!value) return 'ops'; return OWNER_CONFIG[value] ? value : (OWNER_ALIASES[value] || 'ops'); }
-function ownerLabel(key){ return OWNER_CONFIG[normalizeOwner(key)]?.label || key || '운영팀'; }
+function ownerLabel(key){ return OWNER_CONFIG[normalizeOwner(key)]?.label || key || 'NSD'; }
 function ownerTag(key){ const normalized = normalizeOwner(key); const cfg = OWNER_CONFIG[normalized] || OWNER_CONFIG.ops; return `<span class="tag ${cfg.cls}">${escapeHtml(cfg.label)}</span>`; }
 function safeExternalUrl(url){ const raw = String(url || '').trim(); if(!raw) return '#'; const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`; try { const parsed = new URL(normalized); return ['http:','https:'].includes(parsed.protocol) ? parsed.href : '#'; } catch { return '#'; } }
 function formatTs(ts){ if(!ts) return ''; const d = new Date(ts); if(Number.isNaN(d.getTime())) return ''; return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`; }
