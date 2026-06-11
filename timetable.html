@@ -98,7 +98,6 @@
   .legend-dot { width:12px;height:12px;border-radius:4px; }
 
   .toolbar-actions { display:flex;gap:8px; }
-  .toolbar-hint { font-size:12px;color:var(--muted); }
 
   /* ── 시간표 그리드 ── */
   .timetable-wrap {
@@ -488,7 +487,6 @@
   </div>
   <div class="toolbar-actions">
     <button class="toolbar-btn" type="button" onclick="openLocationManager()">📍 장소 관리</button>
-    <span class="toolbar-hint">💡 빈 칸을 드래그하면 새 일정, 일정을 클릭하면 편집할 수 있어요</span>
   </div>
 </div>
 
@@ -505,35 +503,34 @@
   </div>
   <div class="usage-steps">
     <div class="usage-card">
-      <h3>1. 일정 추가</h3>
+      <h3>1. 빈 칸 드래그로 일정 추가</h3>
       <ul>
-        <li>빈 시간 칸을 <b>드래그</b>하면 선택한 시간으로 새 일정 모달이 열립니다.</li>
+        <li>시간표의 <b>빈 시간 칸을 마우스로 드래그</b>하면 선택한 시간 범위로 새 일정 모달이 열립니다.</li>
         <li>제목, 분류, 시작·종료 시간을 확인한 뒤 저장합니다.</li>
       </ul>
     </div>
     <div class="usage-card">
-      <h3>2. 장소 태그 선택</h3>
+      <h3>2. 일정 클릭으로 편집</h3>
+      <ul>
+        <li>등록된 일정 카드를 클릭하면 편집 모달이 열립니다.</li>
+        <li>시간을 바꾸거나 삭제할 때도 같은 모달을 사용합니다.</li>
+      </ul>
+    </div>
+    <div class="usage-card">
+      <h3>3. 장소 태그 선택</h3>
       <ul>
         <li><b>군자관 4층</b>, <b>군자관 6층 식당</b>, <b>대양AI관 만찬장</b>이 기본값입니다.</li>
         <li>일정마다 장소 태그를 여러 개 선택할 수 있습니다.</li>
       </ul>
     </div>
     <div class="usage-card">
-      <h3>3. 새 장소 추가·편집</h3>
+      <h3>4. 새 장소 추가·편집</h3>
       <ul>
         <li>모달의 <b>+ 태그 추가</b> 또는 상단 <b>장소 관리</b>를 사용합니다.</li>
         <li>장소명을 수정하면 기존 일정 표시도 함께 바뀝니다.</li>
       </ul>
     </div>
-    <div class="usage-card">
-      <h3>4. 일정 수정·삭제</h3>
-      <ul>
-        <li>등록된 일정 카드를 클릭하면 편집 모달이 열립니다.</li>
-        <li>삭제 버튼은 해당 일정만 제거하고 장소 태그 목록은 유지합니다.</li>
-      </ul>
-    </div>
   </div>
-  <div class="usage-note"><b>보기 개선:</b> 장소 태그가 잘 보이도록 30분 행 높이를 데스크톱 42px, 모바일 36px로 넉넉하게 설정했습니다.</div>
 </section>
 
 <!-- 시간표 그리드 -->

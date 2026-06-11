@@ -82,7 +82,10 @@
   select:focus,input:focus { border-color:var(--accent); }
   select option { background:var(--surface2); }
 
-  .quick-add { display:grid; grid-template-columns:1.4fr 2fr .8fr .8fr auto; gap:10px; align-items:end; }
+  .quick-add { display:grid; grid-template-columns:1.15fr minmax(260px,2fr) .85fr 1.25fr .85fr auto; gap:10px; align-items:stretch; }
+  .quick-add .field { min-width:0; }
+  .quick-add input, .quick-add select, .quick-add .tag-picker { min-height:42px; }
+  .quick-add .btn { align-self:stretch; min-height:42px; }
   .btn { border:none; border-radius:11px; padding:10px 15px; cursor:pointer; color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent2)); font-weight:800; font-size:13px; white-space:nowrap; transition:opacity .15s, transform .15s; }
   .btn:hover { opacity:.9; transform:translateY(-1px); }
   .btn.secondary { background:transparent; color:var(--accent); border:1px solid rgba(79,142,247,.45); }
@@ -142,12 +145,50 @@
   .tag.doing { color:var(--upstage); border-color:rgba(139,92,246,.42); background:rgba(139,92,246,.08); }
   .tag.done { color:var(--green); border-color:rgba(61,214,140,.35); background:rgba(61,214,140,.08); }
 
+  /* ── Dashboard status panel ──
+     요약 숫자 아래에 오늘/이번 주/회신 대기/다음 마감 정보를 한 번 더 크게 보여주는 대시보드입니다.
+     상세 리스트 섹션은 지금 해야 할 일과 이번 주 Action으로 단순화하고, 전체 현황은 이 영역에서 파악합니다. */
+  .dashboard-panel { margin-bottom:18px; padding:18px; border-radius:22px; border:1px solid rgba(79,142,247,.24); background:linear-gradient(135deg, rgba(79,142,247,.07), rgba(124,106,247,.035)), var(--surface); box-shadow:0 16px 42px rgba(0,0,0,.20); }
+  .dashboard-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .dashboard-head h2 { font-size:18px; font-weight:900; letter-spacing:-.45px; }
+  .dashboard-head p { margin-top:4px; font-size:12px; color:var(--muted); line-height:1.55; }
+  .dashboard-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .dash-card { min-height:116px; position:relative; overflow:hidden; border:1px solid var(--border); border-radius:18px; padding:15px; background:rgba(15,17,23,.34); }
+  .dash-card::after { content:''; position:absolute; right:-32px; bottom:-34px; width:96px; height:96px; border-radius:50%; opacity:.18; background:currentColor; pointer-events:none; }
+  .dash-card.urgent { color:var(--red); }
+  .dash-card.week { color:var(--yellow); }
+  .dash-card.waiting { color:var(--accent); }
+  .dash-card.next { color:var(--green); }
+  .dash-label { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px; font-weight:800; letter-spacing:.02em; }
+  .dash-value { margin-top:10px; font-family:'DM Mono',monospace; font-size:30px; line-height:1; font-weight:700; color:currentColor; }
+  .dash-caption { margin-top:9px; font-size:12px; line-height:1.5; color:var(--muted); }
+
+  /* ── Tag picker parity with details.html ──
+     내 Action 빠른 등록의 '회신을 기다리는 곳'도 상세 관리의 태그 버튼과 같은 시각 언어를 사용합니다. */
+  .tag-picker { min-height:40px; display:flex; flex-wrap:wrap; gap:7px; align-items:center; padding:5px; border:1px solid var(--border); border-radius:14px; background:rgba(15,17,23,.28); }
+  .wait-tag { min-height:30px; display:inline-flex; align-items:center; justify-content:center; gap:6px; border:1.5px solid var(--border); background:rgba(255,255,255,.025); color:var(--muted); border-radius:999px; padding:6px 12px; cursor:pointer; font-size:12px; font-weight:850; line-height:1; transition:all .16s; }
+  .wait-tag:hover { border-color:rgba(79,142,247,.45); color:var(--text); background:rgba(79,142,247,.07); transform:translateY(-1px); }
+  .wait-tag.active { border-color:var(--accent); color:var(--accent); background:rgba(79,142,247,.13); box-shadow:0 0 0 3px rgba(79,142,247,.05); }
+  .wait-tag.ops { border-color:rgba(232,236,244,.26); color:var(--ops); background:rgba(232,236,244,.045); }
+  .wait-tag.ops.active { border-color:var(--ops); color:var(--ops); background:rgba(232,236,244,.12); }
+  .wait-tag.naver { border-color:rgba(0,199,60,.48); color:var(--naver); background:rgba(0,199,60,.055); }
+  .wait-tag.naver.active { border-color:var(--naver); color:var(--naver); background:rgba(0,199,60,.16); box-shadow:0 0 0 3px rgba(0,199,60,.06); }
+  .wait-tag.upstage { border-color:rgba(139,92,246,.38); color:var(--upstage); background:rgba(139,92,246,.055); }
+  .wait-tag.upstage.active { border-color:var(--upstage); color:var(--upstage); background:rgba(139,92,246,.15); }
+  .wait-tag.sejong { border-color:rgba(195,0,47,.38); color:#ff8a9b; background:rgba(195,0,47,.055); }
+  .wait-tag.sejong.active { border-color:var(--sejong); color:#ff8a9b; background:rgba(195,0,47,.15); }
+
+  /* 완료 버튼은 원형 체크 아이콘과 작은 라벨을 분리해, 글자가 동그라미보다 과하게 커 보이지 않게 합니다. */
+  .complete-btn { width:auto; min-width:74px; height:28px; display:inline-flex; align-items:center; gap:5px; padding:0 8px 0 4px; border-radius:999px; }
+  .complete-btn > span:first-child { width:20px; height:20px; flex:0 0 20px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid currentColor; font-size:10px; line-height:1; }
+  .complete-btn .check-text { font-size:9px; line-height:1; font-weight:850; letter-spacing:-.02em; white-space:nowrap; }
+
   .empty { padding:26px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:16px; background:rgba(255,255,255,.015); }
   .legacy-alert { border-color:rgba(245,200,66,.42); background:rgba(245,200,66,.06); }
   .legacy-alert strong { color:var(--yellow); }
 
   @media(max-width:900px){
-    .summary-grid { grid-template-columns:repeat(2,1fr); }
+    .summary-grid,.dashboard-grid { grid-template-columns:repeat(2,1fr); }
     .control-grid,.quick-add { grid-template-columns:1fr 1fr; }
     .quick-add .btn { grid-column:span 2; }
     .major-top { flex-direction:column; }
@@ -156,7 +197,7 @@
   @media(max-width:560px){
     body { padding:20px 14px 90px; }
     .nav { margin-left:-14px; margin-right:-14px; padding-left:14px; padding-right:14px; }
-    .summary-grid,.control-grid,.quick-add { grid-template-columns:1fr; }
+    .summary-grid,.dashboard-grid,.control-grid,.quick-add { grid-template-columns:1fr; }
     .quick-add .btn { grid-column:auto; }
     .action-row { grid-template-columns:auto minmax(0,1fr); }
     .action-tools { grid-column:2; }
@@ -285,7 +326,21 @@
     <div class="summary-card good"><div class="summary-label">완료율</div><div class="summary-value" id="sumProgress">0%</div></div>
   </section>
 
-
+  <section class="dashboard-panel" aria-label="Action Item 현황 대시보드">
+    <div class="dashboard-head">
+      <div>
+        <h2>전체 Action 현황</h2>
+        <p>세부 목록은 오늘 해야 할 일과 이번 주 Action만 보여주고, 전체 상태는 이 대시보드에서 빠르게 확인합니다.</p>
+      </div>
+      <span class="badge" id="dashUpdated">실시간 동기화</span>
+    </div>
+    <div class="dashboard-grid">
+      <div class="dash-card urgent"><div class="dash-label">🔥 오늘·기한초과</div><div class="dash-value" id="dashNow">0</div><div class="dash-caption">가장 먼저 확인할 미완료 Action</div></div>
+      <div class="dash-card week"><div class="dash-label">🗓 7일 이내</div><div class="dash-value" id="dashWeek">0</div><div class="dash-caption">이번 주 안에 마감되는 Action</div></div>
+      <div class="dash-card waiting"><div class="dash-label">💬 회신 대기</div><div class="dash-value" id="dashWaiting">0</div><div class="dash-caption">외부 응답을 기다리는 Action</div></div>
+      <div class="dash-card next"><div class="dash-label">⏱ 다음 마감</div><div class="dash-value" id="dashNextDue">-</div><div class="dash-caption" id="dashNextDueCaption">등록된 due date가 없습니다</div></div>
+    </div>
+  </section>
 
   <!-- 사용법 안내: 기본은 펼친 상태이며, 우측 버튼으로 언제든 접을 수 있습니다. -->
   <section class="usage-guide is-open" id="usageGuide" aria-labelledby="usage-index-title">
@@ -311,8 +366,8 @@
           <ul><li>주요 과제를 먼저 선택한 뒤 수행할 다음 행동을 입력합니다.</li><li>주요 과제 자체를 새로 만들거나 구조를 다시 잡을 때는 <b>상세 관리</b>로 이동하세요.</li></ul>
         </div>
         <div class="usage-card">
-          <h3>4. 완료 Action 확인</h3>
-          <ul><li>완료된 Action Item은 기본적으로 접혀 있습니다.</li><li>섹션 우측 <b>펼치기</b> 버튼으로 필요할 때만 확인합니다.</li></ul>
+          <h3>4. 현황과 완료 확인</h3>
+          <ul><li>전체 현황은 상단 대시보드에서 확인합니다.</li><li>완료된 Action Item은 기본적으로 접혀 있고, 우측 <b>펼치기</b> 버튼으로 볼 수 있습니다.</li></ul>
         </div>
       </div>
       <div class="usage-note"><b>입력 원칙:</b> “업무명”보다 “다음 행동”을 Action Item으로 적으면, 메인 화면에서 오늘 해야 할 일이 훨씬 선명하게 보입니다. 예: “숙박 후보 3곳 견적 비교표 만들기”.</div>
@@ -356,7 +411,7 @@
   <section class="panel">
     <div class="panel-title">
       <h2>+ 빠른 Action 추가</h2>
-      <p>주요 과제를 고른 뒤 바로 세부 Action Item을 추가합니다.</p>
+      <p>주요 과제를 고르고, 담당자·회신 대기 태그·Due Date만 입력해 빠르게 등록합니다.</p>
     </div>
     <div class="quick-add">
       <div class="field"><label for="quickMajor">주요 과제</label><select id="quickMajor"></select></div>
@@ -378,15 +433,6 @@
     <div class="major-list" id="weekList"></div>
   </section>
 
-  <section class="section" id="sec-waiting">
-    <div class="section-head"><h2>⏳ 확인/대기 중</h2><span class="badge" id="countWaiting">0</span></div>
-    <div class="major-list" id="waitingList"></div>
-  </section>
-
-  <section class="section" id="sec-later">
-    <div class="section-head"><h2>🌙 나중에 볼 일</h2><span class="badge" id="countLater">0</span></div>
-    <div class="major-list" id="laterList"></div>
-  </section>
 
   <section class="section collapsible-section collapsed" id="sec-done">
     <div class="section-head done-head">
@@ -616,6 +662,12 @@ function getDaysLeft(deadline) {
   d.setHours(0,0,0,0);
   return Math.ceil((d - today) / 86400000);
 }
+function shortDate(deadline) {
+  if (!deadline) return '-';
+  const d = new Date(deadline);
+  if (Number.isNaN(d.getTime())) return '-';
+  return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+}
 function deadlineTag(deadline) {
   const diff = getDaysLeft(deadline);
   if (diff === null) return '';
@@ -771,6 +823,30 @@ function setSummary() {
   document.getElementById('heroProgressPct').textContent = `${pct}%`;
   document.getElementById('heroProgressFill').style.width = `${pct}%`;
   document.getElementById('heroProgressText').textContent = `완료 ${done} / 전체 ${actions.length}`;
+
+  const openActions = actions.filter(x => !x.action.done);
+  const nowCount = openActions.filter(x => {
+    const diff = getDaysLeft(x.action.deadline);
+    return diff !== null && diff <= 0;
+  }).length;
+  const weekCount = openActions.filter(x => {
+    const diff = getDaysLeft(x.action.deadline);
+    return diff !== null && diff > 0 && diff <= 7;
+  }).length;
+  const waitingCount = openActions.filter(x => normalizeWaitingFor(x.action.waitingFor).length > 0).length;
+  const dueCandidates = openActions.filter(x => x.action.deadline).sort((a,b) => new Date(a.action.deadline) - new Date(b.action.deadline));
+  const next = dueCandidates[0];
+
+  document.getElementById('dashNow').textContent = nowCount;
+  document.getElementById('dashWeek').textContent = weekCount;
+  document.getElementById('dashWaiting').textContent = waitingCount;
+  if (next) {
+    document.getElementById('dashNextDue').textContent = shortDate(next.action.deadline);
+    document.getElementById('dashNextDueCaption').textContent = `${next.major.title} · ${next.action.text}`;
+  } else {
+    document.getElementById('dashNextDue').textContent = '-';
+    document.getElementById('dashNextDueCaption').textContent = '등록된 due date가 없습니다';
+  }
 }
 function setMajorSelect() {
   const entries = sortedMajors(Object.values(majorTasks));
@@ -816,10 +892,8 @@ function visibleActionsForMajor(major, section) {
     if (section === 'done') return action.done;
     if (action.done) return false;
     const diff = getDaysLeft(action.deadline);
-    if (section === 'waiting') return action.status === 'waiting' || action.status === 'review' || normalizeWaitingFor(action.waitingFor).length > 0;
-    if (section === 'now') return diff !== null && diff <= 0 || action.priority === 'high' || action.status === 'doing' || action.status === 'review';
-    if (section === 'week') return diff !== null && diff > 0 && diff <= 7 && action.status !== 'waiting' && action.status !== 'review';
-    if (section === 'later') return (diff === null || diff > 7) && action.priority !== 'high' && action.status !== 'doing' && action.status !== 'review' && action.status !== 'waiting' && normalizeWaitingFor(action.waitingFor).length === 0;
+    if (section === 'now') return (diff !== null && diff <= 0) || action.priority === 'high' || action.status === 'doing' || action.status === 'review';
+    if (section === 'week') return diff !== null && diff > 0 && diff <= 7;
     return true;
   }).sort(([,a],[,b]) => actionSortValue(a) - actionSortValue(b) || actionSortScore(b) - actionSortScore(a) || (a.order||0) - (b.order||0));
 }
@@ -867,7 +941,7 @@ function renderActionRow(major, actionKey, action) {
   const linkCount = Object.keys(action.links || {}).length;
   const memoCount = Object.keys(action.memos || {}).length;
   return `<div class="action-row ${action.done ? 'done' : ''}" id="action-${major.key}-${actionKey}">
-    <button class="check complete-btn" onclick="toggleAction('${major.key}','${actionKey}')" title="누르면 완료 처리됩니다"><span>✓</span><span class="check-text">${action.done ? '완료됨' : '완료 처리'}</span></button>
+    <button class="check complete-btn" onclick="toggleAction('${major.key}','${actionKey}')" title="누르면 완료 처리됩니다"><span>✓</span><span class="check-text">${action.done ? '완료됨' : '완료'}</span></button>
     <div class="action-body">
       <div class="action-text">${escapeHtml(action.text)}</div>
       <div class="action-meta">
@@ -899,8 +973,6 @@ function renderAll() {
   setMajorSelect();
   renderSection('now', 'nowList', 'countNow', '지금 바로 처리할 Action Item이 없습니다.');
   renderSection('week', 'weekList', 'countWeek', '이번 주에 마감되는 Action Item이 없습니다.');
-  renderSection('waiting', 'waitingList', 'countWaiting', '확인 또는 대기 중인 Action Item이 없습니다.');
-  renderSection('later', 'laterList', 'countLater', '나중에 볼 Action Item이 없습니다.');
   renderSection('done', 'doneList', 'countDone', '완료된 Action Item이 없습니다.');
 }
 
