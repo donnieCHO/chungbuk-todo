@@ -212,6 +212,46 @@
   .major-admin-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
   @media(max-width:760px){ .major-admin-row{grid-template-columns:1fr;} .major-admin-actions{justify-content:flex-start;} }
 
+  /* 주요 과제 관리/삭제 영역은 상세 화면의 맨 아래에서 상위 과제만 따로 보여줍니다.
+     Action Item 목록과 섞이지 않도록 별도 안내, 카운트, 삭제 버튼을 분리했습니다. */
+  .major-admin-panel {
+    margin-top:34px;
+    border-color:rgba(247,111,111,.22);
+    background:linear-gradient(180deg,rgba(247,111,111,.045),rgba(255,255,255,.018));
+  }
+  .major-admin-toolbar {
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding:11px 12px; margin-bottom:12px;
+    border:1px solid rgba(245,200,66,.22); border-radius:14px;
+    background:rgba(245,200,66,.055); color:var(--muted); font-size:12px; line-height:1.6;
+  }
+  .major-admin-toolbar b { color:var(--text); }
+  .major-admin-count {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 10px; border-radius:999px;
+    border:1px solid rgba(79,142,247,.35); color:var(--accent); background:rgba(79,142,247,.08);
+    font-weight:850; white-space:nowrap;
+  }
+  .major-admin-row {
+    grid-template-columns:minmax(0,1.5fr) minmax(170px,.6fr) minmax(210px,auto);
+    padding:14px 15px;
+    background:rgba(15,17,23,.26);
+  }
+  .major-admin-title-line { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .major-admin-index {
+    width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center;
+    border-radius:8px; background:rgba(79,142,247,.12); color:var(--accent);
+    font-family:'DM Mono',monospace; font-size:11px; font-weight:900; flex-shrink:0;
+  }
+  .major-admin-delete-note { margin-top:7px; color:var(--muted); font-size:11px; line-height:1.5; }
+  .major-admin-delete-note strong { color:var(--red); font-weight:850; }
+  .delete-major-btn { min-width:92px; }
+  @media(max-width:760px){
+    .major-admin-toolbar{align-items:flex-start;}
+    .major-admin-count{width:100%;justify-content:center;}
+    .major-admin-row{grid-template-columns:1fr;}
+  }
+
   /* 편집 모달은 주요 과제/Action Item 편집을 같은 컴포넌트로 처리합니다. */
   .modal-overlay { position:fixed; inset:0; z-index:500; background:rgba(0,0,0,.65); display:flex; align-items:center; justify-content:center; padding:18px; }
   .modal-overlay.hidden { display:none; }
@@ -428,13 +468,17 @@
 
   <section class="major-list" id="majorList"></section>
 
-  <section class="panel major-admin-panel" id="majorAdminPanel">
+  <section class="panel major-admin-panel" id="majorAdminPanel" aria-labelledby="majorAdminTitle">
     <div class="panel-title">
       <div>
-        <h2>주요 과제 임시 관리</h2>
-        <p>상세 리스트를 보면서 주요 과제를 빠르게 수정하거나 삭제할 수 있는 임시 관리 영역입니다.</p>
+        <h2 id="majorAdminTitle">주요 과제 관리/삭제</h2>
+        <p>하단에서는 Action Item을 펼치지 않고, 주요 과제만 따로 모아 수정하거나 삭제할 수 있습니다.</p>
       </div>
-      <span class="tag">관리/삭제</span>
+      <span class="tag">주요 과제 전용</span>
+    </div>
+    <div class="major-admin-toolbar">
+      <span>삭제 버튼은 <b>해당 주요 과제와 내부 Action Item, 메모, 링크를 함께 삭제</b>합니다. 운영 전에는 Firebase JSON 백업을 권장합니다.</span>
+      <span class="major-admin-count" id="majorAdminCount">주요 과제 0개</span>
     </div>
     <div class="major-admin-list" id="majorAdminList"></div>
   </section>
@@ -1054,26 +1098,33 @@ function renderLink(majorKey, actionKey, linkKey, link) {
 
 function renderMajorAdminList() {
   const wrap = document.getElementById('majorAdminList');
+  const countBadge = document.getElementById('majorAdminCount');
   if (!wrap) return;
   const majors = sortedMajors(Object.values(majorTasks));
+  if (countBadge) countBadge.textContent = `주요 과제 ${majors.length}개`;
   if (!majors.length) {
-    wrap.innerHTML = '<div class="empty">관리할 주요 과제가 없습니다.</div>';
+    wrap.innerHTML = '<div class="empty">관리할 주요 과제가 없습니다. 상단에서 주요 과제를 먼저 추가하세요.</div>';
     return;
   }
-  wrap.innerHTML = majors.map(major => {
+  wrap.innerHTML = majors.map((major, idx) => {
     const p = progressOf(major);
+    const actionCount = actionList(major).length;
     const nextDueMs = majorNextDueDate(major);
     const nextDue = Number.isFinite(nextDueMs) ? new Date(nextDueMs).toISOString().slice(2,10).replace(/-/g,'.') : '미설정';
     return `<div class="major-admin-row">
       <div>
-        <div class="major-admin-title">${escapeHtml(major.title)}</div>
+        <div class="major-admin-title-line">
+          <span class="major-admin-index">${idx + 1}</span>
+          <div class="major-admin-title">${escapeHtml(major.title)}</div>
+        </div>
         <div class="major-admin-meta">${categoryTag(major.cat)}${ownerTag(major.owner)}${priorityTag(major.priority)}<span class="tag">Action ${p.done}/${p.total}</span><span class="tag next-due">다음 due ${nextDue}</span></div>
+        <div class="major-admin-delete-note"><strong>삭제 대상:</strong> 주요 과제 1개 + 내부 Action Item ${actionCount}개</div>
       </div>
       <div class="progress-box"><div class="progress-row"><span>${p.pct}%</span><span>${p.done}/${p.total}</span></div><div class="progress-track"><div class="progress-fill" style="width:${p.pct}%"></div></div></div>
       <div class="major-admin-actions">
-        <a class="btn small ghost" href="#major-${major.key}">목록 보기</a>
+        <a class="btn small ghost" href="#major-${major.key}">상세 위치로 이동</a>
         <button class="btn small secondary" onclick="openMajorEdit('${major.key}')">수정</button>
-        <button class="btn small danger" onclick="deleteMajorTask('${major.key}')">삭제</button>
+        <button class="btn small danger delete-major-btn" onclick="deleteMajorTask('${major.key}')">과제 삭제</button>
       </div>
     </div>`;
   }).join('');
@@ -1200,9 +1251,25 @@ window.toggleAction = async (majorKey, actionKey) => {
 window.deleteMajorTask = async (majorKey) => {
   const major = majorTasks[majorKey];
   if (!major) return;
-  if (!confirm(`주요 과제 "${major.title}"와 그 안의 모든 Action Item을 삭제할까요?`)) return;
+  const actionCount = actionList(major).length;
+  const message = [
+    `주요 과제 "${major.title}"를 삭제할까요?`,
+    '',
+    `삭제 범위: 주요 과제 1개 + 내부 Action Item ${actionCount}개`,
+    'Action Item의 메모와 링크 기록도 함께 삭제됩니다.',
+    '',
+    '이 작업은 되돌릴 수 없습니다.'
+  ].join('\n');
+  if (!confirm(message)) return;
   setSyncStatus('syncing', '삭제 중...');
-  await remove(ref(db, `tasks/${majorKey}`));
+  try {
+    await remove(ref(db, `tasks/${majorKey}`));
+    setSyncStatus('synced', '삭제 완료');
+  } catch (err) {
+    console.error(err);
+    setSyncStatus('error', '삭제 오류');
+    alert('주요 과제 삭제 중 오류가 발생했습니다. Firebase 권한과 네트워크 상태를 확인해주세요.');
+  }
 };
 window.deleteActionItem = async (majorKey, actionKey) => {
   if (!confirm('이 Action Item을 삭제할까요?')) return;

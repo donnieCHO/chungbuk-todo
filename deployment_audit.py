@@ -38,7 +38,7 @@ REQUIRED_LINKS = {
 }
 REQUIRED_DB_STRINGS = {
     "index.html": ["tasks", "actions"],
-    "details.html": ["tasks", "actions", "migrateLegacyTasks"],
+    "details.html": ["tasks", "actions", "migrateLegacyTasks", "majorAdminList", "deleteMajorTask"],
     "drivelink.html": ["tasks", "links"],
     "timetable.html": ["timetable_events", "timetable_locations"],
     "contact.html": ["contacts", "addContact", "saveContactEdit"],

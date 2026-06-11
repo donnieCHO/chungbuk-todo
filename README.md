@@ -124,6 +124,7 @@ contacts
 2. 각 주요 과제 안에 세부 Action Item을 추가합니다.
 3. Action Item 단위로 메모와 링크를 관리합니다.
 4. 기존 평면형 `tasks/{key}.text` 데이터가 있으면 변환 패널에서 2단계 구조로 변환합니다.
+5. 화면 하단 `주요 과제 관리/삭제` 영역에서 주요 과제만 따로 확인하고 수정 또는 삭제할 수 있습니다.
 
 ### drivelink.html — 파일 링크 관리
 
@@ -187,7 +188,7 @@ timetable_locations
 ```txt
 index.html: D-Day, 완료율, 빠른 Action 추가, 완료 Action 펼치기
 
-details.html: 주요 과제 추가, 카테고리 선택, Action Item 추가/수정/삭제, 메모/링크
+details.html: 주요 과제 추가, 카테고리 선택, Action Item 추가/수정/삭제, 메모/링크, 하단 주요 과제 관리/삭제
 
 drivelink.html: 링크 모아보기, 링크 열기, 링크 삭제
 
@@ -213,7 +214,7 @@ python3 deployment_audit.py
 
 1. 주요 과제를 먼저 생성합니다.
 2. Action Item 등록 폼에서 주요 과제를 선택합니다.
-3. Action Item 내용, 담당자, 상태, 우선순위, due date를 입력합니다.
+3. Action Item 내용, 담당자, 회신을 기다리는 곳, 우선순위, due date를 입력합니다.
 4. 저장하면 Firebase의 `tasks/{majorTaskKey}/actions/{actionKey}`에 기록됩니다.
 5. 화면은 즉시 다시 렌더링되며, 각 주요 과제 내부의 Action Item은 due date가 빠른 순서로 표시됩니다.
 
@@ -226,3 +227,16 @@ python3 deployment_audit.py
 - Action Item 등록 시 `상태`는 입력하지 않습니다. 새 Action Item은 기본적으로 `해야 함(todo)`으로 저장되고, 완료 버튼으로만 완료 상태를 바꿉니다.
 - `회신을 기다리는 곳`은 NSD/네이버/업스테이지/세종대 태그로 선택합니다. 선택된 태그는 `waitingFor` 배열로 저장됩니다.
 - 상세 관리 하단에는 임시 `주요 과제 관리` 목록이 있어 주요 과제를 보면서 수정/삭제할 수 있습니다.
+
+
+## 주요 과제 관리/삭제 업데이트
+
+`details.html` 하단에는 `주요 과제 관리/삭제` 영역이 있습니다. 이 영역은 Action Item을 펼치지 않고 주요 과제만 리스트로 보여주며, 각 주요 과제별로 다음 작업을 제공합니다.
+
+```txt
+상세 위치로 이동
+수정
+과제 삭제
+```
+
+`과제 삭제`를 누르면 해당 주요 과제와 그 내부의 Action Item, 메모, 링크 기록이 함께 삭제됩니다. 삭제 전 확인창에 삭제 범위가 표시되며, 운영 데이터가 있는 경우 Firebase Console에서 JSON 백업 후 사용하는 것을 권장합니다.
