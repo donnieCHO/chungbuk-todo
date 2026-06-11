@@ -3,7 +3,7 @@
 <!--
   배포 파일: details.html
   역할: 주요 과제와 세부 Action Item을 모두 관리하는 상세 관리 페이지입니다.
-  핵심 UX: 주요 과제 카드 안에서 Action Item, 상태, 담당자, 기한, 메모, 파일 링크를 함께 관리합니다.
+  핵심 UX: 주요 과제 카드 안에서 Action Item, 담당자, 회신 대기 태그, 기한, 메모, 파일 링크를 함께 관리합니다.
   데이터: Firebase Realtime Database의 tasks 노드를 사용하며, 기존 평면 To Do(tasks/{taskKey}.text) 마이그레이션 기능을 포함합니다.
   연결: index.html(내 Action 대시보드), timetable.html(운영 시간표), drivelink.html(파일 링크 모음), contact.html(담당자 연락처)과 상호 이동합니다.
   배포: 빌드 도구 없이 GitHub Pages에 바로 배포할 수 있습니다.
@@ -170,9 +170,47 @@
   .action-sort-pill { color:var(--green); border-color:rgba(61,214,140,.35); background:rgba(61,214,140,.08); }
   .major-meta .next-due { color:var(--green); border-color:rgba(61,214,140,.35); background:rgba(61,214,140,.08); }
   .major-card.empty-major { border-style:dashed; border-color:rgba(79,142,247,.32); }
-  .action-add { grid-template-columns:2fr .75fr .75fr .85fr auto; }
+  .action-add { grid-template-columns:2fr .75fr 1.15fr .75fr .85fr auto; }
   @media(max-width:980px){ .create-workspace{grid-template-columns:1fr;} .create-grid{grid-template-columns:1fr 1fr;} }
   @media(max-width:620px){ .create-grid{grid-template-columns:1fr;} .create-grid .full{grid-column:auto;} }
+
+
+  /* 회신 대기 태그 선택 UI
+     Action Item 등록 시 자유 입력 대신 NSD/네이버/업스테이지/세종대 태그를 눌러 선택합니다. */
+  .tag-picker { display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
+  .wait-tag {
+    border:1.5px solid var(--border); background:rgba(255,255,255,.025); color:var(--muted);
+    border-radius:999px; padding:7px 10px; font-size:12px; font-weight:800; cursor:pointer;
+    transition:all .15s; white-space:nowrap;
+  }
+  .wait-tag:hover { border-color:rgba(79,142,247,.45); color:var(--text); background:rgba(79,142,247,.07); }
+  .wait-tag.active { border-color:var(--accent); color:var(--accent); background:rgba(79,142,247,.13); box-shadow:0 0 0 3px rgba(79,142,247,.05); }
+  .wait-tag.ops.active { border-color:var(--ops); color:var(--ops); background:rgba(232,236,244,.10); }
+  .wait-tag.naver.active { border-color:var(--naver); color:var(--naver); background:rgba(0,199,60,.10); }
+  .wait-tag.upstage.active { border-color:var(--upstage); color:var(--upstage); background:rgba(139,92,246,.12); }
+  .wait-tag.sejong.active { border-color:var(--sejong); color:var(--sejong); background:rgba(195,0,47,.12); }
+
+  /* 완료 버튼은 체크 아이콘만 있는 형태보다 명확하게 “완료 처리” 문구를 노출합니다. */
+  .check.complete-btn {
+    width:auto; min-width:92px; height:34px; padding:0 12px;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    border-radius:999px; font-size:12px; color:var(--muted); font-weight:900;
+  }
+  .check.complete-btn .check-mark { font-size:13px; line-height:1; }
+  .check.complete-btn .check-text { line-height:1; white-space:nowrap; }
+  .check.complete-btn:hover { border-color:var(--green); color:var(--green); background:rgba(61,214,140,.10); }
+  .action-card.done .check.complete-btn { border-color:var(--green); color:var(--green); background:rgba(61,214,140,.15); }
+
+  /* 상세 페이지 하단 임시 주요 과제 관리 목록 */
+  .major-admin-list { display:flex; flex-direction:column; gap:8px; }
+  .major-admin-row {
+    display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:center;
+    padding:12px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,.02);
+  }
+  .major-admin-title { font-size:14px; font-weight:850; margin-bottom:6px; }
+  .major-admin-meta { display:flex; flex-wrap:wrap; gap:6px; }
+  .major-admin-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
+  @media(max-width:760px){ .major-admin-row{grid-template-columns:1fr;} .major-admin-actions{justify-content:flex-start;} }
 
   /* 편집 모달은 주요 과제/Action Item 편집을 같은 컴포넌트로 처리합니다. */
   .modal-overlay { position:fixed; inset:0; z-index:500; background:rgba(0,0,0,.65); display:flex; align-items:center; justify-content:center; padding:18px; }
@@ -185,7 +223,7 @@
 
   @media(max-width:980px){
     .summary-grid { grid-template-columns:repeat(2,1fr); }
-    .form-grid,.toolbar,.action-add { grid-template-columns:1fr 1fr; }
+    .form-grid,.toolbar,.action-add { grid-template-columns:2fr .75fr 1.15fr .75fr .85fr auto; }
     .form-grid .wide { grid-column:span 2; }
     .sub-panel { grid-template-columns:1fr; padding-left:12px; }
   }
@@ -304,7 +342,7 @@
         <h3>2. Action Item 추가</h3>
         <ul>
           <li>상단 <b>Action Item 등록</b> 폼에서 주요 과제를 고른 뒤 바로 세부 일을 추가합니다.</li>
-          <li>Action은 “실제로 완료할 다음 행동” 단위로 작성하고, <b>due date는 필수</b>로 입력합니다.</li>
+          <li>Action은 “실제로 완료할 다음 행동” 단위로 작성하고, <b>due date는 필수</b>로 입력합니다. 회신이 필요한 곳은 태그로 선택합니다.</li>
         </ul>
       </div>
       <div class="usage-card">
@@ -345,9 +383,9 @@
       <article class="create-card">
         <div class="create-kicker">Step 1</div>
         <div class="create-title">+ 주요 과제 설정</div>
-        <p class="create-desc">강사커리큘럼, 장소시설, 운영물품, 사후처리 카테고리 아래에서 업무 묶음을 만듭니다.</p>
+        <p class="create-desc">강의, 장소, 운영, 사후처리 카테고리 아래에서 업무 묶음을 만듭니다.</p>
         <div class="create-grid">
-          <div class="field full"><label for="majorTitle">주요 과제명</label><input id="majorTitle" type="text" placeholder="예: 장소시설 준비"></div>
+          <div class="field full"><label for="majorTitle">주요 과제명</label><input id="majorTitle" type="text" placeholder="예: 장소 준비"></div>
           <div class="field"><label for="majorCat">카테고리</label><select id="majorCat"></select></div>
           <div class="field"><label for="majorOwner">책임자</label><select id="majorOwner"></select></div>
           <div class="field"><label for="majorPriority">우선순위</label><select id="majorPriority"><option value="high">우선</option><option value="mid" selected>보통</option><option value="low">나중</option></select></div>
@@ -365,10 +403,9 @@
           <div class="field full"><label for="actionMajor">주요 과제</label><select id="actionMajor"></select></div>
           <div class="field full"><label for="actionText">Action Item</label><input id="actionText" type="text" placeholder="예: 숙박 후보 3곳 견적 비교표 만들기"></div>
           <div class="field"><label for="actionOwner">담당</label><select id="actionOwner"></select></div>
+          <div class="field"><label>회신을 기다리는 곳</label><div class="tag-picker" id="actionWaitingForPicker"></div><div class="field-hint">필요한 경우 NSD/네이버/업스테이지/세종대를 태그로 선택하세요.</div></div>
           <div class="field"><label for="actionPriority">우선순위</label><select id="actionPriority"><option value="high">우선</option><option value="mid" selected>보통</option><option value="low">나중</option></select></div>
-          <div class="field"><label for="actionStatus">상태</label><select id="actionStatus"><option value="todo" selected>해야 함</option><option value="doing">진행 중</option><option value="review">확인 필요</option><option value="waiting">대기 중</option><option value="done">완료</option></select></div>
           <div class="field"><label for="actionDeadline">Due Date<span class="required-mark">*</span></label><input id="actionDeadline" type="date" required><div class="field-hint">미입력 시 저장되지 않습니다.</div></div>
-          <div class="field full"><label for="actionWaitingFor">기다리는 대상</label><input id="actionWaitingFor" type="text" placeholder="예: 세종대 회신, Upstage 계정 목록"></div>
         </div>
         <div class="create-actions"><button class="btn" onclick="addActionFromGlobalForm()">Action Item 추가</button></div>
       </article>
@@ -383,13 +420,24 @@
     </div>
     <div class="toolbar">
       <div class="field"><label for="ownerFilter">담당자 필터</label><select id="ownerFilter" onchange="setOwnerFilter(this.value)"></select></div>
-      <div class="field"><label for="statusFilter">상태 필터</label><select id="statusFilter" onchange="setStatusFilter(this.value)"><option value="all">전체</option><option value="open">미완료</option><option value="doing">진행 중</option><option value="review">확인 필요</option><option value="waiting">대기 중</option><option value="done">완료</option></select></div>
+      <div class="field"><label for="statusFilter">완료 필터</label><select id="statusFilter" onchange="setStatusFilter(this.value)"><option value="all">전체</option><option value="open">미완료</option><option value="done">완료</option></select></div>
       <div class="field"><label for="sortMode">주요 과제 정렬</label><select id="sortMode" onchange="setSortMode(this.value)"><option value="deadline">Action Due Date</option><option value="priority">우선순위</option><option value="progress">진행률 낮은 순</option><option value="owner">책임자</option><option value="order">입력 순</option></select></div>
       <div class="field"><label for="searchInput">검색</label><input id="searchInput" type="text" placeholder="과제/Action/메모 검색" oninput="setSearchQuery(this.value)"></div>
     </div>
   </section>
 
   <section class="major-list" id="majorList"></section>
+
+  <section class="panel major-admin-panel" id="majorAdminPanel">
+    <div class="panel-title">
+      <div>
+        <h2>주요 과제 임시 관리</h2>
+        <p>상세 리스트를 보면서 주요 과제를 빠르게 수정하거나 삭제할 수 있는 임시 관리 영역입니다.</p>
+      </div>
+      <span class="tag">관리/삭제</span>
+    </div>
+    <div class="major-admin-list" id="majorAdminList"></div>
+  </section>
 </main>
 
 <div class="modal-overlay hidden" id="editModal">
@@ -410,10 +458,9 @@
     <div class="modal-grid" id="actionEditFields" style="display:none">
       <div class="field full"><label for="editActionText">Action Item</label><input id="editActionText" type="text"></div>
       <div class="field"><label for="editActionOwner">담당</label><select id="editActionOwner"></select></div>
+      <div class="field"><label>회신을 기다리는 곳</label><div class="tag-picker" id="editActionWaitingForPicker"></div></div>
       <div class="field"><label for="editActionPriority">우선순위</label><select id="editActionPriority"><option value="high">우선</option><option value="mid">보통</option><option value="low">나중</option></select></div>
-      <div class="field"><label for="editActionStatus">상태</label><select id="editActionStatus"><option value="todo">해야 함</option><option value="doing">진행 중</option><option value="review">확인 필요</option><option value="waiting">대기 중</option><option value="done">완료</option></select></div>
       <div class="field"><label for="editActionDeadline">기한</label><input id="editActionDeadline" type="date"></div>
-      <div class="field full"><label for="editActionWaitingFor">기다리는 대상</label><input id="editActionWaitingFor" type="text" placeholder="예: 세종대 회신, Upstage 계정 목록"></div>
     </div>
     <div class="modal-footer">
       <button class="btn ghost" onclick="closeEditModal()">취소</button>
@@ -428,7 +475,7 @@
   ---------------------------------------------------------------------------
   전체 관리 페이지입니다. flat To Do 목록을 2단계 구조로 전환합니다.
   - 주요 과제: 관리 단위, 대표 기한, 책임자, 우선순위, 진행률 표시
-  - Action Item: 실제 실행 단위, 담당자, 기한, 상태, 메모, 링크 관리
+  - Action Item: 실제 실행 단위, 담당자, 회신 대기 태그, 기한, 완료, 메모, 링크 관리
   - 마이그레이션: 기존 tasks/{key}.text 구조를 카테고리별 주요 과제로 묶어서 변환
 */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -454,18 +501,64 @@ const tasksRef = ref(db, 'tasks');
 
 // ─────────────────────────────────────────────────────────────
 // 화면 공통 설정
-// 담당자, 상태, 우선순위, 초기 주요 과제 데이터를 한 곳에서 관리합니다.
+// 담당자, 회신 대기 태그, 우선순위, 초기 주요 과제 데이터를 한 곳에서 관리합니다.
 // ─────────────────────────────────────────────────────────────
 const OWNER_CONFIG = {
   all:{ label:'전체', color:'#4f8ef7', cls:'' },
   ops:{ label:'NSD', color:'#e8ecf4', cls:'ops' },
   naver:{ label:'네이버', color:'#00c73c', cls:'naver' },
-  upstage:{ label:'Upstage', color:'#8b5cf6', cls:'upstage' },
+  upstage:{ label:'업스테이지', color:'#8b5cf6', cls:'upstage' },
   sejong:{ label:'세종대', color:'#c3002f', cls:'sejong' },
   education:{ label:'교육청', color:'#f5c842', cls:'education' }
 };
 const OWNER_ORDER = ['all','ops','naver','upstage','sejong','education'];
-const OWNER_ALIASES = { 'NSD':'ops', '네이버':'naver', 'Upstage':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
+const OWNER_ALIASES = { 'NSD':'ops', '네이버':'naver', '업스테이지':'upstage', 'Upstage':'upstage', '세종대':'sejong', '교육청':'education' };
+
+
+const WAITING_OWNER_KEYS = ['ops','naver','upstage','sejong'];
+function uniq(values) {
+  return [...new Set((values || []).filter(Boolean))];
+}
+function normalizeWaitingFor(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return uniq(value.map(normalizeOwner).filter(k => WAITING_OWNER_KEYS.includes(k)));
+  if (typeof value === 'object') return uniq(Object.keys(value).filter(k => value[k]).map(normalizeOwner).filter(k => WAITING_OWNER_KEYS.includes(k)));
+  const raw = String(value).trim();
+  if (!raw) return [];
+  const keys = [];
+  raw.split(/[\s,\/|]+/).forEach(part => {
+    const key = normalizeOwner(part);
+    if (WAITING_OWNER_KEYS.includes(key)) keys.push(key);
+  });
+  WAITING_OWNER_KEYS.forEach(key => {
+    const label = OWNER_CONFIG[key]?.label || key;
+    if (raw.includes(label) || (key === 'upstage' && raw.includes('Upstage')) || (key === 'ops' && raw.includes(LEGACY_OPS_LABEL || ''))) keys.push(key);
+  });
+  return uniq(keys);
+}
+function waitingDisplay(value) {
+  const keys = normalizeWaitingFor(value);
+  if (keys.length) return keys.map(ownerLabel).join(', ');
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  return '';
+}
+function waitingPickerHtml(pickerId, selected=[]) {
+  const selectedKeys = normalizeWaitingFor(selected);
+  return WAITING_OWNER_KEYS.map(key => {
+    const active = selectedKeys.includes(key) ? ' active' : '';
+    return `<button type="button" class="wait-tag ${key}${active}" data-wait-key="${key}" onclick="toggleWaitingTag('${pickerId}','${key}')">${escapeHtml(ownerLabel(key))}</button>`;
+  }).join('');
+}
+function selectedWaitingFor(pickerId) {
+  const picker = document.getElementById(pickerId);
+  if (!picker) return [];
+  return [...picker.querySelectorAll('.wait-tag.active')].map(btn => btn.dataset.waitKey).filter(Boolean);
+}
+window.toggleWaitingTag = (pickerId, key) => {
+  const picker = document.getElementById(pickerId);
+  const btn = picker?.querySelector(`[data-wait-key="${key}"]`);
+  if (btn) btn.classList.toggle('active');
+};
 
 const LEGACY_OPS_LABEL = '\uC6B4\uC601\uD300';
 OWNER_ALIASES[LEGACY_OPS_LABEL] = 'ops';
@@ -473,10 +566,10 @@ const STATUS_LABEL = { todo:'해야 함', doing:'진행 중', review:'확인 필
 const PRIORITY_LABEL = { high:'우선', mid:'보통', low:'나중' };
 const PRIORITY_SCORE = { high:3, mid:2, low:1 };
 const CATEGORY_CONFIG = {
-  curriculum:{ label:'강사커리큘럼', icon:'🎓', color:'#7c6af7', aliases:['강사커리큘럼','강사 커리큘럼','강사커리큘럼'] },
-  facility:{ label:'장소시설', icon:'🏛️', color:'#3dd68c', aliases:['장소시설','장소 시설','장소시설'] },
-  operation:{ label:'운영물품', icon:'⚙️', color:'#f7a34f', aliases:['운영물품','운영 물품','운영물품'] },
-  followup:{ label:'사후처리', icon:'📊', color:'#f76f6f', aliases:['사후 처리','사후·처리'] }
+  curriculum:{ label:'강의', icon:'🎓', color:'#7c6af7', aliases:['강사커리큘럼','강사 커리큘럼','강사·커리큘럼','커리큘럼','강의'] },
+  facility:{ label:'장소', icon:'🏛️', color:'#3dd68c', aliases:['장소시설','장소 시설','장소·시설','시설','장소'] },
+  operation:{ label:'운영', icon:'⚙️', color:'#f7a34f', aliases:['운영물품','운영 물품','운영·물품','물품','운영'] },
+  followup:{ label:'사후처리', icon:'📊', color:'#f76f6f', aliases:['사후 처리','사후·처리','사후처리'] }
 };
 const CATEGORY_ORDER = ['curriculum','facility','operation','followup'];
 
@@ -490,25 +583,26 @@ let majorTasks = {};
 let legacyTasks = [];
 let ownerFilter = localStorage.getItem('todo.details.ownerFilter') || 'all';
 let statusFilter = localStorage.getItem('todo.details.statusFilter') || 'open';
+if (!['all','open','done'].includes(statusFilter)) statusFilter = 'open';
 let sortMode = localStorage.getItem('todo.details.sortMode') || 'deadline';
 let searchQuery = '';
 let isReady = false;
 let seedAttempted = false;
 
 const INITIAL_MAJOR_TASKS = [
-  { title:'강사커리큘럼 설계', cat:'강사커리큘럼', owner:'ops', priority:'high', deadline:'', description:'3일 연수 세션 구성, 강의자료, 실습환경을 통합 관리합니다.', actions:[
+  { title:'강의 설계', cat:'강의', owner:'ops', priority:'high', deadline:'', description:'3일 연수 세션 구성, 강의자료, 실습환경을 통합 관리합니다.', actions:[
     { text:'전체 커리큘럼 3일 세션 구성표 초안 작성', owner:'ops', agencies:['upstage','sejong'], priority:'high' },
-    { text:'Upstage 담당 세션 강의자료·실습자료 제작', owner:'upstage', agencies:['upstage'], priority:'high' },
+    { text:'업스테이지 담당 세션 강의자료·실습자료 제작', owner:'upstage', agencies:['upstage'], priority:'high' },
     { text:'세종대 담당 세션 강의자료·실습자료 제작', owner:'sejong', agencies:['sejong'], priority:'high' },
     { text:'사전 수준 진단 설문 설계', owner:'ops', agencies:['ops'], priority:'mid' }
   ]},
-  { title:'장소시설 준비', cat:'장소시설', owner:'ops', priority:'high', deadline:'', description:'강의실, 숙박, 식사, IT 인프라 등 현장 운영 환경을 준비합니다.', actions:[
+  { title:'장소 준비', cat:'장소', owner:'ops', priority:'high', deadline:'', description:'강의실, 숙박, 식사, IT 인프라 등 현장 운영 환경을 준비합니다.', actions:[
     { text:'세종대학교 강의실 예약 확정', owner:'sejong', agencies:['sejong'], priority:'high', done:true, status:'done' },
     { text:'숙박 시설 후보 비교 및 예약 확정', owner:'ops', agencies:['ops'], priority:'high' },
     { text:'강의실 IT 인프라 점검(Wi-Fi, 빔프로젝터)', owner:'ops', agencies:['ops','sejong'], priority:'high' },
     { text:'식사·케이터링 업체 섭외 및 메뉴 확정', owner:'ops', agencies:['ops'], priority:'mid' }
   ]},
-  { title:'운영물품 준비', cat:'운영물품', owner:'ops', priority:'mid', deadline:'', description:'연수 키트, 출결, 운영 인력, 비상 대응을 준비합니다.', actions:[
+  { title:'운영 준비', cat:'운영', owner:'ops', priority:'mid', deadline:'', description:'연수 키트, 출결, 운영 인력, 비상 대응을 준비합니다.', actions:[
     { text:'연수 키트 구성안 확정', owner:'ops', agencies:['ops'], priority:'mid' },
     { text:'현장 운영 인력 역할표 작성', owner:'ops', agencies:['ops'], priority:'mid' },
     { text:'현장 출결 관리 방식 확정', owner:'ops', agencies:['ops'], priority:'mid' }
@@ -652,7 +746,7 @@ function normalizeAction(key, raw, major) {
     priority: raw.priority || major.priority || 'mid',
     deadline: raw.deadline || '',
     status,
-    waitingFor: raw.waitingFor || '',
+    waitingFor: normalizeWaitingFor(raw.waitingFor || ''),
     done: !!raw.done || status === 'done',
     order: raw.order || raw.createdAt || raw.updatedAt || 0,
     createdAt: raw.createdAt || 0,
@@ -666,7 +760,7 @@ function normalizeMajor(key, raw) {
     key,
     title: raw.title || raw.text || '(주요 과제 제목 없음)',
     description: raw.description || '',
-    cat: normalizeCategory(raw.cat || raw.category || '운영물품'),
+    cat: normalizeCategory(raw.cat || raw.category || '운영'),
     owner: normalizeOwner(raw.owner || raw.writer || (raw.agencies || [])[0] || 'ops'),
     priority: raw.priority || 'mid',
     deadline: raw.deadline || '',
@@ -770,6 +864,7 @@ function fillStaticOptions() {
   document.getElementById('editMajorOwner').innerHTML = ownerOptionsHtml(false);
   document.getElementById('editActionOwner').innerHTML = ownerOptionsHtml(false);
   document.getElementById('actionOwner').innerHTML = ownerOptionsHtml(false);
+  document.getElementById('actionWaitingForPicker').innerHTML = waitingPickerHtml('actionWaitingForPicker');
   populateActionMajorSelect();
   document.getElementById('ownerFilter').innerHTML = ownerOptionsHtml(true);
   document.getElementById('ownerFilter').value = ownerFilter;
@@ -819,12 +914,11 @@ function actionMatchesFilters(major, action) {
   }
   if (statusFilter === 'open' && action.done) return false;
   if (statusFilter === 'done' && !action.done) return false;
-  if (['doing','review','waiting'].includes(statusFilter) && action.status !== statusFilter) return false;
-  const q = searchQuery.trim().toLowerCase();
+    const q = searchQuery.trim().toLowerCase();
   if (q) {
     const memoText = Object.values(action.memos || {}).map(m => `${m.writer || ''} ${m.text || ''}`).join(' ');
     const linkText = Object.values(action.links || {}).map(l => `${l.label || ''} ${l.url || ''}`).join(' ');
-    const hay = `${major.title} ${major.description} ${major.cat} ${action.text} ${ownerLabel(action.owner)} ${action.waitingFor} ${memoText} ${linkText}`.toLowerCase();
+    const hay = `${major.title} ${major.description} ${major.cat} ${action.text} ${ownerLabel(action.owner)} ${waitingDisplay(action.waitingFor)} ${memoText} ${linkText}`.toLowerCase();
     if (!hay.includes(q)) return false;
   }
   return true;
@@ -851,7 +945,7 @@ function renderMajorList() {
   const grouped = {};
   CATEGORY_ORDER.forEach(key => grouped[CATEGORY_CONFIG[key].label] = []);
   majors.forEach(major => {
-    const cat = normalizeCategory(major.cat || '운영물품');
+    const cat = normalizeCategory(major.cat || '운영');
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push(major);
   });
@@ -895,6 +989,7 @@ function renderMajorCard(major) {
     <div class="action-add">
       <div class="field"><label for="actionText-${major.key}">새 Action Item</label><input id="actionText-${major.key}" type="text" placeholder="실제로 수행할 다음 행동"></div>
       <div class="field"><label for="actionOwner-${major.key}">담당</label><select id="actionOwner-${major.key}">${ownerOptionsHtml(false)}</select></div>
+      <div class="field"><label>회신 대기</label><div class="tag-picker" id="waiting-${major.key}">${waitingPickerHtml(`waiting-${major.key}`)}</div></div>
       <div class="field"><label for="actionPriority-${major.key}">우선순위</label><select id="actionPriority-${major.key}"><option value="high">우선</option><option value="mid" selected>보통</option><option value="low">나중</option></select></div>
       <div class="field"><label for="actionDeadline-${major.key}">Due Date<span class="required-mark">*</span></label><input id="actionDeadline-${major.key}" type="date" required></div>
       <button class="btn small" onclick="addActionItem('${major.key}')">Action 추가</button>
@@ -908,10 +1003,10 @@ function renderActionCard(major, actionKey, action) {
   const agencyTags = (action.agencies || []).filter(a => a !== action.owner).map(ownerTag).join('');
   return `<div class="action-card ${action.done ? 'done' : ''}" id="action-${major.key}-${actionKey}">
     <div class="action-main">
-      <button class="check" onclick="toggleAction('${major.key}','${actionKey}')" title="완료 전환">✓</button>
+      <button class="check complete-btn" onclick="toggleAction('${major.key}','${actionKey}')" title="누르면 완료 처리됩니다"><span class="check-mark">✓</span><span class="check-text">${action.done ? '완료됨' : '완료 처리'}</span></button>
       <div>
         <div class="action-title">${escapeHtml(action.text)}</div>
-        <div class="action-meta">${ownerTag(action.owner)}${agencyTags}${priorityTag(action.priority)}${statusTag(action.status, action.done)}${deadlineTag(action.deadline)}${action.waitingFor ? `<span class="tag waiting">대기: ${escapeHtml(action.waitingFor)}</span>` : ''}${formatTs(action.updatedAt) ? `<span class="tag">수정 ${formatTs(action.updatedAt)}</span>` : ''}</div>
+        <div class="action-meta">${ownerTag(action.owner)}${agencyTags}${priorityTag(action.priority)}${deadlineTag(action.deadline)}${waitingDisplay(action.waitingFor) ? `<span class="tag waiting">회신: ${escapeHtml(waitingDisplay(action.waitingFor))}</span>` : ''}${formatTs(action.updatedAt) ? `<span class="tag">수정 ${formatTs(action.updatedAt)}</span>` : ''}</div>
       </div>
       <div class="action-tools">
         <button class="btn small ghost" onclick="openActionEdit('${major.key}','${actionKey}')">수정</button>
@@ -956,10 +1051,39 @@ function renderLink(majorKey, actionKey, linkKey, link) {
     <button class="btn small ghost" onclick="deleteLink('${majorKey}','${actionKey}','${linkKey}')" title="링크 삭제">×</button>
   </div>`;
 }
+
+function renderMajorAdminList() {
+  const wrap = document.getElementById('majorAdminList');
+  if (!wrap) return;
+  const majors = sortedMajors(Object.values(majorTasks));
+  if (!majors.length) {
+    wrap.innerHTML = '<div class="empty">관리할 주요 과제가 없습니다.</div>';
+    return;
+  }
+  wrap.innerHTML = majors.map(major => {
+    const p = progressOf(major);
+    const nextDueMs = majorNextDueDate(major);
+    const nextDue = Number.isFinite(nextDueMs) ? new Date(nextDueMs).toISOString().slice(2,10).replace(/-/g,'.') : '미설정';
+    return `<div class="major-admin-row">
+      <div>
+        <div class="major-admin-title">${escapeHtml(major.title)}</div>
+        <div class="major-admin-meta">${categoryTag(major.cat)}${ownerTag(major.owner)}${priorityTag(major.priority)}<span class="tag">Action ${p.done}/${p.total}</span><span class="tag next-due">다음 due ${nextDue}</span></div>
+      </div>
+      <div class="progress-box"><div class="progress-row"><span>${p.pct}%</span><span>${p.done}/${p.total}</span></div><div class="progress-track"><div class="progress-fill" style="width:${p.pct}%"></div></div></div>
+      <div class="major-admin-actions">
+        <a class="btn small ghost" href="#major-${major.key}">목록 보기</a>
+        <button class="btn small secondary" onclick="openMajorEdit('${major.key}')">수정</button>
+        <button class="btn small danger" onclick="deleteMajorTask('${major.key}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function renderAll() {
   document.getElementById('migration').style.display = legacyTasks.length ? '' : 'none';
   setSummary();
   renderMajorList();
+  renderMajorAdminList();
   populateActionMajorSelect();
   setTimeout(scrollToHashTarget, 80);
 }
@@ -988,7 +1112,7 @@ window.addMajorTask = async () => {
     [`tasks/${newRef.key}`]: {
       title,
       description: document.getElementById('majorDescription').value.trim(),
-      cat: normalizeCategory(document.getElementById('majorCat').value || '운영물품'),
+      cat: normalizeCategory(document.getElementById('majorCat').value || '운영'),
       owner: document.getElementById('majorOwner').value,
       priority: document.getElementById('majorPriority').value,
       deadline: document.getElementById('majorDeadline').value || '',
@@ -1007,20 +1131,23 @@ window.addActionItem = async (majorKey) => {
   const now = Date.now();
   const actionRef = push(ref(db, `tasks/${majorKey}/actions`));
   const owner = document.getElementById(`actionOwner-${majorKey}`)?.value || majorTasks[majorKey]?.owner || 'ops';
+  const waitingFor = selectedWaitingFor(`waiting-${majorKey}`);
   setSyncStatus('syncing', '저장 중...');
   await update(ref(db), {
     [`tasks/${majorKey}/actions/${actionRef.key}`]: {
       text,
       owner,
-      agencies:[owner],
+      agencies:uniq([owner, ...waitingFor]),
       priority: document.getElementById(`actionPriority-${majorKey}`)?.value || 'mid',
       deadline,
+      waitingFor,
       status:'todo', done:false, order:now, createdAt:now, updatedAt:now
     },
     [`tasks/${majorKey}/updatedAt`]: now
   });
   textEl.value = '';
   deadlineEl.value = '';
+  document.getElementById(`waiting-${majorKey}`).innerHTML = waitingPickerHtml(`waiting-${majorKey}`);
 };
 
 window.addActionFromGlobalForm = async () => {
@@ -1034,28 +1161,27 @@ window.addActionFromGlobalForm = async () => {
   if (!deadline) { alert('Action Item의 due date를 입력해주세요.'); deadlineEl?.focus(); return; }
   const now = Date.now();
   const owner = document.getElementById('actionOwner')?.value || majorTasks[majorKey]?.owner || 'ops';
-  const status = document.getElementById('actionStatus')?.value || 'todo';
+  const waitingFor = selectedWaitingFor('actionWaitingForPicker');
   const actionRef = push(ref(db, `tasks/${majorKey}/actions`));
   setSyncStatus('syncing', '저장 중...');
   await update(ref(db), {
     [`tasks/${majorKey}/actions/${actionRef.key}`]: {
       text,
       owner,
-      agencies:[owner],
+      agencies:uniq([owner, ...waitingFor]),
       priority: document.getElementById('actionPriority')?.value || 'mid',
       deadline,
-      status,
-      waitingFor: document.getElementById('actionWaitingFor')?.value.trim() || '',
-      done: status === 'done',
+      waitingFor,
+      status:'todo',
+      done:false,
       order:now, createdAt:now, updatedAt:now
     },
     [`tasks/${majorKey}/updatedAt`]: now
   });
   textEl.value = '';
   deadlineEl.value = '';
-  document.getElementById('actionWaitingFor').value = '';
+  document.getElementById('actionWaitingForPicker').innerHTML = waitingPickerHtml('actionWaitingForPicker');
   document.getElementById('actionPriority').value = 'mid';
-  document.getElementById('actionStatus').value = 'todo';
   textEl.focus();
 };
 window.toggleAction = async (majorKey, actionKey) => {
@@ -1144,7 +1270,7 @@ window.openMajorEdit = (majorKey) => {
   document.getElementById('majorEditFields').style.display = 'grid';
   document.getElementById('actionEditFields').style.display = 'none';
   document.getElementById('editMajorTitle').value = major.title || '';
-  document.getElementById('editMajorCat').value = normalizeCategory(major.cat || '운영물품');
+  document.getElementById('editMajorCat').value = normalizeCategory(major.cat || '운영');
   document.getElementById('editMajorOwner').value = major.owner || 'ops';
   document.getElementById('editMajorPriority').value = major.priority || 'mid';
   document.getElementById('editMajorStatus').value = major.status || 'todo';
@@ -1164,9 +1290,8 @@ window.openActionEdit = (majorKey, actionKey) => {
   document.getElementById('editActionText').value = action.text || '';
   document.getElementById('editActionOwner').value = action.owner || 'ops';
   document.getElementById('editActionPriority').value = action.priority || 'mid';
-  document.getElementById('editActionStatus').value = action.status || 'todo';
   document.getElementById('editActionDeadline').value = action.deadline || '';
-  document.getElementById('editActionWaitingFor').value = action.waitingFor || '';
+  document.getElementById('editActionWaitingForPicker').innerHTML = waitingPickerHtml('editActionWaitingForPicker', action.waitingFor || []);
   document.getElementById('editModal').classList.remove('hidden');
 };
 window.closeEditModal = () => {
@@ -1181,7 +1306,7 @@ window.saveEditModal = async () => {
     const status = document.getElementById('editMajorStatus').value;
     await update(ref(db, `tasks/${majorKey}`), {
       title: document.getElementById('editMajorTitle').value.trim() || '(제목 없음)',
-      cat: normalizeCategory(document.getElementById('editMajorCat').value || '운영물품'),
+      cat: normalizeCategory(document.getElementById('editMajorCat').value || '운영'),
       owner: document.getElementById('editMajorOwner').value,
       priority: document.getElementById('editMajorPriority').value,
       status,
@@ -1192,17 +1317,18 @@ window.saveEditModal = async () => {
     });
   } else if (type === 'action') {
     const actionKey = document.getElementById('editActionKey').value;
-    const status = document.getElementById('editActionStatus').value;
     const owner = document.getElementById('editActionOwner').value;
+    const waitingFor = selectedWaitingFor('editActionWaitingForPicker');
+    const currentDone = !!majorTasks[majorKey]?.actions?.[actionKey]?.done;
     await update(ref(db), {
       [`tasks/${majorKey}/actions/${actionKey}/text`]: document.getElementById('editActionText').value.trim() || '(Action 제목 없음)',
       [`tasks/${majorKey}/actions/${actionKey}/owner`]: owner,
-      [`tasks/${majorKey}/actions/${actionKey}/agencies`]: [owner],
+      [`tasks/${majorKey}/actions/${actionKey}/agencies`]: uniq([owner, ...waitingFor]),
       [`tasks/${majorKey}/actions/${actionKey}/priority`]: document.getElementById('editActionPriority').value,
-      [`tasks/${majorKey}/actions/${actionKey}/status`]: status,
-      [`tasks/${majorKey}/actions/${actionKey}/done`]: status === 'done',
+      [`tasks/${majorKey}/actions/${actionKey}/status`]: currentDone ? 'done' : 'todo',
+      [`tasks/${majorKey}/actions/${actionKey}/done`]: currentDone,
       [`tasks/${majorKey}/actions/${actionKey}/deadline`]: document.getElementById('editActionDeadline').value || '',
-      [`tasks/${majorKey}/actions/${actionKey}/waitingFor`]: document.getElementById('editActionWaitingFor').value.trim(),
+      [`tasks/${majorKey}/actions/${actionKey}/waitingFor`]: waitingFor,
       [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
       [`tasks/${majorKey}/updatedAt`]: now
     });
@@ -1220,7 +1346,7 @@ window.migrateLegacyTasks = async () => {
   if (!ok) return;
   const grouped = {};
   legacyTasks.forEach(([legacyKey, t]) => {
-    const cat = normalizeCategory(t.cat || '운영물품');
+    const cat = normalizeCategory(t.cat || '운영');
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push([legacyKey, t]);
   });
@@ -1238,7 +1364,7 @@ window.migrateLegacyTasks = async () => {
         deadline: t.deadline || '',
         status: t.status || (t.done ? 'done' : 'todo'),
         done: !!t.done,
-        waitingFor: t.waitingFor || '',
+        waitingFor: normalizeWaitingFor(t.waitingFor || ''),
         memos: t.memos || {},
         links: t.links || {},
         order: t.order || now + actionIdx,
@@ -1275,7 +1401,7 @@ document.addEventListener('keydown', e => {
 ['majorTitle','majorDescription'].forEach(id => document.getElementById(id)?.addEventListener('keydown', e => {
   if (e.key === 'Enter') window.addMajorTask();
 }));
-['actionText','actionWaitingFor'].forEach(id => document.getElementById(id)?.addEventListener('keydown', e => {
+['actionText'].forEach(id => document.getElementById(id)?.addEventListener('keydown', e => {
   if (e.key === 'Enter') window.addActionFromGlobalForm();
 }));
 document.getElementById('majorList')?.addEventListener('keydown', e => {

@@ -259,7 +259,7 @@
     <div class="hero-content">
       <div class="hero-kicker">Realtime Collaboration Dashboard</div>
       <h1>충북교육청 AI 교원연수<br><span>To Do List management sheet</span></h1>
-      <p class="hero-desc">강사커리큘럼, 장소시설, 운영물품, 사후처리 카테고리 안에서 주요 과제와 세부 Action Item을 2단계로 관리합니다.</p>
+      <p class="hero-desc">강의, 장소, 운영, 사후처리 카테고리 안에서 주요 과제와 세부 Action Item을 2단계로 관리합니다.</p>
       <div class="hero-meta">
         <span class="meta-chip"><span class="dot"></span>2026년 8월 12~14일 · 세종대학교</span>
         <span class="meta-chip"><span class="dot" style="background:var(--green)"></span>주요 과제 → Action Item</span>
@@ -300,11 +300,11 @@
       <div class="usage-steps">
         <div class="usage-card">
           <h3>1. 내 담당자 선택</h3>
-          <ul><li><b>내 보기</b>에서 NSD, 네이버, Upstage, 세종대, 교육청 또는 전체를 선택합니다.</li><li>담당자로 지정된 Action Item과 협업기관에 포함된 항목이 함께 보입니다.</li></ul>
+          <ul><li><b>내 보기</b>에서 NSD, 네이버, 업스테이지, 세종대, 교육청 또는 전체를 선택합니다.</li><li>담당자로 지정된 Action Item과 협업기관에 포함된 항목이 함께 보입니다.</li></ul>
         </div>
         <div class="usage-card">
           <h3>2. 2단계 구조 이해</h3>
-          <ul><li><b>카테고리</b>는 강사커리큘럼/장소시설/운영물품/사후처리입니다.</li><li>카테고리 안에 <b>주요 과제</b>가 있고, 주요 과제 안에 실제 실행 단위인 <b>Action Item</b>이 들어갑니다.</li></ul>
+          <ul><li><b>카테고리</b>는 강의/장소/운영/사후처리입니다.</li><li>카테고리 안에 <b>주요 과제</b>가 있고, 주요 과제 안에 실제 실행 단위인 <b>Action Item</b>이 들어갑니다.</li></ul>
         </div>
         <div class="usage-card">
           <h3>3. 빠른 Action 추가</h3>
@@ -362,6 +362,7 @@
       <div class="field"><label for="quickMajor">주요 과제</label><select id="quickMajor"></select></div>
       <div class="field"><label for="quickText">Action Item</label><input id="quickText" type="text" placeholder="예: 강의장 Wi-Fi 점검 결과 확인"></div>
       <div class="field"><label for="quickOwner">담당</label><select id="quickOwner"></select></div>
+      <div class="field"><label>회신을 기다리는 곳</label><div class="tag-picker" id="quickWaitingForPicker"></div></div>
       <div class="field"><label for="quickDeadline">Due Date<span class="required-mark">*</span></label><input id="quickDeadline" type="date" required></div>
       <button class="btn" onclick="quickAddAction()">추가</button>
     </div>
@@ -444,12 +445,53 @@ const OWNER_CONFIG = {
   all:{ label:'전체', color:'#4f8ef7', cls:'' },
   ops:{ label:'NSD', color:'#e8ecf4', cls:'ops' },
   naver:{ label:'네이버', color:'#00c73c', cls:'naver' },
-  upstage:{ label:'Upstage', color:'#8b5cf6', cls:'upstage' },
+  upstage:{ label:'업스테이지', color:'#8b5cf6', cls:'upstage' },
   sejong:{ label:'세종대', color:'#c3002f', cls:'sejong' },
   education:{ label:'교육청', color:'#f5c842', cls:'education' }
 };
 const OWNER_ORDER = ['all','ops','naver','upstage','sejong','education'];
-const OWNER_ALIASES = { 'NSD':'ops', '네이버':'naver', 'Upstage':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
+const OWNER_ALIASES = { 'NSD':'ops', '네이버':'naver', '업스테이지':'upstage', 'Upstage':'upstage', '세종대':'sejong', '교육청':'education' };
+
+
+const WAITING_OWNER_KEYS = ['ops','naver','upstage','sejong'];
+function uniq(values) { return [...new Set((values || []).filter(Boolean))]; }
+function normalizeWaitingFor(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return uniq(value.map(normalizeOwner).filter(k => WAITING_OWNER_KEYS.includes(k)));
+  if (typeof value === 'object') return uniq(Object.keys(value).filter(k => value[k]).map(normalizeOwner).filter(k => WAITING_OWNER_KEYS.includes(k)));
+  const raw = String(value).trim();
+  if (!raw) return [];
+  const keys = [];
+  raw.split(/[\s,\/|]+/).forEach(part => {
+    const key = normalizeOwner(part);
+    if (WAITING_OWNER_KEYS.includes(key)) keys.push(key);
+  });
+  WAITING_OWNER_KEYS.forEach(key => {
+    const label = OWNER_CONFIG[key]?.label || key;
+    if (raw.includes(label) || (key === 'upstage' && raw.includes('Upstage')) || (key === 'ops' && raw.includes(LEGACY_OPS_LABEL || ''))) keys.push(key);
+  });
+  return uniq(keys);
+}
+function waitingDisplay(value) {
+  const keys = normalizeWaitingFor(value);
+  if (keys.length) return keys.map(ownerLabel).join(', ');
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  return '';
+}
+function waitingPickerHtml(pickerId, selected=[]) {
+  const selectedKeys = normalizeWaitingFor(selected);
+  return WAITING_OWNER_KEYS.map(key => `<button type="button" class="wait-tag ${key}${selectedKeys.includes(key) ? ' active' : ''}" data-wait-key="${key}" onclick="toggleWaitingTag('${pickerId}','${key}')">${escapeHtml(ownerLabel(key))}</button>`).join('');
+}
+function selectedWaitingFor(pickerId) {
+  const picker = document.getElementById(pickerId);
+  if (!picker) return [];
+  return [...picker.querySelectorAll('.wait-tag.active')].map(btn => btn.dataset.waitKey).filter(Boolean);
+}
+window.toggleWaitingTag = (pickerId, key) => {
+  const picker = document.getElementById(pickerId);
+  const btn = picker?.querySelector(`[data-wait-key="${key}"]`);
+  if (btn) btn.classList.toggle('active');
+};
 
 const LEGACY_OPS_LABEL = '\uC6B4\uC601\uD300';
 OWNER_ALIASES[LEGACY_OPS_LABEL] = 'ops';
@@ -457,10 +499,10 @@ const STATUS_LABEL = { todo:'해야 함', doing:'진행 중', review:'확인 필
 const PRIORITY_LABEL = { high:'우선', mid:'보통', low:'나중' };
 const PRIORITY_SCORE = { high:3, mid:2, low:1 };
 const CATEGORY_CONFIG = {
-  curriculum:{ label:'강사커리큘럼', icon:'🎓', color:'#7c6af7', aliases:['강사커리큘럼','강사 커리큘럼','강사커리큘럼'] },
-  facility:{ label:'장소시설', icon:'🏛️', color:'#3dd68c', aliases:['장소시설','장소 시설','장소시설'] },
-  operation:{ label:'운영물품', icon:'⚙️', color:'#f7a34f', aliases:['운영물품','운영 물품','운영물품'] },
-  followup:{ label:'사후처리', icon:'📊', color:'#f76f6f', aliases:['사후 처리','사후·처리'] }
+  curriculum:{ label:'강의', icon:'🎓', color:'#7c6af7', aliases:['강사커리큘럼','강사 커리큘럼','강사·커리큘럼','커리큘럼','강의'] },
+  facility:{ label:'장소', icon:'🏛️', color:'#3dd68c', aliases:['장소시설','장소 시설','장소·시설','시설','장소'] },
+  operation:{ label:'운영', icon:'⚙️', color:'#f7a34f', aliases:['운영물품','운영 물품','운영·물품','물품','운영'] },
+  followup:{ label:'사후처리', icon:'📊', color:'#f76f6f', aliases:['사후 처리','사후·처리','사후처리'] }
 };
 const CATEGORY_ORDER = ['curriculum','facility','operation','followup'];
 
@@ -479,19 +521,19 @@ let searchQuery = '';
 let seedAttempted = false;
 
 const INITIAL_MAJOR_TASKS = [
-  { title:'강사커리큘럼 설계', cat:'강사커리큘럼', owner:'ops', priority:'high', deadline:'', description:'3일 연수 세션 구성, 강의자료, 실습환경을 통합 관리합니다.', actions:[
+  { title:'강의 설계', cat:'강의', owner:'ops', priority:'high', deadline:'', description:'3일 연수 세션 구성, 강의자료, 실습환경을 통합 관리합니다.', actions:[
     { text:'전체 커리큘럼 3일 세션 구성표 초안 작성', owner:'ops', agencies:['upstage','sejong'], priority:'high' },
-    { text:'Upstage 담당 세션 강의자료·실습자료 제작', owner:'upstage', agencies:['upstage'], priority:'high' },
+    { text:'업스테이지 담당 세션 강의자료·실습자료 제작', owner:'upstage', agencies:['upstage'], priority:'high' },
     { text:'세종대 담당 세션 강의자료·실습자료 제작', owner:'sejong', agencies:['sejong'], priority:'high' },
     { text:'사전 수준 진단 설문 설계', owner:'ops', agencies:['ops'], priority:'mid' }
   ]},
-  { title:'장소시설 준비', cat:'장소시설', owner:'ops', priority:'high', deadline:'', description:'강의실, 숙박, 식사, IT 인프라 등 현장 운영 환경을 준비합니다.', actions:[
+  { title:'장소 준비', cat:'장소', owner:'ops', priority:'high', deadline:'', description:'강의실, 숙박, 식사, IT 인프라 등 현장 운영 환경을 준비합니다.', actions:[
     { text:'세종대학교 강의실 예약 확정', owner:'sejong', agencies:['sejong'], priority:'high', done:true, status:'done' },
     { text:'숙박 시설 후보 비교 및 예약 확정', owner:'ops', agencies:['ops'], priority:'high' },
     { text:'강의실 IT 인프라 점검(Wi-Fi, 빔프로젝터)', owner:'ops', agencies:['ops','sejong'], priority:'high' },
     { text:'식사·케이터링 업체 섭외 및 메뉴 확정', owner:'ops', agencies:['ops'], priority:'mid' }
   ]},
-  { title:'운영물품 준비', cat:'운영물품', owner:'ops', priority:'mid', deadline:'', description:'연수 키트, 출결, 운영 인력, 비상 대응을 준비합니다.', actions:[
+  { title:'운영 준비', cat:'운영', owner:'ops', priority:'mid', deadline:'', description:'연수 키트, 출결, 운영 인력, 비상 대응을 준비합니다.', actions:[
     { text:'연수 키트 구성안 확정', owner:'ops', agencies:['ops'], priority:'mid' },
     { text:'현장 운영 인력 역할표 작성', owner:'ops', agencies:['ops'], priority:'mid' },
     { text:'현장 출결 관리 방식 확정', owner:'ops', agencies:['ops'], priority:'mid' }
@@ -604,7 +646,7 @@ function normalizeAction(key, raw, major) {
     priority: raw.priority || major.priority || 'mid',
     deadline: raw.deadline || '',
     status,
-    waitingFor: raw.waitingFor || '',
+    waitingFor: normalizeWaitingFor(raw.waitingFor || ''),
     done: !!raw.done || status === 'done',
     order: raw.order || raw.createdAt || raw.updatedAt || 0,
     createdAt: raw.createdAt || 0,
@@ -618,7 +660,7 @@ function normalizeMajor(key, raw) {
     key,
     title: raw.title || raw.text || '(주요 과제 제목 없음)',
     description: raw.description || '',
-    cat: normalizeCategory(raw.cat || raw.category || '운영물품'),
+    cat: normalizeCategory(raw.cat || raw.category || '운영'),
     owner: normalizeOwner(raw.owner || raw.writer || (raw.agencies || [])[0] || 'ops'),
     priority: raw.priority || 'mid',
     deadline: raw.deadline || '',
@@ -706,6 +748,7 @@ function buildOwnerOptions() {
   document.getElementById('ownerFilter').value = ownerFilter;
   document.getElementById('quickOwner').innerHTML = OWNER_ORDER.filter(k => k !== 'all').map(key => `<option value="${key}">${OWNER_CONFIG[key].label}</option>`).join('');
   document.getElementById('quickOwner').value = ownerFilter === 'all' ? 'ops' : ownerFilter;
+  document.getElementById('quickWaitingForPicker').innerHTML = waitingPickerHtml('quickWaitingForPicker');
   document.getElementById('sortMode').value = sortMode;
 }
 function calcDDay() {
@@ -767,16 +810,16 @@ function visibleActionsForMajor(major, section) {
       if (!belongs) return false;
     }
     if (q) {
-      const hay = `${major.title} ${major.description} ${major.cat} ${action.text} ${ownerLabel(action.owner)}`.toLowerCase();
+      const hay = `${major.title} ${major.description} ${major.cat} ${action.text} ${ownerLabel(action.owner)} ${waitingDisplay(action.waitingFor)}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     if (section === 'done') return action.done;
     if (action.done) return false;
     const diff = getDaysLeft(action.deadline);
-    if (section === 'waiting') return action.status === 'waiting' || action.status === 'review' || !!action.waitingFor;
+    if (section === 'waiting') return action.status === 'waiting' || action.status === 'review' || normalizeWaitingFor(action.waitingFor).length > 0;
     if (section === 'now') return diff !== null && diff <= 0 || action.priority === 'high' || action.status === 'doing' || action.status === 'review';
     if (section === 'week') return diff !== null && diff > 0 && diff <= 7 && action.status !== 'waiting' && action.status !== 'review';
-    if (section === 'later') return (diff === null || diff > 7) && action.priority !== 'high' && action.status !== 'doing' && action.status !== 'review' && action.status !== 'waiting';
+    if (section === 'later') return (diff === null || diff > 7) && action.priority !== 'high' && action.status !== 'doing' && action.status !== 'review' && action.status !== 'waiting' && normalizeWaitingFor(action.waitingFor).length === 0;
     return true;
   }).sort(([,a],[,b]) => actionSortValue(a) - actionSortValue(b) || actionSortScore(b) - actionSortScore(a) || (a.order||0) - (b.order||0));
 }
@@ -824,12 +867,12 @@ function renderActionRow(major, actionKey, action) {
   const linkCount = Object.keys(action.links || {}).length;
   const memoCount = Object.keys(action.memos || {}).length;
   return `<div class="action-row ${action.done ? 'done' : ''}" id="action-${major.key}-${actionKey}">
-    <button class="check" onclick="toggleAction('${major.key}','${actionKey}')" title="완료 전환">✓</button>
+    <button class="check complete-btn" onclick="toggleAction('${major.key}','${actionKey}')" title="누르면 완료 처리됩니다"><span>✓</span><span class="check-text">${action.done ? '완료됨' : '완료 처리'}</span></button>
     <div class="action-body">
       <div class="action-text">${escapeHtml(action.text)}</div>
       <div class="action-meta">
-        ${ownerTag(action.owner)}${priorityTag(action.priority)}${statusTag(action.status, action.done)}${deadlineTag(action.deadline)}
-        ${action.waitingFor ? `<span class="tag waiting">대기: ${escapeHtml(action.waitingFor)}</span>` : ''}
+        ${ownerTag(action.owner)}${priorityTag(action.priority)}${deadlineTag(action.deadline)}
+        ${waitingDisplay(action.waitingFor) ? `<span class="tag waiting">회신: ${escapeHtml(waitingDisplay(action.waitingFor))}</span>` : ''}
         ${linkCount ? `<span class="tag">🔗 ${linkCount}</span>` : ''}${memoCount ? `<span class="tag">💬 ${memoCount}</span>` : ''}
       </div>
     </div>
@@ -905,17 +948,19 @@ window.quickAddAction = async () => {
   const deadlineEl = document.getElementById('quickDeadline');
   const deadline = deadlineEl.value || '';
   if (!deadline) { alert('Action Item의 due date를 입력해주세요.'); deadlineEl.focus(); return; }
+  const waitingFor = selectedWaitingFor('quickWaitingForPicker');
   const actionRef = push(ref(db, `tasks/${majorKey}/actions`));
   const now = Date.now();
   setSyncStatus('syncing', '저장 중...');
   await update(ref(db), {
     [`tasks/${majorKey}/actions/${actionRef.key}`]: {
-      text, owner, agencies:[owner], priority:'mid', deadline, status:'todo', done:false, order:now, createdAt:now, updatedAt:now
+      text, owner, agencies:uniq([owner, ...waitingFor]), priority:'mid', deadline, waitingFor, status:'todo', done:false, order:now, createdAt:now, updatedAt:now
     },
     [`tasks/${majorKey}/updatedAt`]: now
   });
   textEl.value = '';
   document.getElementById('quickDeadline').value = '';
+  document.getElementById('quickWaitingForPicker').innerHTML = waitingPickerHtml('quickWaitingForPicker');
 };
 window.toggleAction = async (majorKey, actionKey) => {
   const action = majorTasks[majorKey]?.actions?.[actionKey];

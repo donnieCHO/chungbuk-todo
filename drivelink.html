@@ -191,9 +191,9 @@ const tasksRef = ref(db, 'tasks');
 // 필터/표시 설정
 // 담당자 라벨과 기존 한글 작성자명을 키 값으로 변환하는 alias를 관리합니다.
 // ─────────────────────────────────────────────────────────────
-const OWNER_CONFIG = { all:{label:'전체',cls:''}, ops:{label:'NSD',cls:'ops'}, naver:{label:'네이버',cls:'naver'}, upstage:{label:'Upstage',cls:'upstage'}, sejong:{label:'세종대',cls:'sejong'}, education:{label:'교육청',cls:'education'} };
+const OWNER_CONFIG = { all:{label:'전체',cls:''}, ops:{label:'NSD',cls:'ops'}, naver:{label:'네이버',cls:'naver'}, upstage:{label:'업스테이지',cls:'upstage'}, sejong:{label:'세종대',cls:'sejong'}, education:{label:'교육청',cls:'education'} };
 const OWNER_ORDER = ['all','ops','naver','upstage','sejong','education'];
-const OWNER_ALIASES = { 'NSD':'ops', '네이버':'naver', 'Upstage':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
+const OWNER_ALIASES = { 'NSD':'ops', '네이버':'naver', '업스테이지':'upstage', 'Upstage':'upstage', '세종대':'sejong', '교육청':'education' };
 const LEGACY_OPS_LABEL = '\uC6B4\uC601\uD300';
 OWNER_ALIASES[LEGACY_OPS_LABEL] = 'ops';
 // ─────────────────────────────────────────────────────────────

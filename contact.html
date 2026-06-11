@@ -92,7 +92,7 @@
 <!-- 본문 컨테이너: Contact 전용 관리 화면입니다. -->
 <main class="shell">
   <!-- Hero: 연락처 페이지의 역할과 등록 현황을 한눈에 보여줍니다. -->
-  <header class="hero" aria-label="Contact 개요"><div><h1>충북교육청 AI 교원연수<span>Contact management</span></h1><p>NSD, 네이버, Upstage, 세종대, 교육청 담당자 연락처를 소속별로 관리합니다. 전화와 이메일은 카드에서 바로 열 수 있습니다.</p></div><aside class="hero-stat"><div class="hero-stat-label">Total Contacts</div><div class="hero-stat-value" id="totalContacts">0</div></aside></header>
+  <header class="hero" aria-label="Contact 개요"><div><h1>충북교육청 AI 교원연수<span>Contact management</span></h1><p>NSD, 네이버, 업스테이지, 세종대, 교육청 담당자 연락처를 소속별로 관리합니다. 전화와 이메일은 카드에서 바로 열 수 있습니다.</p></div><aside class="hero-stat"><div class="hero-stat-label">Total Contacts</div><div class="hero-stat-value" id="totalContacts">0</div></aside></header>
   <!-- 사용법: 처음에는 펼쳐진 상태이며 필요 시 접을 수 있습니다. -->
   <section class="usage-guide is-open" id="usageGuide"><div class="usage-heading"><div><h2>📖 Contact 사용법</h2><p>담당자 연락처를 추가하고, 카드의 수정 버튼으로 최신 정보로 업데이트합니다.</p></div><button class="usage-toggle-btn" id="usageToggleBtn" onclick="toggleUsageGuide()" type="button" aria-expanded="true">접기 ▴</button></div><div class="usage-body"><div class="usage-steps"><div class="usage-card"><h3>1. 연락처 추가</h3><ul><li>이름과 소속은 필수입니다.</li><li>전화번호와 이메일은 필요한 경우만 입력합니다.</li></ul></div><div class="usage-card"><h3>2. 소속별 확인</h3><ul><li>Contact는 소속별 섹션으로 자동 정렬됩니다.</li><li>검색어와 소속 필터를 함께 사용할 수 있습니다.</li></ul></div><div class="usage-card"><h3>3. 업데이트</h3><ul><li>카드 우측 상단의 <b>✏️</b> 버튼으로 수정합니다.</li><li>삭제는 Firebase의 contacts 노드에서 해당 항목만 제거합니다.</li></ul></div><div class="usage-card"><h3>4. 빠른 연락</h3><ul><li>전화번호는 <b>tel:</b>, 이메일은 <b>mailto:</b> 링크로 연결됩니다.</li></ul></div></div></div></section>
   <!-- 요약 카드: 연락처 전체/소속별/이메일 등록 현황을 표시합니다. -->
@@ -129,12 +129,12 @@ const ORG_CONFIG = {
   all:{ label:'전체', color:'#4f8ef7' },
   ops:{ label:'NSD', color:'#e8ecf4' },
   naver:{ label:'네이버', color:'#00c73c' },
-  upstage:{ label:'Upstage', color:'#8b5cf6' },
+  upstage:{ label:'업스테이지', color:'#8b5cf6' },
   sejong:{ label:'세종대', color:'#c3002f' },
   education:{ label:'교육청', color:'#f5c842' }
 };
 const ORG_ORDER = ['ops','naver','upstage','sejong','education'];
-const ORG_ALIASES = { 'NSD':'ops', '네이버':'naver', 'Upstage':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
+const ORG_ALIASES = { 'NSD':'ops', '네이버':'naver', '업스테이지':'upstage', '업스테이지':'upstage', '세종대':'sejong', '교육청':'education' };
 const LEGACY_OPS_ORG_LABEL = '\uC6B4\uC601\uD300';
 ORG_ALIASES[LEGACY_OPS_ORG_LABEL] = 'ops';
 let contacts = {};
