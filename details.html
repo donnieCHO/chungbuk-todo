@@ -146,6 +146,34 @@
   .inline-add input,.inline-add select { padding:7px 8px; border-radius:8px; font-size:12px; }
   .empty { padding:20px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:16px; background:rgba(255,255,255,.015); }
 
+
+
+  /* ── 주요 과제 설정 + Action Item 등록 폼 ──
+     주요 과제는 업무 묶음, Action Item은 실제 실행 단위입니다.
+     Action Item의 due date를 필수로 받아서 등록 직후 화면에서 마감 임박순으로 정렬합니다. */
+  .create-workspace { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:stretch; }
+  .create-card { position:relative; overflow:hidden; background:linear-gradient(135deg,rgba(79,142,247,.07),rgba(24,28,39,.96)); border:1px solid rgba(79,142,247,.22); border-radius:18px; padding:16px; }
+  .create-card::before { content:''; position:absolute; inset:0 0 auto; height:3px; background:linear-gradient(90deg,var(--accent),var(--accent2)); opacity:.9; }
+  .create-card.action-card-form { background:linear-gradient(135deg,rgba(61,214,140,.06),rgba(24,28,39,.96)); border-color:rgba(61,214,140,.22); }
+  .create-card.action-card-form::before { background:linear-gradient(90deg,var(--green),var(--accent)); }
+  .create-kicker { display:inline-flex; align-items:center; gap:6px; margin-bottom:8px; color:var(--accent); border:1px solid rgba(79,142,247,.28); background:rgba(79,142,247,.08); border-radius:999px; padding:4px 9px; font-size:11px; font-weight:850; letter-spacing:.05em; text-transform:uppercase; }
+  .create-card.action-card-form .create-kicker { color:var(--green); border-color:rgba(61,214,140,.28); background:rgba(61,214,140,.08); }
+  .create-title { font-size:18px; font-weight:900; letter-spacing:-.45px; margin-bottom:6px; }
+  .create-desc { color:var(--muted); font-size:12px; line-height:1.6; margin-bottom:14px; }
+  .create-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:end; }
+  .create-grid .full { grid-column:1 / -1; }
+  .create-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+  .field-hint { margin-top:5px; color:var(--muted); font-size:11px; line-height:1.45; }
+  .required-mark { color:var(--red); font-weight:900; margin-left:3px; }
+  .sort-note { margin-top:8px; color:var(--muted); font-size:12px; line-height:1.55; }
+  .sort-note b { color:var(--text); }
+  .action-sort-pill { color:var(--green); border-color:rgba(61,214,140,.35); background:rgba(61,214,140,.08); }
+  .major-meta .next-due { color:var(--green); border-color:rgba(61,214,140,.35); background:rgba(61,214,140,.08); }
+  .major-card.empty-major { border-style:dashed; border-color:rgba(79,142,247,.32); }
+  .action-add { grid-template-columns:2fr .75fr .75fr .85fr auto; }
+  @media(max-width:980px){ .create-workspace{grid-template-columns:1fr;} .create-grid{grid-template-columns:1fr 1fr;} }
+  @media(max-width:620px){ .create-grid{grid-template-columns:1fr;} .create-grid .full{grid-column:auto;} }
+
   /* 편집 모달은 주요 과제/Action Item 편집을 같은 컴포넌트로 처리합니다. */
   .modal-overlay { position:fixed; inset:0; z-index:500; background:rgba(0,0,0,.65); display:flex; align-items:center; justify-content:center; padding:18px; }
   .modal-overlay.hidden { display:none; }
@@ -275,8 +303,8 @@
       <div class="usage-card">
         <h3>2. Action Item 추가</h3>
         <ul>
-          <li>각 주요 과제 카드 안의 <b>새 Action Item</b> 입력줄을 사용합니다.</li>
-          <li>Action은 “실제로 완료할 다음 행동” 단위로 작성합니다.</li>
+          <li>상단 <b>Action Item 등록</b> 폼에서 주요 과제를 고른 뒤 바로 세부 일을 추가합니다.</li>
+          <li>Action은 “실제로 완료할 다음 행동” 단위로 작성하고, <b>due date는 필수</b>로 입력합니다.</li>
         </ul>
       </div>
       <div class="usage-card">
@@ -294,7 +322,7 @@
         </ul>
       </div>
     </div>
-    <div class="usage-note"><b>운영 팁:</b> 주요 과제는 너무 세분화하지 말고 업무 묶음으로 유지하세요. 실제 체크할 일은 Action Item으로 쪼개야 메인 화면에서 “내가 해야 할 일”이 선명하게 보입니다.</div>
+    <div class="usage-note"><b>운영 팁:</b> 주요 과제는 업무 묶음으로 유지하고, 실제 체크할 일은 Action Item으로 쪼개세요. Action Item은 due date 기준으로 자동 정렬되어, 마감이 임박한 일부터 바로 보입니다.</div>
   </section>
 
   <section class="panel legacy-alert" id="migration" style="display:none">
@@ -307,29 +335,56 @@
 
   <section class="panel">
     <div class="panel-title">
-      <h2>+ 주요 과제 추가</h2>
-      <p>세부 Action Item은 반드시 주요 과제 안에 추가됩니다.</p>
+      <div>
+        <h2>To Do 등록</h2>
+        <p>먼저 주요 과제를 설정하고, 그 과제 내부에 due date가 있는 Action Item을 등록합니다.</p>
+      </div>
+      <span class="tag action-sort-pill">Action due date 자동 정렬</span>
     </div>
-    <div class="form-grid">
-      <div class="field wide"><label for="majorTitle">주요 과제명</label><input id="majorTitle" type="text" placeholder="예: 장소시설 준비"></div>
-      <div class="field"><label for="majorCat">카테고리</label><select id="majorCat"></select></div>
-      <div class="field"><label for="majorOwner">책임자</label><select id="majorOwner"></select></div>
-      <div class="field"><label for="majorPriority">우선순위</label><select id="majorPriority"><option value="high">우선</option><option value="mid" selected>보통</option><option value="low">나중</option></select></div>
-      <div class="field"><label for="majorDeadline">대표 기한</label><input id="majorDeadline" type="date"></div>
-      <div class="field wide"><label for="majorDescription">설명</label><input id="majorDescription" type="text" placeholder="과제 범위나 목표를 적어주세요"></div>
-      <button class="btn" onclick="addMajorTask()">주요 과제 추가</button>
+    <div class="create-workspace">
+      <article class="create-card">
+        <div class="create-kicker">Step 1</div>
+        <div class="create-title">+ 주요 과제 설정</div>
+        <p class="create-desc">강사커리큘럼, 장소시설, 운영물품, 사후처리 카테고리 아래에서 업무 묶음을 만듭니다.</p>
+        <div class="create-grid">
+          <div class="field full"><label for="majorTitle">주요 과제명</label><input id="majorTitle" type="text" placeholder="예: 장소시설 준비"></div>
+          <div class="field"><label for="majorCat">카테고리</label><select id="majorCat"></select></div>
+          <div class="field"><label for="majorOwner">책임자</label><select id="majorOwner"></select></div>
+          <div class="field"><label for="majorPriority">우선순위</label><select id="majorPriority"><option value="high">우선</option><option value="mid" selected>보통</option><option value="low">나중</option></select></div>
+          <div class="field"><label for="majorDeadline">대표 기한</label><input id="majorDeadline" type="date"><div class="field-hint">대표 기한은 참고용이며, 실제 정렬은 Action due date를 우선합니다.</div></div>
+          <div class="field full"><label for="majorDescription">설명</label><input id="majorDescription" type="text" placeholder="과제 범위나 목표를 적어주세요"></div>
+        </div>
+        <div class="create-actions"><button class="btn" onclick="addMajorTask()">주요 과제 추가</button></div>
+      </article>
+
+      <article class="create-card action-card-form">
+        <div class="create-kicker">Step 2</div>
+        <div class="create-title">+ Action Item 등록</div>
+        <p class="create-desc">주요 과제를 선택하고 실제 실행할 다음 행동과 due date를 입력합니다. 저장 후 즉시 마감 임박순으로 보입니다.</p>
+        <div class="create-grid">
+          <div class="field full"><label for="actionMajor">주요 과제</label><select id="actionMajor"></select></div>
+          <div class="field full"><label for="actionText">Action Item</label><input id="actionText" type="text" placeholder="예: 숙박 후보 3곳 견적 비교표 만들기"></div>
+          <div class="field"><label for="actionOwner">담당</label><select id="actionOwner"></select></div>
+          <div class="field"><label for="actionPriority">우선순위</label><select id="actionPriority"><option value="high">우선</option><option value="mid" selected>보통</option><option value="low">나중</option></select></div>
+          <div class="field"><label for="actionStatus">상태</label><select id="actionStatus"><option value="todo" selected>해야 함</option><option value="doing">진행 중</option><option value="review">확인 필요</option><option value="waiting">대기 중</option><option value="done">완료</option></select></div>
+          <div class="field"><label for="actionDeadline">Due Date<span class="required-mark">*</span></label><input id="actionDeadline" type="date" required><div class="field-hint">미입력 시 저장되지 않습니다.</div></div>
+          <div class="field full"><label for="actionWaitingFor">기다리는 대상</label><input id="actionWaitingFor" type="text" placeholder="예: 세종대 회신, Upstage 계정 목록"></div>
+        </div>
+        <div class="create-actions"><button class="btn" onclick="addActionFromGlobalForm()">Action Item 추가</button></div>
+      </article>
     </div>
+    <p class="sort-note"><b>정렬 기준:</b> 각 주요 과제 안의 Action Item은 due date가 빠른 순서로 표시되며, 완료된 Action은 아래쪽으로 이동합니다. 주요 과제 정렬의 기본값도 가장 임박한 Action due date 기준입니다.</p>
   </section>
 
   <section class="panel">
     <div class="panel-title">
       <h2>보기·정렬</h2>
-      <p>주요 과제 단위로 묶고, 선택한 기준으로 정렬합니다.</p>
+      <p>Action Item due date가 빠른 과제부터 볼 수 있도록 정렬합니다.</p>
     </div>
     <div class="toolbar">
       <div class="field"><label for="ownerFilter">담당자 필터</label><select id="ownerFilter" onchange="setOwnerFilter(this.value)"></select></div>
       <div class="field"><label for="statusFilter">상태 필터</label><select id="statusFilter" onchange="setStatusFilter(this.value)"><option value="all">전체</option><option value="open">미완료</option><option value="doing">진행 중</option><option value="review">확인 필요</option><option value="waiting">대기 중</option><option value="done">완료</option></select></div>
-      <div class="field"><label for="sortMode">주요 과제 정렬</label><select id="sortMode" onchange="setSortMode(this.value)"><option value="priority">우선순위</option><option value="deadline">대표 기한</option><option value="progress">진행률 낮은 순</option><option value="owner">책임자</option><option value="order">입력 순</option></select></div>
+      <div class="field"><label for="sortMode">주요 과제 정렬</label><select id="sortMode" onchange="setSortMode(this.value)"><option value="deadline">Action Due Date</option><option value="priority">우선순위</option><option value="progress">진행률 낮은 순</option><option value="owner">책임자</option><option value="order">입력 순</option></select></div>
       <div class="field"><label for="searchInput">검색</label><input id="searchInput" type="text" placeholder="과제/Action/메모 검색" oninput="setSearchQuery(this.value)"></div>
     </div>
   </section>
@@ -435,7 +490,7 @@ let majorTasks = {};
 let legacyTasks = [];
 let ownerFilter = localStorage.getItem('todo.details.ownerFilter') || 'all';
 let statusFilter = localStorage.getItem('todo.details.statusFilter') || 'open';
-let sortMode = localStorage.getItem('todo.details.sortMode') || 'priority';
+let sortMode = localStorage.getItem('todo.details.sortMode') || 'deadline';
 let searchQuery = '';
 let isReady = false;
 let seedAttempted = false;
@@ -695,12 +750,27 @@ async function seedInitialData() {
 function ownerOptionsHtml(includeAll=false) {
   return OWNER_ORDER.filter(k => includeAll || k !== 'all').map(k => `<option value="${k}">${OWNER_CONFIG[k].label}</option>`).join('');
 }
+function majorOptionsHtml() {
+  const majors = sortedMajors(Object.values(majorTasks));
+  return majors.length
+    ? majors.map(m => `<option value="${m.key}">${escapeHtml(m.title)} · ${escapeHtml(categoryInfo(m.cat).label)}</option>`).join('')
+    : '<option value="">주요 과제 없음</option>';
+}
+function populateActionMajorSelect() {
+  const sel = document.getElementById('actionMajor');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = majorOptionsHtml();
+  if (prev && majorTasks[prev]) sel.value = prev;
+}
 function fillStaticOptions() {
   document.getElementById('majorOwner').innerHTML = ownerOptionsHtml(false);
   document.getElementById('majorCat').innerHTML = categoryOptionsHtml();
   document.getElementById('editMajorCat').innerHTML = categoryOptionsHtml();
   document.getElementById('editMajorOwner').innerHTML = ownerOptionsHtml(false);
   document.getElementById('editActionOwner').innerHTML = ownerOptionsHtml(false);
+  document.getElementById('actionOwner').innerHTML = ownerOptionsHtml(false);
+  populateActionMajorSelect();
   document.getElementById('ownerFilter').innerHTML = ownerOptionsHtml(true);
   document.getElementById('ownerFilter').value = ownerFilter;
   document.getElementById('statusFilter').value = statusFilter;
@@ -712,17 +782,32 @@ function calcDDay() {
   const diff = Math.ceil((target - today) / 86400000);
   document.getElementById('ddayBadge').textContent = diff > 0 ? `D-${diff}` : diff === 0 ? 'D-Day' : `D+${Math.abs(diff)}`;
 }
+function actionSortValue(action, { includeDone=false } = {}) {
+  // Due date가 없는 Action Item은 가장 뒤로 보냅니다.
+  // 완료 Action은 상세 관리에서 확인은 가능하지만 미완 Action보다 아래에 배치합니다.
+  const doneOffset = (!includeDone && action.done) ? 9_000_000_000_000_000 : 0;
+  const due = action.deadline ? new Date(action.deadline).getTime() : 8_000_000_000_000_000;
+  const priorityOffset = { high:0, mid:10_000, low:20_000 }[action.priority] || 30_000;
+  return doneOffset + due + priorityOffset + (action.order || 0) / 10_000_000;
+}
+function sortedActionsForMajor(major, entries=actionList(major), options={}) {
+  return [...entries].sort(([,a],[,b]) => actionSortValue(a, options) - actionSortValue(b, options));
+}
+function majorNextDueDate(major) {
+  const open = actionList(major).filter(([,a]) => !a.done && a.deadline);
+  if (open.length) return Math.min(...open.map(([,a]) => new Date(a.deadline).getTime()));
+  if (major.deadline) return new Date(major.deadline).getTime();
+  return Infinity;
+}
 function sortedMajors(majors) {
   const arr = [...majors];
   arr.sort((a,b) => {
     if (sortMode === 'deadline') {
-      const ad = a.deadline ? new Date(a.deadline).getTime() : Infinity;
-      const bd = b.deadline ? new Date(b.deadline).getTime() : Infinity;
-      return ad - bd || (a.order||0) - (b.order||0);
+      return majorNextDueDate(a) - majorNextDueDate(b) || (a.order||0) - (b.order||0);
     }
-    if (sortMode === 'progress') return progressOf(a).pct - progressOf(b).pct || (a.order||0) - (b.order||0);
-    if (sortMode === 'owner') return ownerLabel(a.owner).localeCompare(ownerLabel(b.owner), 'ko') || (a.order||0) - (b.order||0);
-    if (sortMode === 'priority') return (PRIORITY_SCORE[b.priority]||0) - (PRIORITY_SCORE[a.priority]||0) || (a.order||0) - (b.order||0);
+    if (sortMode === 'progress') return progressOf(a).pct - progressOf(b).pct || majorNextDueDate(a) - majorNextDueDate(b) || (a.order||0) - (b.order||0);
+    if (sortMode === 'owner') return ownerLabel(a.owner).localeCompare(ownerLabel(b.owner), 'ko') || majorNextDueDate(a) - majorNextDueDate(b) || (a.order||0) - (b.order||0);
+    if (sortMode === 'priority') return (PRIORITY_SCORE[b.priority]||0) - (PRIORITY_SCORE[a.priority]||0) || majorNextDueDate(a) - majorNextDueDate(b) || (a.order||0) - (b.order||0);
     return (a.order||0) - (b.order||0);
   });
   return arr;
@@ -782,17 +867,24 @@ function renderMajorList() {
   wrap.innerHTML = sections || '<div class="empty">주요 과제가 없습니다. 상단에서 주요 과제를 추가하세요.</div>';
 }
 function renderMajorCard(major) {
-  const visibleActions = actionList(major).filter(([,a]) => actionMatchesFilters(major, a)).sort(([,a],[,b]) => (a.done === b.done ? (a.order||0)-(b.order||0) : a.done ? 1 : -1));
+  const visibleActions = sortedActionsForMajor(major, actionList(major).filter(([,a]) => actionMatchesFilters(major, a)));
   const q = searchQuery.trim().toLowerCase();
   const majorSelfMatches = q && `${major.title} ${major.description} ${major.cat} ${ownerLabel(major.owner)}`.toLowerCase().includes(q);
   if (!visibleActions.length && (q || ownerFilter !== 'all' || statusFilter !== 'all') && !majorSelfMatches) return '';
   const p = progressOf(major);
-  return `<article class="major-card" id="major-${major.key}">
+  const nextDueMs = majorNextDueDate(major);
+  const nextDueTag = Number.isFinite(nextDueMs)
+    ? `<span class="tag next-due">다음 due ${new Date(nextDueMs).toISOString().slice(2,10).replace(/-/g,'.')}</span>`
+    : '<span class="tag">due date 미설정</span>';
+  const actionsHtml = visibleActions.length
+    ? visibleActions.map(([ak,a]) => renderActionCard(major, ak, a)).join('')
+    : '<div class="empty">필터 조건에 맞는 Action Item이 없습니다.</div>';
+  return `<article class="major-card ${actionList(major).length ? '' : 'empty-major'}" id="major-${major.key}">
     <div class="major-head">
       <div>
         <div class="major-title">${escapeHtml(major.title)} ${priorityTag(major.priority)} ${statusTag(major.status, major.done)}</div>
         ${major.description ? `<div class="major-desc">${escapeHtml(major.description)}</div>` : ''}
-        <div class="major-meta">${ownerTag(major.owner)}${categoryTag(major.cat)}${deadlineTag(major.deadline)}<span class="tag">Action ${p.total}개</span></div>
+        <div class="major-meta">${ownerTag(major.owner)}${categoryTag(major.cat)}${deadlineTag(major.deadline)}${nextDueTag}<span class="tag">Action ${p.total}개</span></div>
         <div class="progress-box"><div class="progress-row"><span>${p.done}/${p.total}</span><span>${p.pct}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${p.pct}%"></div></div></div>
       </div>
       <div class="major-actions">
@@ -804,10 +896,10 @@ function renderMajorCard(major) {
       <div class="field"><label for="actionText-${major.key}">새 Action Item</label><input id="actionText-${major.key}" type="text" placeholder="실제로 수행할 다음 행동"></div>
       <div class="field"><label for="actionOwner-${major.key}">담당</label><select id="actionOwner-${major.key}">${ownerOptionsHtml(false)}</select></div>
       <div class="field"><label for="actionPriority-${major.key}">우선순위</label><select id="actionPriority-${major.key}"><option value="high">우선</option><option value="mid" selected>보통</option><option value="low">나중</option></select></div>
-      <div class="field"><label for="actionDeadline-${major.key}">기한</label><input id="actionDeadline-${major.key}" type="date"></div>
+      <div class="field"><label for="actionDeadline-${major.key}">Due Date<span class="required-mark">*</span></label><input id="actionDeadline-${major.key}" type="date" required></div>
       <button class="btn small" onclick="addActionItem('${major.key}')">Action 추가</button>
     </div>
-    <div class="action-list">${visibleActions.length ? visibleActions.map(([ak,a]) => renderActionCard(major, ak, a)).join('') : '<div class="empty">필터 조건에 맞는 Action Item이 없습니다.</div>'}</div>
+    <div class="action-list">${actionsHtml}</div>
   </article>`;
 }
 function renderActionCard(major, actionKey, action) {
@@ -868,6 +960,7 @@ function renderAll() {
   document.getElementById('migration').style.display = legacyTasks.length ? '' : 'none';
   setSummary();
   renderMajorList();
+  populateActionMajorSelect();
   setTimeout(scrollToHashTarget, 80);
 }
 function scrollToHashTarget() {
@@ -906,25 +999,64 @@ window.addMajorTask = async () => {
 };
 window.addActionItem = async (majorKey) => {
   const textEl = document.getElementById(`actionText-${majorKey}`);
-  const text = textEl.value.trim();
-  if (!text) { textEl.focus(); return; }
+  const deadlineEl = document.getElementById(`actionDeadline-${majorKey}`);
+  const text = textEl?.value.trim();
+  const deadline = deadlineEl?.value || '';
+  if (!text) { textEl?.focus(); return; }
+  if (!deadline) { alert('Action Item의 due date를 입력해주세요.'); deadlineEl?.focus(); return; }
   const now = Date.now();
   const actionRef = push(ref(db, `tasks/${majorKey}/actions`));
-  const owner = document.getElementById(`actionOwner-${majorKey}`).value;
+  const owner = document.getElementById(`actionOwner-${majorKey}`)?.value || majorTasks[majorKey]?.owner || 'ops';
   setSyncStatus('syncing', '저장 중...');
   await update(ref(db), {
     [`tasks/${majorKey}/actions/${actionRef.key}`]: {
       text,
       owner,
       agencies:[owner],
-      priority: document.getElementById(`actionPriority-${majorKey}`).value,
-      deadline: document.getElementById(`actionDeadline-${majorKey}`).value || '',
+      priority: document.getElementById(`actionPriority-${majorKey}`)?.value || 'mid',
+      deadline,
       status:'todo', done:false, order:now, createdAt:now, updatedAt:now
     },
     [`tasks/${majorKey}/updatedAt`]: now
   });
   textEl.value = '';
-  document.getElementById(`actionDeadline-${majorKey}`).value = '';
+  deadlineEl.value = '';
+};
+
+window.addActionFromGlobalForm = async () => {
+  const majorKey = document.getElementById('actionMajor')?.value || '';
+  const textEl = document.getElementById('actionText');
+  const deadlineEl = document.getElementById('actionDeadline');
+  const text = textEl?.value.trim();
+  const deadline = deadlineEl?.value || '';
+  if (!majorKey) { alert('Action Item을 넣을 주요 과제를 먼저 선택해주세요.'); document.getElementById('actionMajor')?.focus(); return; }
+  if (!text) { textEl?.focus(); return; }
+  if (!deadline) { alert('Action Item의 due date를 입력해주세요.'); deadlineEl?.focus(); return; }
+  const now = Date.now();
+  const owner = document.getElementById('actionOwner')?.value || majorTasks[majorKey]?.owner || 'ops';
+  const status = document.getElementById('actionStatus')?.value || 'todo';
+  const actionRef = push(ref(db, `tasks/${majorKey}/actions`));
+  setSyncStatus('syncing', '저장 중...');
+  await update(ref(db), {
+    [`tasks/${majorKey}/actions/${actionRef.key}`]: {
+      text,
+      owner,
+      agencies:[owner],
+      priority: document.getElementById('actionPriority')?.value || 'mid',
+      deadline,
+      status,
+      waitingFor: document.getElementById('actionWaitingFor')?.value.trim() || '',
+      done: status === 'done',
+      order:now, createdAt:now, updatedAt:now
+    },
+    [`tasks/${majorKey}/updatedAt`]: now
+  });
+  textEl.value = '';
+  deadlineEl.value = '';
+  document.getElementById('actionWaitingFor').value = '';
+  document.getElementById('actionPriority').value = 'mid';
+  document.getElementById('actionStatus').value = 'todo';
+  textEl.focus();
 };
 window.toggleAction = async (majorKey, actionKey) => {
   const action = majorTasks[majorKey]?.actions?.[actionKey];
@@ -1140,9 +1272,18 @@ document.getElementById('editModal').addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') window.closeEditModal();
 });
-['majorTitle','majorDescription'].forEach(id => document.getElementById(id).addEventListener('keydown', e => {
+['majorTitle','majorDescription'].forEach(id => document.getElementById(id)?.addEventListener('keydown', e => {
   if (e.key === 'Enter') window.addMajorTask();
 }));
+['actionText','actionWaitingFor'].forEach(id => document.getElementById(id)?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') window.addActionFromGlobalForm();
+}));
+document.getElementById('majorList')?.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (!e.target.id?.startsWith('actionText-') && !e.target.id?.startsWith('actionDeadline-')) return;
+  const majorKey = e.target.id.replace(/^action(Text|Deadline)-/, '');
+  window.addActionItem(majorKey);
+});
 
 // ─────────────────────────────────────────────────────────────
 // 초기화

@@ -1,5 +1,14 @@
 # 변경 이력
 
+## 2026-06-11 — 운영 시간표 내비게이션 통일
+
+### Changed
+
+- `timetable.html`의 헤더 내부 이동 버튼을 제거하고 다른 페이지와 같은 공통 sticky nav로 통일했습니다.
+- 메뉴 순서를 `내 Action → 상세 관리 → 파일 관리 → 운영 시간표 → Contact`로 맞췄습니다.
+- 운영 시간표 메뉴에 active 상태를 적용하고, 장소 관리 버튼은 toolbar 전용 버튼으로 분리했습니다.
+
+
 
 ## 2026-06-11 — NSD 명칭 통일
 
@@ -46,3 +55,10 @@
 - 기존 평면형 데이터 마이그레이션 기능
 - `drivelink.html` 파일 링크 모아보기
 - `timetable.html` 장소 태그 및 세로 간격 개선
+
+## Action Item due date 정렬 개선
+
+- 상세 관리 페이지의 To Do 등록을 `주요 과제 설정`과 `Action Item 등록` 2개 폼으로 분리했습니다.
+- Action Item 등록 시 due date 입력을 필수화했습니다.
+- 주요 과제 내부 Action Item은 due date가 빠른 순서로 자동 정렬됩니다.
+- 메인 페이지와 상세 관리 페이지의 기본 주요 과제 정렬을 가장 임박한 Action Item due date 기준으로 변경했습니다.

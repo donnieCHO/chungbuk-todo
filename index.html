@@ -75,6 +75,7 @@
 
   .control-grid { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:12px; }
   .field { display:flex; flex-direction:column; gap:6px; }
+  .required-mark { color:var(--red); font-weight:900; margin-left:3px; }
   .field label { font-size:11px; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; font-weight:800; }
   select,input { width:100%; padding:10px 12px; border-radius:11px; background:var(--surface2); border:1px solid var(--border); color:var(--text); outline:none; font-size:13px; }
   input[type=date] { color-scheme:dark; }
@@ -339,8 +340,8 @@
       <div class="field">
         <label for="sortMode">주요 과제 정렬</label>
         <select id="sortMode" onchange="setSortMode(this.value)">
+          <option value="deadline">Action Due Date 빠른 순</option>
           <option value="priority">우선순위 높은 순</option>
-          <option value="deadline">마감 임박 순</option>
           <option value="progress">진행률 낮은 순</option>
           <option value="order">입력 순</option>
         </select>
@@ -361,7 +362,7 @@
       <div class="field"><label for="quickMajor">주요 과제</label><select id="quickMajor"></select></div>
       <div class="field"><label for="quickText">Action Item</label><input id="quickText" type="text" placeholder="예: 강의장 Wi-Fi 점검 결과 확인"></div>
       <div class="field"><label for="quickOwner">담당</label><select id="quickOwner"></select></div>
-      <div class="field"><label for="quickDeadline">기한</label><input id="quickDeadline" type="date"></div>
+      <div class="field"><label for="quickDeadline">Due Date<span class="required-mark">*</span></label><input id="quickDeadline" type="date" required></div>
       <button class="btn" onclick="quickAddAction()">추가</button>
     </div>
   </section>
@@ -473,7 +474,7 @@ let majorTasks = {};
 let legacyTasks = [];
 let isReady = false;
 let ownerFilter = localStorage.getItem('todo.ownerFilter') || 'ops';
-let sortMode = localStorage.getItem('todo.sortMode') || 'priority';
+let sortMode = localStorage.getItem('todo.sortMode') || 'deadline';
 let searchQuery = '';
 let seedAttempted = false;
 
@@ -733,16 +734,27 @@ function setMajorSelect() {
   const sel = document.getElementById('quickMajor');
   sel.innerHTML = entries.length ? entries.map(m => `<option value="${m.key}">${escapeHtml(m.title)}</option>`).join('') : '<option value="">주요 과제 없음</option>';
 }
+function actionSortValue(action, { includeDone=false } = {}) {
+  const doneOffset = (!includeDone && action.done) ? 9_000_000_000_000_000 : 0;
+  const due = action.deadline ? new Date(action.deadline).getTime() : 8_000_000_000_000_000;
+  const priorityOffset = { high:0, mid:10_000, low:20_000 }[action.priority] || 30_000;
+  return doneOffset + due + priorityOffset + (action.order || 0) / 10_000_000;
+}
+function sortedActionsForMajor(major, entries=actionList(major), options={}) {
+  return [...entries].sort(([,a],[,b]) => actionSortValue(a, options) - actionSortValue(b, options));
+}
+function majorNextDueDate(major) {
+  const open = actionList(major).filter(([,a]) => !a.done && a.deadline);
+  if (open.length) return Math.min(...open.map(([,a]) => new Date(a.deadline).getTime()));
+  if (major.deadline) return new Date(major.deadline).getTime();
+  return Infinity;
+}
 function sortedMajors(majors) {
   const arr = [...majors];
   arr.sort((a,b) => {
-    if (sortMode === 'deadline') {
-      const ad = a.deadline ? new Date(a.deadline).getTime() : Infinity;
-      const bd = b.deadline ? new Date(b.deadline).getTime() : Infinity;
-      return ad - bd || (a.order||0) - (b.order||0);
-    }
-    if (sortMode === 'progress') return progressOf(a).pct - progressOf(b).pct || (a.order||0) - (b.order||0);
-    if (sortMode === 'priority') return (PRIORITY_SCORE[b.priority]||0) - (PRIORITY_SCORE[a.priority]||0) || (a.order||0) - (b.order||0);
+    if (sortMode === 'deadline') return majorNextDueDate(a) - majorNextDueDate(b) || (a.order||0) - (b.order||0);
+    if (sortMode === 'progress') return progressOf(a).pct - progressOf(b).pct || majorNextDueDate(a) - majorNextDueDate(b) || (a.order||0) - (b.order||0);
+    if (sortMode === 'priority') return (PRIORITY_SCORE[b.priority]||0) - (PRIORITY_SCORE[a.priority]||0) || majorNextDueDate(a) - majorNextDueDate(b) || (a.order||0) - (b.order||0);
     return (a.order||0) - (b.order||0);
   });
   return arr;
@@ -766,7 +778,7 @@ function visibleActionsForMajor(major, section) {
     if (section === 'week') return diff !== null && diff > 0 && diff <= 7 && action.status !== 'waiting' && action.status !== 'review';
     if (section === 'later') return (diff === null || diff > 7) && action.priority !== 'high' && action.status !== 'doing' && action.status !== 'review' && action.status !== 'waiting';
     return true;
-  }).sort(([,a],[,b]) => actionSortScore(b) - actionSortScore(a) || (a.order||0) - (b.order||0));
+  }).sort(([,a],[,b]) => actionSortValue(a) - actionSortValue(b) || actionSortScore(b) - actionSortScore(a) || (a.order||0) - (b.order||0));
 }
 function actionSortScore(action) {
   let score = 0;
@@ -890,7 +902,9 @@ window.quickAddAction = async () => {
   if (!majorKey) { alert('먼저 주요 과제를 만들어주세요.'); return; }
   if (!text) { textEl.focus(); return; }
   const owner = document.getElementById('quickOwner').value;
-  const deadline = document.getElementById('quickDeadline').value || '';
+  const deadlineEl = document.getElementById('quickDeadline');
+  const deadline = deadlineEl.value || '';
+  if (!deadline) { alert('Action Item의 due date를 입력해주세요.'); deadlineEl.focus(); return; }
   const actionRef = push(ref(db, `tasks/${majorKey}/actions`));
   const now = Date.now();
   setSyncStatus('syncing', '저장 중...');

@@ -36,6 +36,8 @@
 - [ ] 모든 페이지에서 `drivelink.html`로 이동 가능
 - [ ] 모든 페이지에서 `timetable.html`로 이동 가능
 - [ ] 운영 시간표 다음 메뉴로 `contact.html`이 표시됨
+- [ ] `timetable.html`도 다른 페이지와 같은 공통 sticky nav 스타일로 표시됨
+- [ ] `timetable.html`에서 `운영 시간표` 메뉴가 active 상태로 표시됨
 - [ ] `dricelink.html`은 `drivelink.html`로 이동함
 
 ## 5. Contact 페이지
@@ -85,3 +87,12 @@
 - [ ] `timetable.html`에서 일정과 장소 태그가 저장됨
 - [ ] `contact.html`에서 연락처 추가/수정/삭제가 저장됨
 - [ ] 다른 브라우저나 다른 기기에서 실시간 반영됨
+
+
+## Action Item due date 정렬 수동 테스트
+
+- [ ] details.html에서 주요 과제를 새로 추가한다.
+- [ ] 상단 Action Item 등록 폼에서 주요 과제를 선택하고 due date를 입력해 저장한다.
+- [ ] 같은 주요 과제에 due date가 더 빠른 Action Item을 추가했을 때 카드 내부에서 위로 올라오는지 확인한다.
+- [ ] index.html에서도 가장 임박한 Action Item이 먼저 보이는지 확인한다.
+- [ ] due date를 입력하지 않으면 저장이 막히는지 확인한다.

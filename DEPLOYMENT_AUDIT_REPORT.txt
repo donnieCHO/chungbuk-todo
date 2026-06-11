@@ -1,6 +1,6 @@
 DEPLOYMENT AUDIT REPORT
-Generated: 2026-06-11 08:02:10
-Root: /mnt/data/todo_release_nsd
+Generated: 2026-06-11 08:27:17
+Root: /mnt/data/work_nav_fix
 
 FILE EXISTENCE CHECK
 - OK

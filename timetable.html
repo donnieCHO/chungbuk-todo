@@ -4,7 +4,7 @@
   배포 파일: timetable.html
   역할: 2박 3일 운영 시간표를 Google Calendar 스타일의 시간 그리드로 관리합니다.
   데이터: Firebase Realtime Database의 timetable_events, timetable_locations 노드를 사용합니다.
-  연결: index.html, details.html, drivelink.html과 상호 이동합니다.
+  연결: index.html, details.html, drivelink.html, contact.html과 공통 내비게이션으로 상호 이동합니다.
   장소: 일정별 locations 배열과 재사용 가능한 장소 태그 목록을 분리해 관리합니다.
 -->
 <head>
@@ -57,6 +57,14 @@
   #syncStatus.syncing .sync-dot { animation:pulse 1s ease infinite; }
   @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
 
+  /* ── 공통 내비게이션 ──
+     다른 페이지(index/details/drivelink/contact)와 같은 순서, 같은 pill 스타일을 사용합니다.
+     현재 페이지인 timetable.html만 active 상태로 표시해 사용자가 위치를 바로 알 수 있게 했습니다. */
+  .nav { position:sticky; top:0; z-index:100; margin:0 -24px 24px; padding:8px 24px; background:rgba(15,17,23,.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid var(--border); }
+  .nav-inner { max-width:1200px; margin:0 auto; display:flex; gap:8px; flex-wrap:wrap; }
+  .nav a { text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:99px; border:1px solid var(--border); color:var(--muted); background:rgba(255,255,255,.02); font-size:13px; font-weight:700; transition:all .15s; white-space:nowrap; }
+  .nav a:hover, .nav a.active { color:var(--accent); border-color:rgba(79,142,247,.48); background:rgba(79,142,247,.1); }
+
   /* ── Header ── */
   .header {
     max-width:1200px;margin:0 auto 28px;
@@ -68,13 +76,13 @@
   .meta-chip { display:flex;align-items:center;gap:5px; }
   .meta-chip .dot { width:6px;height:6px;border-radius:50%;background:var(--accent); }
 
-  .back-btn {
-    font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;
+  .toolbar-btn {
+    font-family:'Pretendard',sans-serif;font-size:13px;font-weight:700;
     padding:8px 16px;border-radius:99px;border:1.5px solid var(--border);
-    background:transparent;color:var(--muted);text-decoration:none;
-    transition:all .2s;display:inline-flex;align-items:center;gap:5px;
+    background:rgba(255,255,255,.02);color:var(--muted);text-decoration:none;
+    transition:all .2s;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;
   }
-  .back-btn:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08); }
+  .toolbar-btn:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08); }
 
   /* ── 범례 + 액션 ── */
   .toolbar {
@@ -297,6 +305,8 @@
   /* 반응형 */
   @media(max-width:700px){
     body{padding:16px 12px;}
+    .nav{margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px;}
+    .nav a{font-size:12px;padding:7px 11px;}
     .timetable { font-size:12px; }
     :root { --time-col-w:48px; --row-h:36px; }
     .tt-day-num{font-size:15px;}
@@ -349,6 +359,17 @@
 </div>
 
 <div id="syncStatus"><span class="sync-dot"></span><span id="syncText">연결 중</span></div>
+
+<!-- 공통 메뉴: 다른 페이지와 동일한 순서로 제공하며, 현재 페이지인 운영 시간표만 active 처리합니다. -->
+<nav class="nav" aria-label="주요 메뉴">
+  <div class="nav-inner">
+    <a href="index.html">🏠 내 Action</a>
+    <a href="details.html">🧩 상세 관리</a>
+    <a href="drivelink.html">📁 파일 관리</a>
+    <a class="active" href="timetable.html">🕐 운영 시간표</a>
+    <a href="contact.html">👥 Contact</a>
+  </div>
+</nav>
 
 <!-- 일정 편집 모달 -->
 <div class="modal-overlay hidden" id="eventModal">
@@ -447,7 +468,7 @@
   </div>
 </div>
 
-<!-- ── Header ── -->
+<!-- ── Header: 페이지 제목과 행사 메타 정보만 담당합니다. 페이지 이동은 공통 nav에서 처리합니다. ── -->
 <div class="header">
   <div class="header-left">
     <h1>충북교육청 <span>AI 교원연수</span> 운영 시간표</h1>
@@ -455,12 +476,6 @@
       <span class="meta-chip"><span class="dot"></span>2026년 8월 12~14일 · 2박 3일</span>
       <span class="meta-chip"><span class="dot" style="background:var(--green)"></span>세종대학교</span>
     </div>
-  </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;">
-    <a class="back-btn" href="index.html">← 메인</a>
-    <a class="back-btn" href="details.html">상세 관리</a>
-    <a class="back-btn" href="drivelink.html">파일 관리</a>
-    <a class="back-btn" href="contact.html">Contact</a>
   </div>
 </div>
 
@@ -472,7 +487,7 @@
     <span class="legend-chip"><span class="legend-dot" style="background:var(--upstage)"></span>업스테이지</span>
   </div>
   <div class="toolbar-actions">
-    <button class="back-btn" type="button" onclick="openLocationManager()">📍 장소 관리</button>
+    <button class="toolbar-btn" type="button" onclick="openLocationManager()">📍 장소 관리</button>
     <span class="toolbar-hint">💡 빈 칸을 드래그하면 새 일정, 일정을 클릭하면 편집할 수 있어요</span>
   </div>
 </div>

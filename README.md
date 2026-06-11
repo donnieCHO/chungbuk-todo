@@ -87,6 +87,14 @@ tasks
 
 주소록은 `contact.html`로 분리했습니다. 상단 메뉴에서 `운영 시간표` 다음에 `Contact` 메뉴가 보입니다. 연락처는 Firebase `contacts` 노드에 저장됩니다.
 
+### 6. 공통 내비게이션 통일
+
+모든 주요 페이지는 아래 순서와 같은 pill 스타일의 공통 내비게이션을 사용합니다. `timetable.html`도 별도 헤더 버튼 방식이 아니라 동일한 sticky nav를 사용하며, 현재 페이지는 active 상태로 표시됩니다.
+
+```txt
+내 Action → 상세 관리 → 파일 관리 → 운영 시간표 → Contact
+```
+
 ```txt
 contacts
 └── {contactKey}
@@ -197,3 +205,16 @@ python3 deployment_audit.py
 ```
 
 점검 항목은 UTF-8, BOM 없음, HTML 기본 메타, 중복 ID, 내부 링크, inline handler, JavaScript 문법, 필수 기능 문자열, 사용법 안내, 로컬 정적 서빙입니다.
+
+
+## Action Item due date 정렬 업데이트
+
+상세 관리 페이지의 To Do 등록은 `주요 과제 설정`과 `Action Item 등록` 두 단계로 나뉩니다.
+
+1. 주요 과제를 먼저 생성합니다.
+2. Action Item 등록 폼에서 주요 과제를 선택합니다.
+3. Action Item 내용, 담당자, 상태, 우선순위, due date를 입력합니다.
+4. 저장하면 Firebase의 `tasks/{majorTaskKey}/actions/{actionKey}`에 기록됩니다.
+5. 화면은 즉시 다시 렌더링되며, 각 주요 과제 내부의 Action Item은 due date가 빠른 순서로 표시됩니다.
+
+`details.html`과 `index.html`의 주요 과제 기본 정렬은 가장 임박한 미완료 Action Item의 due date 기준입니다.

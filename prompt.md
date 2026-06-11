@@ -158,3 +158,26 @@ tasks
 - CHANGELOG.md 작성
 - deployment_audit.py 작성
 - 정적 점검 항목: 파일 존재, UTF-8, BOM 없음, HTML 메타, 중복 ID, 내부 링크, JS 문법, 필수 기능 문자열, 사용법 안내, 로컬 정적 서빙
+
+
+## 추가 요구사항 — 주요 과제 / Action Item / due date 기준 정렬
+
+동일 구조의 페이지를 만들 때 상세 관리 페이지는 반드시 다음 구조를 따른다.
+
+- To Do 등록 영역은 `주요 과제 설정`과 `Action Item 등록`으로 분리한다.
+- Action Item은 반드시 특정 주요 과제 내부에 저장한다.
+- Action Item 등록 시 due date를 필수 입력으로 받는다.
+- 저장 위치는 `tasks/{majorTaskKey}/actions/{actionKey}`이다.
+- 화면 렌더링 시 각 주요 과제 내부 Action Item은 due date가 빠른 순서로 정렬한다.
+- 주요 과제 정렬 기본값도 가장 임박한 미완료 Action Item due date 기준으로 한다.
+
+
+## 공통 내비게이션 요구사항
+
+모든 페이지의 공통 내비게이션은 같은 순서와 같은 pill 스타일을 사용한다.
+
+```txt
+내 Action → 상세 관리 → 파일 관리 → 운영 시간표 → Contact
+```
+
+`timetable.html`도 헤더 내부의 별도 이동 버튼을 쓰지 말고, 다른 페이지와 같은 sticky nav를 사용하며 `운영 시간표` 메뉴를 active 상태로 표시한다. 장소 관리처럼 페이지 내부에서만 쓰는 기능은 nav가 아니라 toolbar 버튼으로 분리한다.

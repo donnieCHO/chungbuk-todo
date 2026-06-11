@@ -31,6 +31,7 @@ deployment_audit.py
 | 주요 과제 → Action Item 2단계 구조 | 유지/보강 |
 | 드롭다운 UI 통일 | 반영 |
 | Contact 별도 페이지 | 신규 추가 |
+| 운영 시간표 내비게이션 통일 | 반영 |
 | Firebase 노드 문서화 | 반영 |
 | 정적 배포 점검 | 통과 |
 
@@ -65,7 +66,10 @@ deployment_audit.py
 ### timetable.html
 
 - 기존 장소 태그 기능과 세로 간격 개선을 유지했습니다.
-- 상단 메뉴에 `Contact` 링크를 추가했습니다.
+- 헤더 안에 따로 있던 이동 버튼을 제거하고, 다른 페이지와 동일한 공통 sticky nav를 적용했습니다.
+- 메뉴 순서는 `내 Action → 상세 관리 → 파일 관리 → 운영 시간표 → Contact`로 통일했습니다.
+- 현재 페이지인 `운영 시간표` 메뉴는 active 상태로 표시됩니다.
+- 장소 관리 버튼은 페이지 이동 메뉴가 아니라 toolbar 액션 버튼으로 분리했습니다.
 - 드롭다운 UI 스타일을 통일했습니다.
 
 ### drivelink.html
@@ -95,3 +99,10 @@ timetable.html: 일정 및 장소 태그 저장
 
 contact.html: 연락처 추가 / 수정 / 삭제
 ```
+
+
+## Action due date 검수
+
+- `details.html`의 To Do 등록 UI가 주요 과제 설정과 Action Item 등록으로 분리되었습니다.
+- Action Item 등록 시 due date 미입력 저장을 차단합니다.
+- `sortedActionsForMajor()`와 `majorNextDueDate()`로 상세/메인 화면의 정렬 기준을 일관화했습니다.
