@@ -107,20 +107,47 @@
 ## 로고 / favicon / 메타 정보 반영
 
 - 충북교육청 로고 이미지를 `assets/cbe-logo.png`로 추가했습니다.
-- 모든 주요 페이지의 헤더 또는 Hero 영역에 로고를 노출했습니다.
+- 당시에는 주요 페이지의 헤더/Hero 영역에 로고를 노출했으나, 이후 본문 노출은 제거했습니다.
 - `favicon.ico`, PNG favicon, Apple Touch Icon을 추가했습니다.
 - Open Graph / Twitter Card 메타 이미지에 로고를 연결했습니다.
 - GitHub Pages 하위 경로 배포를 고려해 모든 자산 경로는 상대 경로로 설정했습니다.
 
 ## 2026-06-12 — 라이트/다크 모드 전환 및 내 Action 로고 제거
 
-- 내 Action(`index.html`) Hero 영역에서 충북교육청 로고 이미지를 제거하고 타이포그래피 중심 Hero로 정리했습니다.
+- 모든 주요 페이지의 본문/헤더/Hero 영역에서 충북교육청 로고 이미지를 제거하고 타이포그래피 중심 구조로 정리했습니다.
 - `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html` 공통 내비게이션 우측에 라이트/다크 모드 전환 버튼을 추가했습니다.
 - 선택한 테마는 `localStorage(todo.theme)`에 저장되어 모든 페이지에서 동일하게 유지됩니다.
-- favicon, Apple Touch Icon, Open Graph/Twitter 이미지 메타는 기존 충북교육청 로고 자산을 유지합니다.
+- favicon, Apple Touch Icon, Open Graph/Twitter 이미지 메타는 기존 충북교육청 로고 자산을 유지합니다. 페이지 본문에는 로고 이미지를 사용하지 않습니다.
 
 
 ## 2026-06-12 추가 업데이트 — 내 Action 필터와 메모 색상
 - 내 Action 페이지의 내 보기 설정은 선택한 담당자와 직접 관련된 Action Item만 보여주도록 정밀화했습니다.
 - 관련 기준은 Action Item 담당, 협업기관, 회신 대기 대상입니다. 주요 과제 책임자만 같다는 이유로 관련 없는 Action Item이 노출되지 않도록 조정했습니다.
 - Action Item 메모는 작성자별 고유 색상으로 표시됩니다. NSD는 밝은 회색, 네이버는 녹색, 업스테이지는 보라, 세종대는 크림슨, 교육청은 노랑 기준입니다.
+
+
+## UI 개선 — 드롭다운 디자인 통일
+
+- 모든 페이지의 기본 브라우저 select UI를 공통 커스텀 드롭다운으로 대체했습니다.
+- 원본 `<select>`는 데이터 연동용으로 유지하여 기존 Firebase 저장/필터 로직과 호환됩니다.
+- 라이트/다크 모드에서 드롭다운 버튼, 메뉴, 선택 옵션 색상이 일관되게 보이도록 CSS 변수를 정리했습니다.
+- 네이버는 녹색, 업스테이지는 보라, 세종대는 크림슨, NSD는 밝은 회색 계열로 드롭다운 옵션 점 색상이 표시됩니다.
+
+## 2026-06-12 — 페이지 본문 로고 제거 범위 확대
+
+- `details.html`, `drivelink.html`, `timetable.html`, `contact.html`에 남아 있던 충북교육청 로고 `<img>` 표시를 제거했습니다.
+- `assets/cbe-logo.png`는 favicon, apple-touch-icon, Open Graph/Twitter 메타 이미지 용도로만 유지합니다.
+- 배포 점검 스크립트에 페이지 본문 로고 노출 금지 검사를 추가했습니다.
+
+
+## 2026-06-12 — 페이지 본문 로고 제거 확정
+
+- `details.html`, `drivelink.html`, `timetable.html`, `contact.html`의 헤더/Hero에서 `assets/cbe-logo.png` 이미지 태그를 제거했습니다.
+- `assets/cbe-logo.png`는 favicon, Apple Touch Icon, Open Graph/Twitter Card 메타 이미지 용도로만 유지합니다.
+
+
+## 2026-06-12 헤드라인 통일 및 본문 로고 제거 재검수
+
+- details.html, drivelink.html, timetable.html의 상단 헤드라인을 내 Action(index.html) Hero 스타일과 같은 톤으로 통일했습니다.
+- 페이지 본문에서는 충북교육청 로고 이미지를 사용하지 않도록 재검수했습니다. 로고는 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지에만 사용합니다.
+- drivelink.html Hero의 전체 링크 수가 파일 링크 요약과 함께 갱신되도록 보강했습니다.

@@ -1,0 +1,236 @@
+/*
+  Global custom select/dropdown UI
+  --------------------------------
+  브라우저 기본 select 드롭다운은 OS/브라우저별로 모양이 달라집니다.
+  이 파일은 모든 페이지의 select를 동일한 버튼형 드롭다운으로 보이게 하는 공통 UI 레이어입니다.
+  실제 데이터 값은 원래 select 요소에 그대로 유지되므로 기존 JS 로직과 Firebase 연동에는 영향을 주지 않습니다.
+*/
+.native-select-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-width: 1px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  clip-path: inset(50%) !important;
+}
+
+.ui-select {
+  position: relative;
+  width: 100%;
+  min-width: 120px;
+  display: block;
+}
+
+.ui-select-trigger {
+  position: relative;
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 40px 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.01)),
+    var(--surface2);
+  color: var(--text);
+  font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease, transform .16s ease;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.ui-select-trigger::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: translateY(-65%) rotate(45deg);
+  opacity: .9;
+  transition: transform .16s ease, opacity .16s ease;
+}
+
+.ui-select-trigger:hover {
+  border-color: rgba(79,142,247,.42);
+  background:
+    linear-gradient(180deg, rgba(79,142,247,.08), rgba(255,255,255,.012)),
+    var(--surface2);
+}
+
+.ui-select-trigger:focus-visible,
+.ui-select.open .ui-select-trigger {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(79,142,247,.14), inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.ui-select.open .ui-select-trigger::after {
+  transform: translateY(-35%) rotate(225deg);
+}
+
+.ui-select-value {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-select-placeholder .ui-select-value {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.ui-select-disabled .ui-select-trigger,
+.ui-select-trigger:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.ui-select-menu {
+  position: fixed;
+  z-index: 9999;
+  display: none;
+  max-height: min(320px, 52vh);
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid rgba(79,142,247,.28);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)),
+    var(--surface);
+  box-shadow: 0 22px 64px rgba(0,0,0,.44), 0 0 0 1px rgba(255,255,255,.035) inset;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.ui-select-menu.open {
+  display: block;
+  animation: uiSelectPop .12s ease-out;
+}
+
+@keyframes uiSelectPop {
+  from { opacity: 0; transform: translateY(-4px) scale(.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ui-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 34px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease, transform .12s ease;
+}
+
+.ui-select-option:hover,
+.ui-select-option.focused {
+  background: rgba(79,142,247,.12);
+  color: var(--accent);
+}
+
+.ui-select-option.selected {
+  background: rgba(79,142,247,.18);
+  color: var(--accent);
+}
+
+.ui-select-option.selected::after {
+  content: '✓';
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.ui-select-option:disabled,
+.ui-select-option.disabled {
+  color: var(--muted);
+  opacity: .48;
+  cursor: not-allowed;
+}
+
+.ui-select-menu::-webkit-scrollbar {
+  width: 8px;
+}
+.ui-select-menu::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: rgba(107,122,158,.45);
+}
+.ui-select-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 좁은 메모 입력줄에 들어가는 작성자 select는 버튼형 UI를 살짝 작게 조정합니다. */
+.memo-input-row .ui-select,
+.action-memo-row .ui-select {
+  width: 132px;
+  min-width: 118px;
+  flex: 0 0 auto;
+}
+.memo-input-row .ui-select-trigger,
+.action-memo-row .ui-select-trigger {
+  min-height: 32px;
+  padding: 6px 32px 6px 10px;
+  border-radius: 9px;
+  font-size: 12px;
+}
+.memo-input-row .ui-select-trigger::after,
+.action-memo-row .ui-select-trigger::after {
+  right: 11px;
+  width: 7px;
+  height: 7px;
+}
+
+/* 필터/툴바 영역에서는 드롭다운이 카드 그리드에 맞춰 꽉 차도록 합니다. */
+.toolbar .ui-select,
+.filter-bar .ui-select,
+.form-grid .ui-select,
+.modal-grid .ui-select,
+.action-entry-grid .ui-select,
+.quick-add .ui-select {
+  width: 100%;
+}
+
+html[data-theme="light"] .ui-select-trigger {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.92), rgba(248,250,255,.92)),
+    var(--surface2);
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 8px 22px rgba(24,31,55,.05);
+}
+
+html[data-theme="light"] .ui-select-menu {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,255,.96)),
+    var(--surface);
+  box-shadow: 0 24px 54px rgba(24,31,55,.18), 0 0 0 1px rgba(79,142,247,.10) inset;
+}
+
+html[data-theme="light"] .ui-select-option:hover,
+html[data-theme="light"] .ui-select-option.focused,
+html[data-theme="light"] .ui-select-option.selected {
+  background: rgba(79,142,247,.10);
+}

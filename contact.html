@@ -88,16 +88,9 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
 
-  /* 충북교육청 로고 공통 스타일
-     - assets/cbe-logo.png를 모든 주요 페이지의 헤더와 favicon/meta에서 함께 사용합니다.
-     - 로고 이미지는 어두운 배경에서 식별되도록 흰색 패널과 은은한 그림자를 함께 적용합니다. */
-  .logo-lockup { display:flex; align-items:center; gap:14px; min-width:0; }
-  .logo-lockup.hero-lockup { align-items:flex-start; gap:20px; }
-  .logo-text { min-width:0; }
-  .logo-mark { width:54px; height:54px; object-fit:contain; flex-shrink:0; border-radius:16px; background:rgba(255,255,255,.94); padding:6px; border:1px solid rgba(255,255,255,.22); box-shadow:0 14px 34px rgba(0,0,0,.30), 0 0 0 5px rgba(79,142,247,.05); }
-  .logo-mark.hero-logo { width:78px; height:78px; border-radius:24px; padding:8px; box-shadow:0 22px 50px rgba(0,0,0,.34), 0 0 0 8px rgba(79,142,247,.07); }
-  .logo-caption { margin-top:5px; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-  @media(max-width:560px){ .logo-lockup.hero-lockup{gap:14px;} .logo-mark.hero-logo{width:62px;height:62px;border-radius:20px;} .logo-mark{width:46px;height:46px;border-radius:14px;} }
+  /* 충북교육청 로고 자산 안내
+     - assets/cbe-logo.png는 favicon, apple-touch-icon, Open Graph/Twitter 메타 이미지 용도로만 사용합니다.
+     - 페이지 본문, Header, Hero 영역에는 로고 이미지를 직접 노출하지 않습니다. */
 
   body{font-family:'Pretendard','Malgun Gothic',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:28px 22px 90px;}
   button,input,select,textarea{font-family:inherit}
@@ -228,11 +221,6 @@
   html[data-theme="light"] .tt-corner { background:rgba(248,251,255,.92); }
   html[data-theme="light"] .usage-note { background:rgba(238,244,255,.72); }
   html[data-theme="light"] .modal-overlay { background:rgba(15,23,42,.34); }
-  html[data-theme="light"] .logo-mark {
-    background:#fff;
-    border-color:rgba(79,142,247,.18);
-    box-shadow:0 12px 30px rgba(49,63,93,.16), 0 0 0 5px rgba(79,142,247,.05);
-  }
   .theme-toggle {
     margin-left:auto;
     display:inline-flex;
@@ -269,6 +257,8 @@
   }
 
 </style>
+  <link rel="stylesheet" href="assets/ui-select.css">
+  <script src="assets/ui-select.js" defer></script>
 </head>
 <body>
 <div id="loadingOverlay"><div class="spinner"></div><div class="loading-text">연락처 데이터를 불러오는 중...</div></div>
@@ -284,12 +274,9 @@
 <main class="shell">
   <!-- Hero: 연락처 페이지의 역할과 등록 현황을 한눈에 보여줍니다. -->
   <header class="hero" aria-label="Contact 개요">
-    <div class="logo-lockup hero-lockup">
-      <img class="logo-mark hero-logo" src="assets/cbe-logo.png" alt="충북교육청 로고" width="78" height="78" loading="eager">
-      <div class="logo-text">
-        <h1>충북교육청 AI 교원연수<span>Contact management</span></h1>
-        <p>NSD, 네이버, 업스테이지, 세종대, 교육청 담당자 연락처를 소속별로 관리합니다. 전화와 이메일은 카드에서 바로 열 수 있습니다.</p>
-      </div>
+    <div class="hero-content">
+      <h1>충북교육청 AI 교원연수<br><span>Contact management sheet</span></h1>
+      <p>NSD, 네이버, 업스테이지, 세종대, 교육청 담당자 연락처를 소속별로 관리합니다. 전화와 이메일은 카드에서 바로 열 수 있습니다.</p>
     </div>
     <aside class="hero-stat"><div class="hero-stat-label">Total Contacts</div><div class="hero-stat-value" id="totalContacts">0</div></aside>
   </header>

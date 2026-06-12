@@ -136,7 +136,7 @@
 
 - [ ] `assets/cbe-logo.png`가 배포 루트 기준으로 존재하는지 확인
 - [ ] `assets/favicon.ico`, `favicon-64.png`, `favicon-32.png`, `favicon-16.png`, `apple-touch-icon.png`가 존재하는지 확인
-- [ ] `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html` 헤더에 로고가 보이는지 확인
+- [ ] `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html` 본문/Header/Hero에 로고 이미지가 보이지 않는지 확인
 - [ ] 브라우저 탭 favicon이 충북교육청 로고로 표시되는지 확인
 - [ ] 카카오톡/메신저 공유 시 Open Graph 이미지가 노출되는지 확인
 
@@ -145,10 +145,35 @@
 - [ ] 공통 내비게이션 오른쪽에 `Light` / `Dark` 테마 전환 버튼이 보인다.
 - [ ] `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html`에서 동일하게 테마가 전환된다.
 - [ ] 새로고침 후에도 마지막 선택 테마가 유지된다.
-- [ ] 내 Action Hero에는 로고 이미지가 보이지 않고, favicon은 정상 표시된다.
+- [ ] 모든 주요 페이지 본문에는 로고 이미지가 보이지 않고, favicon은 정상 표시된다.
 
 
 ## 2026-06-12 추가 업데이트 — 내 Action 필터와 메모 색상
 - 내 Action 페이지의 내 보기 설정은 선택한 담당자와 직접 관련된 Action Item만 보여주도록 정밀화했습니다.
 - 관련 기준은 Action Item 담당, 협업기관, 회신 대기 대상입니다. 주요 과제 책임자만 같다는 이유로 관련 없는 Action Item이 노출되지 않도록 조정했습니다.
 - Action Item 메모는 작성자별 고유 색상으로 표시됩니다. NSD는 밝은 회색, 네이버는 녹색, 업스테이지는 보라, 세종대는 크림슨, 교육청은 노랑 기준입니다.
+
+
+## 드롭다운 UI 확인
+
+배포 후 아래 페이지에서 드롭다운 메뉴가 기본 브라우저 UI로 보이지 않고 동일한 커스텀 UI로 열리는지 확인합니다.
+
+```txt
+index.html: 내 보기 설정, 주요 과제, 담당
+details.html: 주요 과제 선택창, 우선순위, 필터, 수정 모달
+drivelink.html: 담당자, 위치 필터
+timetable.html: 일정 날짜 선택
+contact.html: 소속 필터, 연락처 소속, 수정 모달
+```
+
+## 페이지 본문 로고 노출 금지
+
+- [ ] HTML 본문에 `<img src="assets/cbe-logo.png">`가 남아 있지 않은지 확인
+- [ ] `assets/cbe-logo.png`는 favicon, apple-touch-icon, OG/Twitter meta에서만 사용
+
+
+## 2026-06-12 헤드라인 통일 및 본문 로고 제거 재검수
+
+- details.html, drivelink.html, timetable.html의 상단 헤드라인을 내 Action(index.html) Hero 스타일과 같은 톤으로 통일했습니다.
+- 페이지 본문에서는 충북교육청 로고 이미지를 사용하지 않도록 재검수했습니다. 로고는 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지에만 사용합니다.
+- drivelink.html Hero의 전체 링크 수가 파일 링크 요약과 함께 갱신되도록 보강했습니다.

@@ -79,17 +79,6 @@
 </script>
 <style>
 
-  /* 충북교육청 로고 공통 스타일
-     - assets/cbe-logo.png를 모든 주요 페이지의 헤더와 favicon/meta에서 함께 사용합니다.
-     - 로고 이미지는 어두운 배경에서 식별되도록 흰색 패널과 은은한 그림자를 함께 적용합니다. */
-  .logo-lockup { display:flex; align-items:center; gap:14px; min-width:0; }
-  .logo-lockup.hero-lockup { align-items:flex-start; gap:20px; }
-  .logo-text { min-width:0; }
-  .logo-mark { width:54px; height:54px; object-fit:contain; flex-shrink:0; border-radius:16px; background:rgba(255,255,255,.94); padding:6px; border:1px solid rgba(255,255,255,.22); box-shadow:0 14px 34px rgba(0,0,0,.30), 0 0 0 5px rgba(79,142,247,.05); }
-  .logo-mark.hero-logo { width:78px; height:78px; border-radius:24px; padding:8px; box-shadow:0 22px 50px rgba(0,0,0,.34), 0 0 0 8px rgba(79,142,247,.07); }
-  .logo-caption { margin-top:5px; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-  @media(max-width:560px){ .logo-lockup.hero-lockup{gap:14px;} .logo-mark.hero-logo{width:62px;height:62px;border-radius:20px;} .logo-mark{width:46px;height:46px;border-radius:14px;} }
-
   /* 시간표 페이지 전용 스타일: 시간 그리드, 드래그 프리뷰, 일정 편집 모달을 포함합니다. */
   @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
@@ -138,6 +127,41 @@
   /* ── 공통 내비게이션 ──
      다른 페이지(index/details/drivelink/contact)와 같은 순서, 같은 pill 스타일을 사용합니다.
      현재 페이지인 timetable.html만 active 상태로 표시해 사용자가 위치를 바로 알 수 있게 했습니다. */
+
+  /* ── 통합 Hero Headline ──
+     내 Action 페이지의 헤드라인 톤과 동일하게, 각 페이지의 역할을
+     큰 제목·보조 영문 라인·메타 칩·우측 상태 카드로 정리합니다.
+     로고 이미지는 본문에 노출하지 않고 favicon/meta 용도로만 유지합니다. */
+  .hero {
+    position:relative; overflow:hidden;
+    display:grid; grid-template-columns:minmax(0,1fr) 260px;
+    gap:24px; align-items:stretch;
+    max-width:1200px; margin:6px auto 18px; padding:30px;
+    border:1px solid rgba(79,142,247,.34); border-radius:28px;
+    background:
+      radial-gradient(circle at 10% 8%, rgba(79,142,247,.22), transparent 34%),
+      radial-gradient(circle at 88% 0%, rgba(124,106,247,.20), transparent 30%),
+      linear-gradient(135deg, rgba(24,28,39,.98), rgba(18,22,34,.95));
+    box-shadow:0 24px 70px rgba(0,0,0,.36);
+  }
+  .hero-bg-orb { position:absolute; width:210px; height:210px; border-radius:50%; filter:blur(18px); opacity:.40; pointer-events:none; }
+  .hero-bg-orb.orb-a { left:-80px; top:-80px; background:rgba(79,142,247,.40); }
+  .hero-bg-orb.orb-b { right:-92px; top:-64px; background:rgba(124,106,247,.36); }
+  .hero-content,.hero-status { position:relative; z-index:1; }
+  .hero-kicker { display:inline-flex; align-items:center; gap:8px; margin-bottom:13px; color:var(--accent); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+  .hero-kicker::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 0 6px rgba(61,214,140,.13); }
+  .hero h1 { margin:0; font-size:clamp(30px,4.8vw,56px); line-height:.99; letter-spacing:-2.1px; font-weight:900; }
+  .hero h1 span { display:inline-block; margin-top:10px; color:transparent; background:linear-gradient(135deg,#e8ecf4 0%,#8fb9ff 48%,#c7bfff 100%); -webkit-background-clip:text; background-clip:text; font-size:clamp(22px,3vw,36px); letter-spacing:-1.2px; }
+  .hero-desc { max-width:760px; margin:17px 0 0; color:#b9c3d8; line-height:1.72; font-size:14px; }
+  .hero-meta { margin-top:18px; display:flex; flex-wrap:wrap; gap:10px 14px; color:var(--muted); font-size:13px; }
+  .hero-status { display:flex; flex-direction:column; justify-content:center; align-self:stretch; min-height:148px; padding:20px; border:1px solid rgba(255,255,255,.10); border-radius:24px; background:rgba(15,17,23,.46); box-shadow:inset 0 1px 0 rgba(255,255,255,.08); }
+  .hero-status-label { color:var(--muted); font-size:12px; font-weight:850; letter-spacing:.08em; text-transform:uppercase; }
+  .hero-big-stat { margin-top:8px; font-family:'DM Mono',monospace; font-size:40px; line-height:1; color:var(--accent); font-weight:650; letter-spacing:-1px; }
+  .hero-dday { margin-top:9px; align-self:flex-start; font-size:34px; line-height:1; padding:12px 16px; border-radius:20px; box-shadow:0 14px 35px rgba(79,142,247,.32); }
+  .hero-status-note { margin-top:11px; color:var(--muted); font-size:12px; line-height:1.5; }
+  @media(max-width:900px){ .hero { grid-template-columns:1fr; padding:24px; } .hero-status { min-height:auto; } }
+  @media(max-width:560px){ .hero { border-radius:24px; padding:22px; } .hero h1 { letter-spacing:-1.4px; } .hero-dday,.hero-big-stat { font-size:32px; } }
+
   .nav { position:sticky; top:0; z-index:100; margin:0 -24px 24px; padding:8px 24px; background:rgba(15,17,23,.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid var(--border); }
   .nav-inner { max-width:1200px; margin:0 auto; display:flex; gap:8px; flex-wrap:wrap; }
   .nav a { text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:99px; border:1px solid var(--border); color:var(--muted); background:rgba(255,255,255,.02); font-size:13px; font-weight:700; transition:all .15s; white-space:nowrap; }
@@ -494,11 +518,6 @@
   html[data-theme="light"] .tt-corner { background:rgba(248,251,255,.92); }
   html[data-theme="light"] .usage-note { background:rgba(238,244,255,.72); }
   html[data-theme="light"] .modal-overlay { background:rgba(15,23,42,.34); }
-  html[data-theme="light"] .logo-mark {
-    background:#fff;
-    border-color:rgba(79,142,247,.18);
-    box-shadow:0 12px 30px rgba(49,63,93,.16), 0 0 0 5px rgba(79,142,247,.05);
-  }
   .theme-toggle {
     margin-left:auto;
     display:inline-flex;
@@ -535,6 +554,8 @@
   }
 
 </style>
+  <link rel="stylesheet" href="assets/ui-select.css">
+  <script src="assets/ui-select.js" defer></script>
 </head>
 <body>
 
@@ -657,21 +678,26 @@
   </div>
 </div>
 
-<!-- ── Header: 페이지 제목과 행사 메타 정보만 담당합니다. 페이지 이동은 공통 nav에서 처리합니다. ── -->
-<div class="header">
-  <div class="header-left">
-    <div class="logo-lockup">
-      <img class="logo-mark" src="assets/cbe-logo.png" alt="충북교육청 로고" width="54" height="54" loading="eager">
-      <div class="logo-text">
-        <h1>충북교육청 <span>AI 교원연수</span> 운영 시간표</h1>
-        <div class="meta">
-          <span class="meta-chip"><span class="dot"></span>2026년 8월 12~14일 · 2박 3일</span>
-          <span class="meta-chip"><span class="dot" style="background:var(--green)"></span>세종대학교</span>
-        </div>
-      </div>
+<!-- ── Hero: 운영 시간표 페이지도 내 Action과 같은 헤드라인 톤으로 통일합니다. ── -->
+<header class="hero" aria-label="운영 시간표 개요">
+  <div class="hero-bg-orb orb-a"></div>
+  <div class="hero-bg-orb orb-b"></div>
+  <div class="hero-content">
+    <div class="hero-kicker">Timetable Dashboard</div>
+    <h1>충북교육청 AI 교원연수<br><span>Timetable management sheet</span></h1>
+    <p class="hero-desc">2박 3일 연수의 강의, 식사, 이동, 멘토링, 발표 일정을 시간 그리드에서 드래그로 등록하고 장소 태그와 함께 관리합니다.</p>
+    <div class="hero-meta">
+      <span class="meta-chip"><span class="dot"></span>2026년 8월 12~14일 · 2박 3일</span>
+      <span class="meta-chip"><span class="dot" style="background:var(--green)"></span>세종대학교</span>
+      <span class="meta-chip"><span class="dot" style="background:var(--accent2)"></span>장소 태그 관리</span>
     </div>
   </div>
-</div>
+  <aside class="hero-status" aria-label="운영 기간">
+    <div class="hero-status-label">운영 기간</div>
+    <div class="hero-big-stat">3D</div>
+    <div class="hero-status-note">빈 시간 칸을 드래그하면 선택한 시간 범위로 일정 입력창이 열립니다.</div>
+  </aside>
+</header>
 
 <!-- 범례 + 안내 -->
 <div class="toolbar">

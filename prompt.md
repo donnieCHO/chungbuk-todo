@@ -241,17 +241,33 @@ tasks
 동일 구조의 페이지를 새로 만들 때는 아래 요구사항을 포함하세요.
 
 - 로고 파일은 `assets/cbe-logo.png`로 저장한다.
-- 모든 주요 HTML 페이지의 헤더 또는 Hero 영역에 로고를 표시한다.
+- 모든 주요 HTML 페이지의 Header/Hero/본문에는 로고 이미지를 표시하지 않는다.
 - `favicon.ico`, `favicon-64.png`, `favicon-32.png`, `favicon-16.png`, `apple-touch-icon.png`를 생성한다.
 - 모든 HTML 파일의 `<head>`에 favicon, theme-color, description, Open Graph, Twitter Card 메타를 넣는다.
 - GitHub Pages 하위 경로 배포를 고려해 자산 경로는 상대 경로를 사용한다.
 
 ## 전역 테마 전환 요구사항
 
-동일 구조의 페이지를 다시 만들 때는 모든 주요 페이지의 Global Navigation 오른쪽에 라이트/다크 모드 전환 버튼을 추가합니다. 테마 선택값은 `localStorage(todo.theme)`에 저장하고, `html[data-theme="light"]` / `html[data-theme="dark"]` CSS 변수로 화면 색상을 전환합니다. 내 Action Hero에는 로고 이미지를 노출하지 않고, favicon/meta에는 로고 자산을 사용할 수 있습니다.
+동일 구조의 페이지를 다시 만들 때는 모든 주요 페이지의 Global Navigation 오른쪽에 라이트/다크 모드 전환 버튼을 추가합니다. 테마 선택값은 `localStorage(todo.theme)`에 저장하고, `html[data-theme="light"]` / `html[data-theme="dark"]` CSS 변수로 화면 색상을 전환합니다. 모든 주요 페이지의 본문에는 로고 이미지를 노출하지 않고, favicon/meta에는 로고 자산을 사용할 수 있습니다.
 
 
 ## 2026-06-12 추가 업데이트 — 내 Action 필터와 메모 색상
 - 내 Action 페이지의 내 보기 설정은 선택한 담당자와 직접 관련된 Action Item만 보여주도록 정밀화했습니다.
 - 관련 기준은 Action Item 담당, 협업기관, 회신 대기 대상입니다. 주요 과제 책임자만 같다는 이유로 관련 없는 Action Item이 노출되지 않도록 조정했습니다.
 - Action Item 메모는 작성자별 고유 색상으로 표시됩니다. NSD는 밝은 회색, 네이버는 녹색, 업스테이지는 보라, 세종대는 크림슨, 교육청은 노랑 기준입니다.
+
+
+## 추가 요구사항 — 드롭다운 UI 일관성
+
+동일 구조의 페이지를 다시 만들 때는 모든 `<select>` 요소를 기본 브라우저 UI 그대로 노출하지 말고, 원본 select는 데이터 연동용으로 유지한 채 화면에는 공통 커스텀 드롭다운 컴포넌트를 표시해야 합니다. 라이트/다크 모드, 업체별 색상 점, 외부 클릭 닫기, ESC 닫기, 동적 option 변경 동기화를 포함합니다.
+
+## 본문 로고 노출 금지 요구사항
+
+- `assets/cbe-logo.png`는 favicon, apple-touch-icon, Open Graph/Twitter meta 전용으로 사용합니다.
+- `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html` 본문에는 `<img src="assets/cbe-logo.png">`를 넣지 않습니다.
+
+
+### 페이지 본문에는 로고 금지
+
+- `assets/cbe-logo.png`는 favicon, Apple Touch Icon, Open Graph/Twitter Card 이미지에만 사용한다.
+- `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html`의 본문/헤더/Hero에는 `<img src="assets/cbe-logo.png">`를 넣지 않는다.

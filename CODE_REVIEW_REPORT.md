@@ -144,17 +144,43 @@ contact.html: 연락처 추가 / 수정 / 삭제
 
 - `assets/cbe-logo.png`를 기준 로고 파일로 추가했습니다.
 - 모든 주요 HTML 파일에 favicon, Apple Touch Icon, Open Graph, Twitter Card 메타를 추가했습니다.
-- 각 페이지의 헤더 또는 Hero 영역에 로고 표시를 추가했습니다.
+- 최신 기준으로 각 페이지의 Header/Hero 본문 로고 표시는 제거했습니다.
 - 로고 경로는 GitHub Pages 하위 경로에서도 동작하도록 상대 경로를 사용합니다.
 
 ## Theme Toggle Review
 
 - 공통 내비게이션에 라이트/다크 모드 버튼을 추가했습니다.
 - 테마 적용은 CSS 변수 오버라이드 방식으로 처리해 Firebase 데이터 구조와 CRUD 로직을 변경하지 않았습니다.
-- 내 Action Hero의 로고 이미지는 제거했으며, favicon/meta 자산은 유지했습니다.
+- 모든 주요 페이지 본문/헤더/Hero의 로고 이미지는 제거했으며, favicon/meta 자산은 유지했습니다.
 
 
 ## 2026-06-12 추가 업데이트 — 내 Action 필터와 메모 색상
 - 내 Action 페이지의 내 보기 설정은 선택한 담당자와 직접 관련된 Action Item만 보여주도록 정밀화했습니다.
 - 관련 기준은 Action Item 담당, 협업기관, 회신 대기 대상입니다. 주요 과제 책임자만 같다는 이유로 관련 없는 Action Item이 노출되지 않도록 조정했습니다.
 - Action Item 메모는 작성자별 고유 색상으로 표시됩니다. NSD는 밝은 회색, 네이버는 녹색, 업스테이지는 보라, 세종대는 크림슨, 교육청은 노랑 기준입니다.
+
+
+## UI 코드 검수 — 드롭다운 컴포넌트
+
+- 기본 브라우저 select가 OS별로 다르게 노출되는 문제를 줄이기 위해 공통 커스텀 드롭다운 레이어를 추가했습니다.
+- 기존 `<select>`는 숨김 처리만 하고 제거하지 않아 기존 `document.getElementById(...).value`, `onchange`, Firebase 저장 로직이 그대로 동작합니다.
+- 동적으로 option이 채워지는 select는 MutationObserver와 주기적 동기화로 표시값을 갱신합니다.
+- 메뉴 외부 클릭과 ESC 키로 닫히도록 처리했습니다.
+
+## 본문 로고 노출 검수
+
+- `assets/cbe-logo.png`는 favicon/meta 자산으로만 유지합니다.
+- 주요 HTML 페이지의 본문에는 `assets/cbe-logo.png`를 사용하는 `<img>` 태그가 남아 있지 않도록 점검했습니다.
+
+
+## 본문 로고 이미지 미노출 검수
+
+- `assets/cbe-logo.png`는 favicon/meta 용도로만 유지합니다.
+- HTML 본문에는 `<img src="assets/cbe-logo.png">`가 남지 않도록 전수 검색했습니다.
+
+
+## 2026-06-12 헤드라인 통일 및 본문 로고 제거 재검수
+
+- details.html, drivelink.html, timetable.html의 상단 헤드라인을 내 Action(index.html) Hero 스타일과 같은 톤으로 통일했습니다.
+- 페이지 본문에서는 충북교육청 로고 이미지를 사용하지 않도록 재검수했습니다. 로고는 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지에만 사용합니다.
+- drivelink.html Hero의 전체 링크 수가 파일 링크 요약과 함께 갱신되도록 보강했습니다.

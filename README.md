@@ -263,7 +263,16 @@ python3 deployment_audit.py
 
 ## 로고 및 웹페이지 메타
 
-충북교육청 로고는 `assets/cbe-logo.png`에 저장되어 있으며, 모든 주요 HTML 페이지의 헤더와 favicon/meta 태그에서 공통으로 사용합니다.
+운영 원칙:
+
+```txt
+페이지 본문/Header/Hero: 로고 이미지 미노출
+favicon/apple-touch-icon: 로고 사용
+Open Graph/Twitter image: 로고 사용
+```
+
+
+충북교육청 로고는 `assets/cbe-logo.png`에 저장되어 있으며, **페이지 본문/Header/Hero에는 노출하지 않고 favicon 및 웹페이지 메타 이미지에서만 사용**합니다.
 
 ```txt
 assets/
@@ -281,10 +290,41 @@ assets/
 
 전 페이지 공통 내비게이션 오른쪽의 `Light` / `Dark` 버튼으로 화면 테마를 전환할 수 있습니다. 선택값은 브라우저 `localStorage(todo.theme)`에 저장되어 `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html`에서 동일하게 적용됩니다.
 
-내 Action 메인 Hero에는 로고 이미지를 노출하지 않고, favicon과 SNS 공유 메타에는 `assets/cbe-logo.png`를 계속 사용합니다.
+모든 주요 페이지의 본문/Header/Hero에는 로고 이미지를 노출하지 않습니다. favicon, Apple Touch Icon, Open Graph/Twitter 공유 메타에만 `assets/cbe-logo.png`를 사용합니다.
 
 
 ## 2026-06-12 추가 업데이트 — 내 Action 필터와 메모 색상
 - 내 Action 페이지의 내 보기 설정은 선택한 담당자와 직접 관련된 Action Item만 보여주도록 정밀화했습니다.
 - 관련 기준은 Action Item 담당, 협업기관, 회신 대기 대상입니다. 주요 과제 책임자만 같다는 이유로 관련 없는 Action Item이 노출되지 않도록 조정했습니다.
 - Action Item 메모는 작성자별 고유 색상으로 표시됩니다. NSD는 밝은 회색, 네이버는 녹색, 업스테이지는 보라, 세종대는 크림슨, 교육청은 노랑 기준입니다.
+
+
+## UI 업데이트 — 커스텀 드롭다운 통일
+
+모든 주요 페이지의 `<select>` 입력은 기본 브라우저 UI 대신 공통 커스텀 드롭다운으로 표시됩니다. 원본 `<select>` 요소는 Firebase 연동, `value` 읽기, `change` 이벤트 처리를 위해 DOM에 그대로 유지하고 화면에는 `.custom-select-wrap` 컴포넌트를 렌더링합니다.
+
+적용 페이지:
+
+```txt
+index.html
+details.html
+drivelink.html
+timetable.html
+contact.html
+```
+
+특징:
+
+```txt
+라이트/다크 모드 색상 자동 대응
+네이버/업스테이지/세종대/NSD/교육청/우선순위 색상 점 표시
+동적 option 변경 시 자동 동기화
+원본 select의 onchange 로직 유지
+```
+
+
+## 2026-06-12 헤드라인 통일 및 본문 로고 제거 재검수
+
+- details.html, drivelink.html, timetable.html의 상단 헤드라인을 내 Action(index.html) Hero 스타일과 같은 톤으로 통일했습니다.
+- 페이지 본문에서는 충북교육청 로고 이미지를 사용하지 않도록 재검수했습니다. 로고는 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지에만 사용합니다.
+- drivelink.html Hero의 전체 링크 수가 파일 링크 요약과 함께 갱신되도록 보강했습니다.

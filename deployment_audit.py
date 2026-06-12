@@ -108,10 +108,13 @@ def check_logo_assets() -> list[str]:
             errors.append(f"empty logo/favicon asset: {name}")
     for name in HTML_FILES:
         text = read_text(name)
-        if name != "dricelink.html" and "assets/cbe-logo.png" not in text:
-            errors.append(f"{name}: logo image reference missing")
         if "assets/favicon.ico" not in text or "apple-touch-icon" not in text:
             errors.append(f"{name}: favicon/apple touch icon metadata missing")
+        if "og:image" not in text or "twitter:image" not in text:
+            errors.append(f"{name}: social image metadata missing")
+        # 충북교육청 로고는 favicon/meta 전용입니다. 본문/Header/Hero에 img로 노출하면 안 됩니다.
+        if re.search(r'<img[^>]+src=["\']assets/cbe-logo\.png["\']', text, flags=re.I):
+            errors.append(f"{name}: page-visible cbe-logo img tag found")
     return errors
 
 
@@ -257,12 +260,40 @@ def check_theme_toggle() -> list[str]:
             errors.append(f"{name}: theme persistence script missing")
         if 'html[data-theme="light"]' not in text:
             errors.append(f"{name}: light theme CSS missing")
-    index_text = read_text("index.html")
-    hero_start = index_text.find('<header class="hero"')
-    hero_end = index_text.find('</header>', hero_start)
-    hero_block = index_text[hero_start:hero_end] if hero_start != -1 and hero_end != -1 else ""
-    if 'cbe-logo.png' in hero_block or 'hero-logo' in hero_block:
-        errors.append("index.html: visual logo should not appear in 내 Action hero")
+        body_start = text.lower().find('<body')
+        body_text = text[body_start:] if body_start != -1 else text
+        if 'assets/cbe-logo.png' in body_text:
+            errors.append(f"{name}: cbe logo should not be rendered in page body/header/hero")
+    return errors
+
+
+
+def check_custom_dropdown() -> list[str]:
+    errors: list[str] = []
+    css_path = ROOT / "assets/ui-select.css"
+    js_path = ROOT / "assets/ui-select.js"
+    if not css_path.exists():
+        errors.append("assets/ui-select.css missing")
+    elif "native-select-hidden" not in css_path.read_text(encoding="utf-8"):
+        errors.append("assets/ui-select.css: native-select-hidden marker missing")
+    if not js_path.exists():
+        errors.append("assets/ui-select.js missing")
+    else:
+        js_text = js_path.read_text(encoding="utf-8")
+        if "window.refreshCustomSelects" not in js_text:
+            errors.append("assets/ui-select.js: refreshCustomSelects marker missing")
+        node = subprocess.run(["bash", "-lc", "command -v node"], capture_output=True, text=True)
+        if node.returncode == 0:
+            result = subprocess.run(["node", "--check", str(js_path)], capture_output=True, text=True)
+            if result.returncode != 0:
+                errors.append(f"assets/ui-select.js: {result.stderr.strip()}")
+    pages = ["index.html", "details.html", "drivelink.html", "timetable.html", "contact.html"]
+    for name in pages:
+        text = read_text(name)
+        if 'href="assets/ui-select.css"' not in text:
+            errors.append(f"{name}: ui-select.css link missing")
+        if 'src="assets/ui-select.js"' not in text:
+            errors.append(f"{name}: ui-select.js script link missing")
     return errors
 
 
@@ -306,7 +337,8 @@ def main() -> int:
         ("JAVASCRIPT SYNTAX CHECK", check_js_syntax),
         ("REQUIRED FEATURE MARKER CHECK", check_required_strings),
         ("USAGE GUIDE / COMMENT CHECK", check_usage_guides_and_comments),
-        ("THEME TOGGLE / INDEX LOGO CHECK", check_theme_toggle),
+        ("THEME TOGGLE / BODY LOGO CHECK", check_theme_toggle),
+        ("CUSTOM DROPDOWN UI CHECK", check_custom_dropdown),
         ("LOCAL STATIC SERVE CHECK", check_static_serve),
     ]
     all_errors: list[str] = []
