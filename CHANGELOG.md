@@ -111,3 +111,10 @@
 - `favicon.ico`, PNG favicon, Apple Touch Icon을 추가했습니다.
 - Open Graph / Twitter Card 메타 이미지에 로고를 연결했습니다.
 - GitHub Pages 하위 경로 배포를 고려해 모든 자산 경로는 상대 경로로 설정했습니다.
+
+## 2026-06-12 — 라이트/다크 모드 전환 및 내 Action 로고 제거
+
+- 내 Action(`index.html`) Hero 영역에서 충북교육청 로고 이미지를 제거하고 타이포그래피 중심 Hero로 정리했습니다.
+- `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html` 공통 내비게이션 우측에 라이트/다크 모드 전환 버튼을 추가했습니다.
+- 선택한 테마는 `localStorage(todo.theme)`에 저장되어 모든 페이지에서 동일하게 유지됩니다.
+- favicon, Apple Touch Icon, Open Graph/Twitter 이미지 메타는 기존 충북교육청 로고 자산을 유지합니다.

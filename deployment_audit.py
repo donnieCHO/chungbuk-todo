@@ -246,6 +246,26 @@ def check_usage_guides_and_comments() -> list[str]:
     return errors
 
 
+def check_theme_toggle() -> list[str]:
+    errors: list[str] = []
+    theme_pages = ["index.html", "details.html", "drivelink.html", "timetable.html", "contact.html"]
+    for name in theme_pages:
+        text = read_text(name)
+        if 'id="themeToggle"' not in text:
+            errors.append(f"{name}: theme toggle button missing")
+        if 'todo.theme' not in text:
+            errors.append(f"{name}: theme persistence script missing")
+        if 'html[data-theme="light"]' not in text:
+            errors.append(f"{name}: light theme CSS missing")
+    index_text = read_text("index.html")
+    hero_start = index_text.find('<header class="hero"')
+    hero_end = index_text.find('</header>', hero_start)
+    hero_block = index_text[hero_start:hero_end] if hero_start != -1 and hero_end != -1 else ""
+    if 'cbe-logo.png' in hero_block or 'hero-logo' in hero_block:
+        errors.append("index.html: visual logo should not appear in 내 Action hero")
+    return errors
+
+
 def check_static_serve() -> list[str]:
     errors: list[str] = []
 
@@ -286,6 +306,7 @@ def main() -> int:
         ("JAVASCRIPT SYNTAX CHECK", check_js_syntax),
         ("REQUIRED FEATURE MARKER CHECK", check_required_strings),
         ("USAGE GUIDE / COMMENT CHECK", check_usage_guides_and_comments),
+        ("THEME TOGGLE / INDEX LOGO CHECK", check_theme_toggle),
         ("LOCAL STATIC SERVE CHECK", check_static_serve),
     ]
     all_errors: list[str] = []

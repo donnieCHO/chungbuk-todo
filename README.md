@@ -276,3 +276,9 @@ assets/
 ```
 
 적용 페이지는 `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html`, `dricelink.html`입니다. GitHub Pages의 하위 경로 배포에서도 동작하도록 모두 상대 경로를 사용합니다.
+
+## 라이트/다크 모드
+
+전 페이지 공통 내비게이션 오른쪽의 `Light` / `Dark` 버튼으로 화면 테마를 전환할 수 있습니다. 선택값은 브라우저 `localStorage(todo.theme)`에 저장되어 `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html`에서 동일하게 적용됩니다.
+
+내 Action 메인 Hero에는 로고 이미지를 노출하지 않고, favicon과 SNS 공유 메타에는 `assets/cbe-logo.png`를 계속 사용합니다.

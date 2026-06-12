@@ -245,3 +245,7 @@ tasks
 - `favicon.ico`, `favicon-64.png`, `favicon-32.png`, `favicon-16.png`, `apple-touch-icon.png`를 생성한다.
 - 모든 HTML 파일의 `<head>`에 favicon, theme-color, description, Open Graph, Twitter Card 메타를 넣는다.
 - GitHub Pages 하위 경로 배포를 고려해 자산 경로는 상대 경로를 사용한다.
+
+## 전역 테마 전환 요구사항
+
+동일 구조의 페이지를 다시 만들 때는 모든 주요 페이지의 Global Navigation 오른쪽에 라이트/다크 모드 전환 버튼을 추가합니다. 테마 선택값은 `localStorage(todo.theme)`에 저장하고, `html[data-theme="light"]` / `html[data-theme="dark"]` CSS 변수로 화면 색상을 전환합니다. 내 Action Hero에는 로고 이미지를 노출하지 않고, favicon/meta에는 로고 자산을 사용할 수 있습니다.

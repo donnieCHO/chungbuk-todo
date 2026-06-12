@@ -28,6 +28,56 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+
+<!-- 라이트/다크 모드 초기화: 화면이 그려지기 전에 저장된 테마를 먼저 적용해 깜빡임을 줄입니다. -->
+<script>
+(function(){
+  const STORAGE_KEY = 'todo.theme';
+  const DARK_THEME_COLOR = '#0f1117';
+  const LIGHT_THEME_COLOR = '#f6f8fc';
+
+  function getPreferredTheme(){
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch (err) { /* localStorage 접근이 제한된 환경에서는 시스템 설정을 사용합니다. */ }
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+
+  function updateThemeButton(theme){
+    const btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    const icon = document.getElementById('themeToggleIcon');
+    const text = document.getElementById('themeToggleText');
+    const isDark = theme === 'dark';
+    btn.setAttribute('aria-label', isDark ? '라이트 모드로 전환' : '다크 모드로 전환');
+    btn.setAttribute('title', isDark ? '라이트 모드로 전환' : '다크 모드로 전환');
+    if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+    if (text) text.textContent = isDark ? 'Light' : 'Dark';
+  }
+
+  function applyTheme(theme){
+    const normalized = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', normalized);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', normalized === 'light' ? LIGHT_THEME_COLOR : DARK_THEME_COLOR);
+    updateThemeButton(normalized);
+  }
+
+  window.applyTodoTheme = applyTheme;
+  window.toggleTheme = function(){
+    const current = document.documentElement.getAttribute('data-theme') || getPreferredTheme();
+    const next = current === 'light' ? 'dark' : 'light';
+    try { localStorage.setItem(STORAGE_KEY, next); } catch (err) {}
+    applyTheme(next);
+  };
+
+  applyTheme(getPreferredTheme());
+  document.addEventListener('DOMContentLoaded', function(){
+    applyTheme(document.documentElement.getAttribute('data-theme') || getPreferredTheme());
+  });
+})();
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
@@ -45,18 +95,6 @@
   body { font-family:'Pretendard','Malgun Gothic',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:28px 22px 80px; }
   button,input,select,textarea { font-family:inherit; }
   a { color:inherit; }
-
-  /* 충북교육청 로고 공통 스타일
-     - assets/cbe-logo.png를 모든 주요 페이지의 헤더와 favicon/meta에서 함께 사용합니다.
-     - 로고 이미지는 어두운 배경에서 식별되도록 흰색 패널과 은은한 그림자를 함께 적용합니다. */
-  .logo-lockup { display:flex; align-items:center; gap:14px; min-width:0; }
-  .logo-lockup.hero-lockup { align-items:flex-start; gap:20px; }
-  .logo-text { min-width:0; }
-  .logo-mark { width:54px; height:54px; object-fit:contain; flex-shrink:0; border-radius:16px; background:rgba(255,255,255,.94); padding:6px; border:1px solid rgba(255,255,255,.22); box-shadow:0 14px 34px rgba(0,0,0,.30), 0 0 0 5px rgba(79,142,247,.05); }
-  .logo-mark.hero-logo { width:78px; height:78px; border-radius:24px; padding:8px; box-shadow:0 22px 50px rgba(0,0,0,.34), 0 0 0 8px rgba(79,142,247,.07); }
-  .logo-caption { margin-top:5px; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-  @media(max-width:560px){ .logo-lockup.hero-lockup{gap:14px;} .logo-mark.hero-logo{width:62px;height:62px;border-radius:20px;} .logo-mark{width:46px;height:46px;border-radius:14px;} }
-
 
   /* 로딩과 동기화 배지는 Firebase 연결 상태를 사용자에게 즉시 알려줍니다. */
   #loadingOverlay { position:fixed; inset:0; background:var(--bg); z-index:999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px; transition:opacity .35s; }
@@ -309,6 +347,114 @@
   @media(max-width:900px){ .hero { grid-template-columns:1fr; padding:26px; } .hero-status { max-width:none; } }
   @media(max-width:560px){ .hero { border-radius:24px; padding:22px; } .hero-dday { font-size:34px; } }
 
+
+
+  /* ── Global Theme Switch ──
+     - 기본 변수는 기존 다크 모드 값을 유지합니다.
+     - html[data-theme="light"] 에서만 색상 토큰을 교체하므로 Firebase/렌더링 로직은 건드리지 않습니다.
+     - 선택한 테마는 localStorage(todo.theme)에 저장되어 모든 페이지에서 동일하게 유지됩니다. */
+  html[data-theme="dark"] { color-scheme: dark; }
+  html[data-theme="light"] {
+    color-scheme: light;
+    --bg:#f6f8fc;
+    --surface:#ffffff;
+    --surface2:#eef3fb;
+    --surface3:#e7edf7;
+    --border:#d8e1ef;
+    --text:#172033;
+    --muted:#66758f;
+    --ops:#334155;
+  }
+  html[data-theme="light"] body {
+    background:radial-gradient(circle at 10% -10%, rgba(79,142,247,.12), transparent 32%), var(--bg);
+  }
+  html[data-theme="light"] .nav {
+    background:rgba(246,248,252,.90);
+    border-bottom-color:var(--border);
+  }
+  html[data-theme="light"] #loadingOverlay { background:var(--bg); }
+  html[data-theme="light"] #syncStatus {
+    background:rgba(255,255,255,.94);
+    box-shadow:0 12px 30px rgba(49,63,93,.14);
+  }
+  html[data-theme="light"] input[type=date] { color-scheme:light; }
+  html[data-theme="dark"] input[type=date] { color-scheme:dark; }
+  html[data-theme="light"] select option { background:#fff; color:#172033; }
+  html[data-theme="light"] .panel,
+  html[data-theme="light"] .summary-card,
+  html[data-theme="light"] .major-card,
+  html[data-theme="light"] .modal,
+  html[data-theme="light"] .usage-guide,
+  html[data-theme="light"] .dashboard-panel,
+  html[data-theme="light"] .timetable-wrap,
+  html[data-theme="light"] .contact-card,
+  html[data-theme="light"] .link-card {
+    box-shadow:0 14px 36px rgba(49,63,93,.10);
+  }
+  html[data-theme="light"] .hero {
+    background:radial-gradient(circle at 10% 10%, rgba(79,142,247,.14), transparent 34%),
+               radial-gradient(circle at 86% 0%, rgba(124,106,247,.13), transparent 31%),
+               linear-gradient(135deg, rgba(255,255,255,.98), rgba(238,244,255,.95));
+    box-shadow:0 24px 70px rgba(49,63,93,.15);
+  }
+  html[data-theme="light"] .hero h1 span {
+    background:linear-gradient(135deg,#172033 0%,#4f8ef7 48%,#7c6af7 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+  }
+  html[data-theme="light"] .hero-desc { color:#4b5870; }
+  html[data-theme="light"] .hero-status {
+    background:rgba(255,255,255,.72);
+    border-color:rgba(79,142,247,.18);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
+  }
+  html[data-theme="light"] .hero-progress-track { background:rgba(216,225,239,.95); }
+  html[data-theme="light"] .usage-card,
+  html[data-theme="light"] .toolbar,
+  html[data-theme="light"] .tt-day-head,
+  html[data-theme="light"] .tt-corner { background:rgba(248,251,255,.92); }
+  html[data-theme="light"] .usage-note { background:rgba(238,244,255,.72); }
+  html[data-theme="light"] .modal-overlay { background:rgba(15,23,42,.34); }
+  html[data-theme="light"] .logo-mark {
+    background:#fff;
+    border-color:rgba(79,142,247,.18);
+    box-shadow:0 12px 30px rgba(49,63,93,.16), 0 0 0 5px rgba(79,142,247,.05);
+  }
+  .theme-toggle {
+    margin-left:auto;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    min-height:36px;
+    padding:8px 13px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,.03);
+    color:var(--muted);
+    font-family:'Pretendard','Malgun Gothic',sans-serif;
+    font-size:12px;
+    font-weight:800;
+    cursor:pointer;
+    transition:color .16s, border-color .16s, background .16s, transform .16s;
+    white-space:nowrap;
+  }
+  .theme-toggle:hover {
+    color:var(--accent);
+    border-color:rgba(79,142,247,.48);
+    background:rgba(79,142,247,.10);
+    transform:translateY(-1px);
+  }
+  .theme-toggle-icon { line-height:1; }
+  .theme-toggle-text { font-family:'DM Mono',monospace; letter-spacing:.02em; }
+  html[data-theme="light"] .theme-toggle {
+    background:rgba(255,255,255,.72);
+    box-shadow:0 8px 20px rgba(49,63,93,.08);
+  }
+  @media(max-width:640px){
+    .theme-toggle { margin-left:0; width:100%; }
+  }
+
 </style>
 </head>
 <body>
@@ -322,6 +468,10 @@
     <a href="drivelink.html">📁 파일 관리</a>
     <a href="timetable.html">🕐 운영 시간표</a>
     <a href="contact.html">👥 Contact</a>
+    <button class="theme-toggle" id="themeToggle" type="button" onclick="toggleTheme()" aria-label="라이트 모드로 전환" title="라이트/다크 모드 전환">
+      <span class="theme-toggle-icon" id="themeToggleIcon" aria-hidden="true">☀️</span>
+      <span class="theme-toggle-text" id="themeToggleText">Light</span>
+    </button>
   </div>
 </nav>
 
@@ -330,13 +480,9 @@
     <div class="hero-bg-orb orb-a"></div>
     <div class="hero-bg-orb orb-b"></div>
     <div class="hero-content">
-      <div class="logo-lockup hero-lockup">
-        <img class="logo-mark hero-logo" src="assets/cbe-logo.png" alt="충북교육청 로고" width="78" height="78" loading="eager">
-        <div class="logo-text">
-          <div class="hero-kicker">Realtime Collaboration Dashboard</div>
-          <h1>충북교육청 AI 교원연수<br><span>To Do List management sheet</span></h1>
-        </div>
-      </div>
+      <!-- 내 Action 페이지 Hero에서는 로고 이미지를 노출하지 않고, 타이포그래피 중심으로 구성합니다. -->
+      <div class="hero-kicker">Realtime Collaboration Dashboard</div>
+      <h1>충북교육청 AI 교원연수<br><span>To Do List management sheet</span></h1>
       <p class="hero-desc">강의, 장소, 운영, 사후처리 카테고리 안에서 주요 과제와 세부 Action Item을 2단계로 관리합니다.</p>
       <div class="hero-meta">
         <span class="meta-chip"><span class="dot"></span>2026년 8월 12~14일 · 세종대학교</span>

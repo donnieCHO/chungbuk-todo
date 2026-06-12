@@ -146,3 +146,9 @@ contact.html: 연락처 추가 / 수정 / 삭제
 - 모든 주요 HTML 파일에 favicon, Apple Touch Icon, Open Graph, Twitter Card 메타를 추가했습니다.
 - 각 페이지의 헤더 또는 Hero 영역에 로고 표시를 추가했습니다.
 - 로고 경로는 GitHub Pages 하위 경로에서도 동작하도록 상대 경로를 사용합니다.
+
+## Theme Toggle Review
+
+- 공통 내비게이션에 라이트/다크 모드 버튼을 추가했습니다.
+- 테마 적용은 CSS 변수 오버라이드 방식으로 처리해 Firebase 데이터 구조와 CRUD 로직을 변경하지 않았습니다.
+- 내 Action Hero의 로고 이미지는 제거했으며, favicon/meta 자산은 유지했습니다.

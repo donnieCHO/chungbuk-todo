@@ -139,3 +139,10 @@
 - [ ] `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html` 헤더에 로고가 보이는지 확인
 - [ ] 브라우저 탭 favicon이 충북교육청 로고로 표시되는지 확인
 - [ ] 카카오톡/메신저 공유 시 Open Graph 이미지가 노출되는지 확인
+
+## 테마 전환 점검
+
+- [ ] 공통 내비게이션 오른쪽에 `Light` / `Dark` 테마 전환 버튼이 보인다.
+- [ ] `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html`에서 동일하게 테마가 전환된다.
+- [ ] 새로고침 후에도 마지막 선택 테마가 유지된다.
+- [ ] 내 Action Hero에는 로고 이미지가 보이지 않고, favicon은 정상 표시된다.
