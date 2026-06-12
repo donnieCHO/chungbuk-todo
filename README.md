@@ -259,3 +259,20 @@ python3 deployment_audit.py
 - 완료 버튼은 글자 없이 왼쪽 원형 체크만 표시하도록 정리했습니다. 사용법에는 `왼쪽 원형 체크를 누르면 완료가 됩니다.` 안내를 추가했습니다.
 - `timetable.html` 상단 toolbar의 드래그 안내 문구를 제거하고, 같은 내용을 `운영 시간표 사용법` 카드 안으로 이동했습니다.
 - 시간표 사용법의 `보기 개선` 안내 문구는 제거했습니다.
+
+
+## 로고 및 웹페이지 메타
+
+충북교육청 로고는 `assets/cbe-logo.png`에 저장되어 있으며, 모든 주요 HTML 페이지의 헤더와 favicon/meta 태그에서 공통으로 사용합니다.
+
+```txt
+assets/
+├── cbe-logo.png
+├── favicon.ico
+├── favicon-64.png
+├── favicon-32.png
+├── favicon-16.png
+└── apple-touch-icon.png
+```
+
+적용 페이지는 `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html`, `dricelink.html`입니다. GitHub Pages의 하위 경로 배포에서도 동작하도록 모두 상대 경로를 사용합니다.

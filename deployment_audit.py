@@ -29,6 +29,7 @@ ROOT = Path(__file__).resolve().parent
 HTML_FILES = ["index.html", "details.html", "timetable.html", "drivelink.html", "contact.html", "dricelink.html"]
 DOC_FILES = ["README.md", "DEPLOYMENT_CHECKLIST.md", "CHANGELOG.md", "prompt.md", "CODE_REVIEW_REPORT.md"]
 REQUIRED_FILES = HTML_FILES + DOC_FILES
+LOGO_ASSETS = ["assets/cbe-logo.png", "assets/favicon.ico", "assets/favicon-64.png", "assets/favicon-32.png", "assets/favicon-16.png", "assets/apple-touch-icon.png"]
 REQUIRED_LINKS = {
     "index.html": ["details.html", "drivelink.html", "timetable.html", "contact.html"],
     "details.html": ["index.html", "drivelink.html", "timetable.html", "contact.html"],
@@ -97,6 +98,23 @@ def check_files() -> list[str]:
     return errors
 
 
+def check_logo_assets() -> list[str]:
+    errors: list[str] = []
+    for name in LOGO_ASSETS:
+        path = ROOT / name
+        if not path.exists():
+            errors.append(f"missing logo/favicon asset: {name}")
+        elif path.stat().st_size == 0:
+            errors.append(f"empty logo/favicon asset: {name}")
+    for name in HTML_FILES:
+        text = read_text(name)
+        if name != "dricelink.html" and "assets/cbe-logo.png" not in text:
+            errors.append(f"{name}: logo image reference missing")
+        if "assets/favicon.ico" not in text or "apple-touch-icon" not in text:
+            errors.append(f"{name}: favicon/apple touch icon metadata missing")
+    return errors
+
+
 def check_encoding_and_html() -> list[str]:
     errors: list[str] = []
     for name in REQUIRED_FILES:
@@ -140,7 +158,6 @@ def check_duplicate_ids() -> list[str]:
 
 def check_internal_links() -> list[str]:
     errors: list[str] = []
-    existing = {p.name for p in ROOT.iterdir() if p.is_file()}
     for name in HTML_FILES:
         parser = parse_html(name)
         found_links = [value for _, _, value in parser.links]
@@ -150,7 +167,10 @@ def check_internal_links() -> list[str]:
             if link.startswith(("http://", "https://", "mailto:", "tel:", "#", "data:")):
                 continue
             target = link.split("#", 1)[0].split("?", 1)[0]
-            if target and target not in existing:
+            if not target:
+                continue
+            # 상대 경로 자산(assets/...)과 HTML 파일 링크를 모두 실제 파일 경로 기준으로 확인합니다.
+            if not (ROOT / target).exists():
                 errors.append(f"{name}: broken local link -> {link}")
         for required in REQUIRED_LINKS.get(name, []):
             if not any(required in link for link in found_links):
@@ -258,6 +278,7 @@ def check_static_serve() -> list[str]:
 def main() -> int:
     sections = [
         ("FILE EXISTENCE CHECK", check_files),
+        ("LOGO / FAVICON ASSET CHECK", check_logo_assets),
         ("ENCODING / HTML STATIC CHECK", check_encoding_and_html),
         ("DUPLICATE ID CHECK", check_duplicate_ids),
         ("INTERNAL LINK / NAVIGATION CHECK", check_internal_links),

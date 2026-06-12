@@ -130,3 +130,12 @@
 - [ ] 완료 버튼에 텍스트 라벨이 노출되지 않고 원형 체크만 보이는지 확인
 - [ ] `timetable.html`의 드래그 안내가 toolbar가 아니라 `운영 시간표 사용법` 안에 보이는지 확인
 - [ ] 시간표 사용법에서 `보기 개선` 문구가 보이지 않는지 확인
+
+
+## 로고와 favicon 점검
+
+- [ ] `assets/cbe-logo.png`가 배포 루트 기준으로 존재하는지 확인
+- [ ] `assets/favicon.ico`, `favicon-64.png`, `favicon-32.png`, `favicon-16.png`, `apple-touch-icon.png`가 존재하는지 확인
+- [ ] `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html` 헤더에 로고가 보이는지 확인
+- [ ] 브라우저 탭 favicon이 충북교육청 로고로 표시되는지 확인
+- [ ] 카카오톡/메신저 공유 시 Open Graph 이미지가 노출되는지 확인

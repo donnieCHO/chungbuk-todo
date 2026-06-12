@@ -102,3 +102,12 @@
 - 내 Action과 상세 관리의 완료 버튼에서 `완료`, `완료됨`, `완료 처리` 텍스트 라벨을 제거했습니다.
 - Action Item 왼쪽의 원형 체크 버튼만으로 완료 상태를 전환하도록 UI를 정리했습니다.
 - 내 Action 사용법에 `왼쪽 원형 체크를 누르면 완료가 됩니다.` 안내를 추가했습니다.
+
+
+## 로고 / favicon / 메타 정보 반영
+
+- 충북교육청 로고 이미지를 `assets/cbe-logo.png`로 추가했습니다.
+- 모든 주요 페이지의 헤더 또는 Hero 영역에 로고를 노출했습니다.
+- `favicon.ico`, PNG favicon, Apple Touch Icon을 추가했습니다.
+- Open Graph / Twitter Card 메타 이미지에 로고를 연결했습니다.
+- GitHub Pages 하위 경로 배포를 고려해 모든 자산 경로는 상대 경로로 설정했습니다.

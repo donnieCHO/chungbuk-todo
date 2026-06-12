@@ -11,6 +11,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>충북교육청 AI 교원연수 — 파일 링크 관리</title>
+<meta name="description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
+<meta name="theme-color" content="#0f1117">
+<meta name="application-name" content="충북교육청 AI 교원연수 To Do">
+<meta property="og:type" content="website">
+<meta property="og:title" content="충북교육청 AI 교원연수 — 파일 링크 관리">
+<meta property="og:description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
+<meta property="og:image" content="assets/cbe-logo.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="충북교육청 AI 교원연수 — 파일 링크 관리">
+<meta name="twitter:description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
+<meta name="twitter:image" content="assets/cbe-logo.png">
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
@@ -18,6 +34,18 @@
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:'Pretendard','Malgun Gothic',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:28px 22px 80px; }
   button,input,select { font-family:inherit; }
+
+  /* 충북교육청 로고 공통 스타일
+     - assets/cbe-logo.png를 모든 주요 페이지의 헤더와 favicon/meta에서 함께 사용합니다.
+     - 로고 이미지는 어두운 배경에서 식별되도록 흰색 패널과 은은한 그림자를 함께 적용합니다. */
+  .logo-lockup { display:flex; align-items:center; gap:14px; min-width:0; }
+  .logo-lockup.hero-lockup { align-items:flex-start; gap:20px; }
+  .logo-text { min-width:0; }
+  .logo-mark { width:54px; height:54px; object-fit:contain; flex-shrink:0; border-radius:16px; background:rgba(255,255,255,.94); padding:6px; border:1px solid rgba(255,255,255,.22); box-shadow:0 14px 34px rgba(0,0,0,.30), 0 0 0 5px rgba(79,142,247,.05); }
+  .logo-mark.hero-logo { width:78px; height:78px; border-radius:24px; padding:8px; box-shadow:0 22px 50px rgba(0,0,0,.34), 0 0 0 8px rgba(79,142,247,.07); }
+  .logo-caption { margin-top:5px; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  @media(max-width:560px){ .logo-lockup.hero-lockup{gap:14px;} .logo-mark.hero-logo{width:62px;height:62px;border-radius:20px;} .logo-mark{width:46px;height:46px;border-radius:14px;} }
+
   input,select { width:100%; padding:10px 12px; border-radius:11px; background:var(--surface2); border:1px solid var(--border); color:var(--text); outline:none; font-size:13px; }
   input:focus,select:focus { border-color:var(--accent); }
   select option { background:var(--surface2); }
@@ -119,7 +147,17 @@
 <div id="syncStatus" class="syncing"><span class="sync-dot"></span><span id="syncText">연결 중</span></div>
 <nav class="nav" aria-label="주요 메뉴"><div class="nav-inner"><a href="index.html">🏠 내 Action</a><a href="details.html">🧩 상세 관리</a><a class="active" href="drivelink.html">📁 파일 관리</a><a href="timetable.html">🕐 운영 시간표</a><a href="contact.html">👥 Contact</a></div></nav>
 <main class="shell">
-  <header class="topbar"><div class="title"><h1>충북교육청 <span>AI 교원연수</span> 파일 링크 관리</h1><div class="meta"><span class="meta-chip"><span class="dot"></span>주요 과제와 Action Item에 첨부된 링크를 한곳에서 확인</span><span class="meta-chip"><span class="dot" style="background:var(--green)"></span>원본 파일은 Google Drive 등 외부 저장소에 보관</span></div></div></header>
+  <header class="topbar">
+    <div class="title">
+      <div class="logo-lockup">
+        <img class="logo-mark" src="assets/cbe-logo.png" alt="충북교육청 로고" width="54" height="54" loading="eager">
+        <div class="logo-text">
+          <h1>충북교육청 <span>AI 교원연수</span> 파일 링크 관리</h1>
+          <div class="meta"><span class="meta-chip"><span class="dot"></span>주요 과제와 Action Item에 첨부된 링크를 한곳에서 확인</span><span class="meta-chip"><span class="dot" style="background:var(--green)"></span>원본 파일은 Google Drive 등 외부 저장소에 보관</span></div>
+        </div>
+      </div>
+    </div>
+  </header>
   <section class="summary-grid"><div class="summary-card highlight"><div class="summary-label">전체 링크</div><div class="summary-value" id="sumLinks">0</div></div><div class="summary-card good"><div class="summary-label">Google Drive</div><div class="summary-value" id="sumDrive">0</div></div><div class="summary-card"><div class="summary-label">연결된 주요 과제</div><div class="summary-value" id="sumMajors">0</div></div><div class="summary-card"><div class="summary-label">Action Item</div><div class="summary-value" id="sumActions">0</div></div></section>
 
 

@@ -234,3 +234,14 @@ tasks
 - 완료 버튼은 글자 없는 원형 체크만 표시한다.
 - 버튼 안에 `완료`, `완료됨`, `완료 처리` 텍스트를 넣지 않는다.
 - 사용법 안내에는 `왼쪽 원형 체크를 누르면 완료가 됩니다.` 문구를 넣는다.
+
+
+## 로고와 favicon 요구사항
+
+동일 구조의 페이지를 새로 만들 때는 아래 요구사항을 포함하세요.
+
+- 로고 파일은 `assets/cbe-logo.png`로 저장한다.
+- 모든 주요 HTML 페이지의 헤더 또는 Hero 영역에 로고를 표시한다.
+- `favicon.ico`, `favicon-64.png`, `favicon-32.png`, `favicon-16.png`, `apple-touch-icon.png`를 생성한다.
+- 모든 HTML 파일의 `<head>`에 favicon, theme-color, description, Open Graph, Twitter Card 메타를 넣는다.
+- GitHub Pages 하위 경로 배포를 고려해 자산 경로는 상대 경로를 사용한다.

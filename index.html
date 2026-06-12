@@ -12,6 +12,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>충북교육청 AI 교원연수 — To Do List management sheet</title>
+<meta name="description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
+<meta name="theme-color" content="#0f1117">
+<meta name="application-name" content="충북교육청 AI 교원연수 To Do">
+<meta property="og:type" content="website">
+<meta property="og:title" content="충북교육청 AI 교원연수 — To Do List management sheet">
+<meta property="og:description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
+<meta property="og:image" content="assets/cbe-logo.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="충북교육청 AI 교원연수 — To Do List management sheet">
+<meta name="twitter:description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
+<meta name="twitter:image" content="assets/cbe-logo.png">
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
@@ -29,6 +45,18 @@
   body { font-family:'Pretendard','Malgun Gothic',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:28px 22px 80px; }
   button,input,select,textarea { font-family:inherit; }
   a { color:inherit; }
+
+  /* 충북교육청 로고 공통 스타일
+     - assets/cbe-logo.png를 모든 주요 페이지의 헤더와 favicon/meta에서 함께 사용합니다.
+     - 로고 이미지는 어두운 배경에서 식별되도록 흰색 패널과 은은한 그림자를 함께 적용합니다. */
+  .logo-lockup { display:flex; align-items:center; gap:14px; min-width:0; }
+  .logo-lockup.hero-lockup { align-items:flex-start; gap:20px; }
+  .logo-text { min-width:0; }
+  .logo-mark { width:54px; height:54px; object-fit:contain; flex-shrink:0; border-radius:16px; background:rgba(255,255,255,.94); padding:6px; border:1px solid rgba(255,255,255,.22); box-shadow:0 14px 34px rgba(0,0,0,.30), 0 0 0 5px rgba(79,142,247,.05); }
+  .logo-mark.hero-logo { width:78px; height:78px; border-radius:24px; padding:8px; box-shadow:0 22px 50px rgba(0,0,0,.34), 0 0 0 8px rgba(79,142,247,.07); }
+  .logo-caption { margin-top:5px; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  @media(max-width:560px){ .logo-lockup.hero-lockup{gap:14px;} .logo-mark.hero-logo{width:62px;height:62px;border-radius:20px;} .logo-mark{width:46px;height:46px;border-radius:14px;} }
+
 
   /* 로딩과 동기화 배지는 Firebase 연결 상태를 사용자에게 즉시 알려줍니다. */
   #loadingOverlay { position:fixed; inset:0; background:var(--bg); z-index:999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px; transition:opacity .35s; }
@@ -302,8 +330,13 @@
     <div class="hero-bg-orb orb-a"></div>
     <div class="hero-bg-orb orb-b"></div>
     <div class="hero-content">
-      <div class="hero-kicker">Realtime Collaboration Dashboard</div>
-      <h1>충북교육청 AI 교원연수<br><span>To Do List management sheet</span></h1>
+      <div class="logo-lockup hero-lockup">
+        <img class="logo-mark hero-logo" src="assets/cbe-logo.png" alt="충북교육청 로고" width="78" height="78" loading="eager">
+        <div class="logo-text">
+          <div class="hero-kicker">Realtime Collaboration Dashboard</div>
+          <h1>충북교육청 AI 교원연수<br><span>To Do List management sheet</span></h1>
+        </div>
+      </div>
       <p class="hero-desc">강의, 장소, 운영, 사후처리 카테고리 안에서 주요 과제와 세부 Action Item을 2단계로 관리합니다.</p>
       <div class="hero-meta">
         <span class="meta-chip"><span class="dot"></span>2026년 8월 12~14일 · 세종대학교</span>
