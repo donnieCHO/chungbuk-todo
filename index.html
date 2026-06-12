@@ -512,8 +512,8 @@
   <section class="dashboard-panel" aria-label="Action Item 현황 대시보드">
     <div class="dashboard-head">
       <div>
-        <h2>전체 Action 현황</h2>
-        <p>세부 목록은 오늘 해야 할 일과 이번 주 Action만 보여주고, 전체 상태는 이 대시보드에서 빠르게 확인합니다.</p>
+        <h2>현재 보기 Action 현황</h2>
+        <p>내 보기 설정에서 선택한 담당자와 직접 관련된 Action만 기준으로 오늘/이번 주/회신 대기/다음 마감을 계산합니다.</p>
       </div>
       <span class="badge" id="dashUpdated">실시간 동기화</span>
     </div>
@@ -538,7 +538,7 @@
       <div class="usage-steps">
         <div class="usage-card">
           <h3>1. 내 담당자 선택</h3>
-          <ul><li><b>내 보기</b>에서 NSD, 네이버, 업스테이지, 세종대, 교육청 또는 전체를 선택합니다.</li><li>담당자로 지정된 Action Item과 협업기관에 포함된 항목이 함께 보입니다.</li></ul>
+          <ul><li><b>내 보기</b>에서 NSD, 네이버, 업스테이지, 세종대, 교육청 또는 전체를 선택합니다.</li><li>담당자로 지정되었거나, 협업기관 또는 회신 대기 대상에 포함된 Action Item만 보입니다.</li></ul>
         </div>
         <div class="usage-card">
           <h3>2. 2단계 구조 이해</h3>
@@ -861,6 +861,20 @@ function deadlineTag(deadline) {
 function actionList(major) {
   return Object.entries(major.actions || {}).map(([key, action]) => [key, action]);
 }
+function actionRelatedToOwner(action, ownerKey) {
+  const target = normalizeOwner(ownerKey);
+  if (!target || target === 'all') return true;
+  const owner = normalizeOwner(action.owner);
+  const relatedOwners = uniq([
+    ...((action.agencies || []).map(normalizeOwner)),
+    ...normalizeWaitingFor(action.waitingFor)
+  ]);
+  return owner === target || relatedOwners.includes(target);
+}
+function actionsForCurrentOwner(majors) {
+  return majors.flatMap(m => actionList(m).map(([key,a]) => ({ major:m, key, action:a })))
+    .filter(x => ownerFilter === 'all' || actionRelatedToOwner(x.action, ownerFilter));
+}
 function progressOf(major) {
   const actions = actionList(major);
   if (actions.length === 0) return { done:major.done ? 1 : 0, total:1, pct:major.done ? 100 : 0 };
@@ -995,6 +1009,8 @@ function calcDDay() {
 function setSummary() {
   const majors = Object.values(majorTasks);
   const actions = majors.flatMap(m => actionList(m).map(([key,a]) => ({ major:m, key, action:a })));
+
+  // Hero와 상단 요약은 전체 프로젝트 기준을 유지합니다.
   const open = actions.filter(x => !x.action.done).length;
   const done = actions.filter(x => x.action.done).length;
   const overdue = actions.filter(x => !x.action.done && getDaysLeft(x.action.deadline) !== null && getDaysLeft(x.action.deadline) < 0).length;
@@ -1007,7 +1023,9 @@ function setSummary() {
   document.getElementById('heroProgressFill').style.width = `${pct}%`;
   document.getElementById('heroProgressText').textContent = `완료 ${done} / 전체 ${actions.length}`;
 
-  const openActions = actions.filter(x => !x.action.done);
+  // 대시보드와 목록은 내 보기 설정에서 선택한 담당자 기준으로 좁혀서 계산합니다.
+  const viewActions = actionsForCurrentOwner(majors);
+  const openActions = viewActions.filter(x => !x.action.done);
   const nowCount = openActions.filter(x => {
     const diff = getDaysLeft(x.action.deadline);
     return diff !== null && diff <= 0;
@@ -1023,12 +1041,14 @@ function setSummary() {
   document.getElementById('dashNow').textContent = nowCount;
   document.getElementById('dashWeek').textContent = weekCount;
   document.getElementById('dashWaiting').textContent = waitingCount;
+  const dashScope = ownerFilter === 'all' ? '전체 기준' : `${ownerLabel(ownerFilter)} 기준`;
+  document.getElementById('dashUpdated').textContent = `${dashScope} · 실시간 동기화`;
   if (next) {
     document.getElementById('dashNextDue').textContent = shortDate(next.action.deadline);
     document.getElementById('dashNextDueCaption').textContent = `${next.major.title} · ${next.action.text}`;
   } else {
     document.getElementById('dashNextDue').textContent = '-';
-    document.getElementById('dashNextDueCaption').textContent = '등록된 due date가 없습니다';
+    document.getElementById('dashNextDueCaption').textContent = '현재 보기 기준 등록된 due date가 없습니다';
   }
 }
 function setMajorSelect() {
@@ -1064,10 +1084,7 @@ function sortedMajors(majors) {
 function visibleActionsForMajor(major, section) {
   const q = searchQuery.trim().toLowerCase();
   return actionList(major).filter(([,action]) => {
-    if (ownerFilter !== 'all') {
-      const belongs = action.owner === ownerFilter || (action.agencies || []).includes(ownerFilter) || major.owner === ownerFilter;
-      if (!belongs) return false;
-    }
+    if (ownerFilter !== 'all' && !actionRelatedToOwner(action, ownerFilter)) return false;
     if (q) {
       const hay = `${major.title} ${major.description} ${major.cat} ${action.text} ${ownerLabel(action.owner)} ${waitingDisplay(action.waitingFor)}`.toLowerCase();
       if (!hay.includes(q)) return false;

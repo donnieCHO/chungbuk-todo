@@ -282,3 +282,9 @@ assets/
 전 페이지 공통 내비게이션 오른쪽의 `Light` / `Dark` 버튼으로 화면 테마를 전환할 수 있습니다. 선택값은 브라우저 `localStorage(todo.theme)`에 저장되어 `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html`에서 동일하게 적용됩니다.
 
 내 Action 메인 Hero에는 로고 이미지를 노출하지 않고, favicon과 SNS 공유 메타에는 `assets/cbe-logo.png`를 계속 사용합니다.
+
+
+## 2026-06-12 추가 업데이트 — 내 Action 필터와 메모 색상
+- 내 Action 페이지의 내 보기 설정은 선택한 담당자와 직접 관련된 Action Item만 보여주도록 정밀화했습니다.
+- 관련 기준은 Action Item 담당, 협업기관, 회신 대기 대상입니다. 주요 과제 책임자만 같다는 이유로 관련 없는 Action Item이 노출되지 않도록 조정했습니다.
+- Action Item 메모는 작성자별 고유 색상으로 표시됩니다. NSD는 밝은 회색, 네이버는 녹색, 업스테이지는 보라, 세종대는 크림슨, 교육청은 노랑 기준입니다.

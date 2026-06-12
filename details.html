@@ -214,7 +214,17 @@
   .mini-title { font-size:11px; color:var(--muted); font-weight:850; letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; display:flex; justify-content:space-between; }
   .memo-list,.link-list { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
   .memo-item { display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:start; font-size:12px; line-height:1.45; border-left:3px solid var(--accent); background:rgba(255,255,255,.025); border-radius:9px; padding:7px 8px; }
+  .memo-item.memo-ops { border-left-color:var(--ops); background:rgba(232,236,244,.045); }
+  .memo-item.memo-naver { border-left-color:var(--naver); background:rgba(0,199,60,.065); }
+  .memo-item.memo-upstage { border-left-color:var(--upstage); background:rgba(139,92,246,.065); }
+  .memo-item.memo-sejong { border-left-color:var(--sejong); background:rgba(195,0,47,.075); }
+  .memo-item.memo-education { border-left-color:var(--edu); background:rgba(245,200,66,.065); }
   .memo-writer { font-weight:850; color:var(--accent); }
+  .memo-writer.memo-ops { color:var(--ops); }
+  .memo-writer.memo-naver { color:var(--naver); }
+  .memo-writer.memo-upstage { color:var(--upstage); }
+  .memo-writer.memo-sejong { color:#ff8a9b; }
+  .memo-writer.memo-education { color:var(--edu); }
   .memo-text { color:var(--text); }
   .memo-date { color:var(--muted); font-family:'DM Mono',monospace; font-size:10px; }
   .link-chip { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--accent); text-decoration:none; border:1px solid rgba(79,142,247,.28); background:rgba(79,142,247,.08); border-radius:999px; padding:5px 8px; font-size:12px; min-width:0; }
@@ -1050,6 +1060,16 @@ function safeExternalUrl(url) {
 function actionList(major) {
   return Object.entries(major.actions || {}).map(([key, action]) => [key, action]);
 }
+function actionRelatedToOwner(action, ownerKey) {
+  const target = normalizeOwner(ownerKey);
+  if (!target || target === 'all') return true;
+  const owner = normalizeOwner(action.owner);
+  const relatedOwners = uniq([
+    ...((action.agencies || []).map(normalizeOwner)),
+    ...normalizeWaitingFor(action.waitingFor)
+  ]);
+  return owner === target || relatedOwners.includes(target);
+}
 function progressOf(major) {
   const actions = actionList(major);
   if (actions.length === 0) return { done:major.done ? 1 : 0, total:1, pct:major.done ? 100 : 0 };
@@ -1235,10 +1255,7 @@ function sortedMajors(majors) {
   return arr;
 }
 function actionMatchesFilters(major, action) {
-  if (ownerFilter !== 'all') {
-    const belongs = action.owner === ownerFilter || (action.agencies || []).includes(ownerFilter) || major.owner === ownerFilter;
-    if (!belongs) return false;
-  }
+  if (ownerFilter !== 'all' && !actionRelatedToOwner(action, ownerFilter)) return false;
   if (statusFilter === 'open' && action.done) return false;
   if (statusFilter === 'done' && !action.done) return false;
     const q = searchQuery.trim().toLowerCase();
@@ -1290,7 +1307,7 @@ function renderMajorList() {
 function renderMajorCard(major) {
   const visibleActions = sortedActionsForMajor(major, actionList(major).filter(([,a]) => actionMatchesFilters(major, a)));
   const q = searchQuery.trim().toLowerCase();
-  const majorSelfMatches = q && `${major.title} ${major.description} ${major.cat} ${ownerLabel(major.owner)}`.toLowerCase().includes(q);
+  const majorSelfMatches = ownerFilter === 'all' && statusFilter === 'all' && q && `${major.title} ${major.description} ${major.cat} ${ownerLabel(major.owner)}`.toLowerCase().includes(q);
   if (!visibleActions.length && (q || ownerFilter !== 'all' || statusFilter !== 'all') && !majorSelfMatches) return '';
   const p = progressOf(major);
   const nextDueMs = majorNextDueDate(major);
@@ -1363,8 +1380,10 @@ function renderActionCard(major, actionKey, action) {
   </div>`;
 }
 function renderMemo(majorKey, actionKey, memoKey, memo) {
-  return `<div class="memo-item">
-    <span class="memo-writer">${escapeHtml(displayOwnerName(memo.writer))}</span>
+  const writerKey = normalizeOwner(memo.writer);
+  const writerCls = OWNER_CONFIG[writerKey]?.cls || 'ops';
+  return `<div class="memo-item memo-${writerCls}" title="${escapeAttr(ownerLabel(writerKey))} 메모">
+    <span class="memo-writer memo-${writerCls}">${escapeHtml(displayOwnerName(memo.writer))}</span>
     <span class="memo-text">${escapeHtml(memo.text || '')}</span>
     <button class="btn small ghost" onclick="deleteMemo('${majorKey}','${actionKey}','${memoKey}')" title="메모 삭제">×</button>
     <span></span><span class="memo-date">${formatTs(memo.ts)}</span><span></span>
