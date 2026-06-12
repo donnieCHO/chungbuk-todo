@@ -87,11 +87,6 @@
     --naver:#00c73c; --upstage:#8b5cf6; --sejong:#c3002f; --ops:#e8ecf4; --education:#f5c842;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-
-  /* 충북교육청 로고 자산 안내
-     - assets/cbe-logo.png는 favicon, apple-touch-icon, Open Graph/Twitter 메타 이미지 용도로만 사용합니다.
-     - 페이지 본문, Header, Hero 영역에는 로고 이미지를 직접 노출하지 않습니다. */
-
   body{font-family:'Pretendard','Malgun Gothic',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:28px 22px 90px;}
   button,input,select,textarea{font-family:inherit}
   a{color:inherit}
@@ -115,44 +110,29 @@
   .nav a{text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:99px;border:1px solid var(--border);color:var(--muted);background:rgba(255,255,255,.02);font-size:13px;font-weight:800;transition:all .15s}
   .nav a:hover,.nav a.active{color:var(--accent);border-color:rgba(79,142,247,.48);background:rgba(79,142,247,.1)}
 
-  .hero{position:relative;overflow:hidden;display:flex;justify-content:space-between;gap:24px;align-items:flex-end;margin:6px 0 18px;padding:30px;border:1px solid rgba(79,142,247,.34);border-radius:28px;background:radial-gradient(circle at 8% 0%, rgba(79,142,247,.22), transparent 34%),radial-gradient(circle at 90% 10%, rgba(124,106,247,.20), transparent 30%),linear-gradient(135deg, rgba(24,28,39,.98), rgba(18,22,34,.95));box-shadow:0 24px 70px rgba(0,0,0,.36)}
-  .hero h1{font-size:clamp(30px,4.6vw,54px);line-height:1.02;letter-spacing:-2px;font-weight:900}
-  .hero h1 span{display:block;margin-top:8px;color:transparent;background:linear-gradient(135deg,#e8ecf4,#8fb9ff,#c7bfff);-webkit-background-clip:text;background-clip:text;font-size:clamp(22px,3vw,34px)}
-  .hero p{margin-top:14px;color:#b9c3d8;line-height:1.7;font-size:14px;max-width:720px}
-  .hero-stat{min-width:180px;border:1px solid rgba(255,255,255,.10);border-radius:22px;background:rgba(15,17,23,.44);padding:18px;text-align:right}
-  .hero-stat-label{color:var(--muted);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-  .hero-stat-value{margin-top:8px;font-family:'DM Mono',monospace;font-size:38px;color:var(--accent);font-weight:600}
-
-  .usage-guide{background:rgba(79,142,247,.045);border:1px solid rgba(79,142,247,.22);border-radius:20px;padding:18px;margin-bottom:18px;box-shadow:0 12px 34px rgba(0,0,0,.18)}
-  .usage-heading{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-  .usage-heading h2{font-size:18px;font-weight:900;letter-spacing:-.4px}
-  .usage-heading p{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.6}
-  .usage-toggle-btn{flex-shrink:0;border:1px solid rgba(79,142,247,.42);background:rgba(79,142,247,.10);color:var(--accent);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer}
-  .usage-body{display:block;margin-top:14px}
-  .usage-guide:not(.is-open) .usage-body{display:none}
-  .usage-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  .usage-card{background:rgba(24,28,39,.72);border:1px solid var(--border);border-radius:14px;padding:13px 14px}
-  .usage-card h3{font-size:13px;font-weight:900;margin-bottom:7px;color:var(--accent)}
-  .usage-card li{font-size:12px;line-height:1.55;color:var(--muted);margin-left:16px}
-  .usage-card b{color:var(--text)}
-
-  .panel{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:18px;margin-bottom:18px;box-shadow:0 12px 34px rgba(0,0,0,.2)}
-  .panel-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
-  .panel-title h2{font-size:18px;letter-spacing:-.4px}.panel-title p{color:var(--muted);font-size:12px}
-  .form-grid{display:grid;grid-template-columns:repeat(4,1fr) auto;gap:10px;align-items:end}
-  .field{display:flex;flex-direction:column;gap:6px}.field.wide{grid-column:span 2}.field label{font-size:11px;color:#8794b7;letter-spacing:.08em;text-transform:uppercase;font-weight:900}
-  input,select,textarea{width:100%;padding:10px 12px;border-radius:11px;background:var(--surface2);border:1px solid var(--border);color:var(--text);outline:none;font-size:13px;transition:border-color .16s}
-  select{appearance:none;-webkit-appearance:none;padding-right:38px!important;background-image:linear-gradient(45deg,transparent 50%, var(--accent) 50%),linear-gradient(135deg,var(--accent) 50%, transparent 50%);background-position:calc(100% - 18px) 52%, calc(100% - 12px) 52%;background-size:6px 6px,6px 6px;background-repeat:no-repeat}
-  input:hover,select:hover,textarea:hover{border-color:rgba(79,142,247,.34)} input:focus,select:focus,textarea:focus{border-color:var(--accent)} select option{background:var(--surface2)}
-  .btn{border:none;border-radius:11px;padding:10px 15px;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));font-weight:900;font-size:13px;white-space:nowrap;transition:opacity .15s,transform .15s}.btn:hover{opacity:.9;transform:translateY(-1px)}
-  .btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn.danger{background:rgba(247,111,111,.12);color:var(--red);border:1px solid rgba(247,111,111,.32)}.btn.small{padding:7px 10px;font-size:12px}
-  .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}.search-row{display:grid;grid-template-columns:1fr 220px;gap:10px}
-  .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.summary-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px}.summary-label{font-size:12px;color:var(--muted);margin-bottom:8px}.summary-value{font-family:'DM Mono',monospace;font-size:24px;color:var(--text);font-weight:600}.summary-card.highlight .summary-value{color:var(--accent)}.summary-card.good .summary-value{color:var(--green)}
-  .contact-groups{display:flex;flex-direction:column;gap:18px}.org-section{border:1px solid rgba(79,142,247,.24);border-radius:22px;overflow:hidden;background:linear-gradient(135deg,rgba(79,142,247,.035),rgba(24,28,39,.95))}.org-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.07)}.org-title{display:flex;align-items:center;gap:10px;font-weight:900}.org-dot{width:12px;height:12px;border-radius:5px}.org-count{font-size:12px;color:var(--muted)}
-  .contact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px}.contact-card{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:18px;background:rgba(255,255,255,.025);padding:18px;min-height:168px;display:flex;flex-direction:column;gap:10px}.contact-card:hover{border-color:rgba(79,142,247,.35)}.card-stripe{position:absolute;left:0;right:0;top:0;height:4px}.card-top{display:flex;align-items:center;gap:12px}.avatar{width:42px;height:42px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#fff}.name{font-size:16px;font-weight:900}.role{margin-top:2px;font-size:12px;color:var(--muted);line-height:1.4}.contact-line{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);line-height:1.45;word-break:break-all}.contact-line a{text-decoration:none}.contact-line a:hover{color:var(--text)}.memo{margin-top:auto;font-size:12px;color:var(--muted);line-height:1.5;border-top:1px dashed rgba(42,48,80,.7);padding-top:9px}.card-actions{position:absolute;right:10px;top:10px;display:flex;gap:4px}.icon-btn{border:1px solid var(--border);background:rgba(15,17,23,.48);color:var(--muted);border-radius:9px;padding:5px 7px;cursor:pointer}.icon-btn:hover{color:var(--accent);border-color:rgba(79,142,247,.44)}.icon-btn.delete:hover{color:var(--red);border-color:rgba(247,111,111,.4)}.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--border);border-radius:16px;background:rgba(255,255,255,.015)}
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}.modal-overlay.hidden{display:none}.modal{width:100%;max-width:620px;background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.42)}.modal-title{font-size:18px;font-weight:900;color:var(--accent);margin-bottom:16px}.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.modal-grid .full{grid-column:span 2}.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
-  @media(max-width:900px){.hero{flex-direction:column;align-items:stretch}.form-grid,.toolbar,.search-row{grid-template-columns:1fr 1fr}.form-grid .btn{grid-column:span 2}.contact-grid{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:1fr 1fr}.usage-steps{grid-template-columns:1fr 1fr}}
-  @media(max-width:560px){body{padding:20px 14px 90px}.nav{margin-left:-14px;margin-right:-14px;padding-left:14px;padding-right:14px}.form-grid,.toolbar,.search-row,.contact-grid,.summary-grid,.usage-steps,.modal-grid{grid-template-columns:1fr}.field.wide,.modal-grid .full,.form-grid .btn{grid-column:auto}.hero{padding:22px;border-radius:24px}.hero-stat{text-align:left}}
+  /* ── Unified Hero Header ──
+     내 Action 페이지와 같은 카드형 헤드라인 문법입니다.
+     화면에는 로고 이미지를 노출하지 않고, 텍스트 헤드라인과 우측 상태 카드만 사용합니다. */
+  .hero { position:relative; overflow:hidden; display:grid; grid-template-columns:minmax(0,1fr) 310px; gap:28px; align-items:stretch; margin:6px 0 18px; padding:34px; border:1px solid rgba(79,142,247,.34); border-radius:30px; background:radial-gradient(circle at 10% 10%, rgba(79,142,247,.22), transparent 34%), radial-gradient(circle at 85% 0%, rgba(124,106,247,.20), transparent 30%), linear-gradient(135deg, rgba(24,28,39,.98), rgba(18,22,34,.95)); box-shadow:0 24px 70px rgba(0,0,0,.36); }
+  .hero-bg-orb { position:absolute; width:220px; height:220px; border-radius:50%; filter:blur(18px); opacity:.42; pointer-events:none; }
+  .hero-bg-orb.orb-a { left:-80px; top:-80px; background:rgba(79,142,247,.40); }
+  .hero-bg-orb.orb-b { right:-92px; top:-64px; background:rgba(124,106,247,.36); }
+  .hero-content, .hero-status { position:relative; z-index:1; }
+  .hero-kicker { display:inline-flex; align-items:center; gap:8px; margin-bottom:13px; color:var(--accent); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+  .hero-kicker::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 0 6px rgba(61,214,140,.13); }
+  .hero h1 { margin:0; font-size:clamp(32px,5.6vw,62px); line-height:.98; letter-spacing:-2.4px; font-weight:900; }
+  .hero h1 span { display:inline-block; margin-top:10px; color:transparent; background:linear-gradient(135deg,#e8ecf4 0%,#8fb9ff 48%,#c7bfff 100%); -webkit-background-clip:text; background-clip:text; font-size:clamp(23px,3.4vw,42px); letter-spacing:-1.4px; }
+  .hero-desc { max-width:720px; margin:18px 0 0; color:#b9c3d8; line-height:1.75; font-size:15px; }
+  .hero-meta { margin-top:20px; display:flex; flex-wrap:wrap; gap:10px 14px; color:var(--muted); font-size:13px; }
+  .meta-chip { display:inline-flex; align-items:center; gap:7px; white-space:nowrap; }
+  .meta-chip .dot { width:7px; height:7px; border-radius:50%; background:var(--accent); }
+  .hero-status { display:flex; flex-direction:column; justify-content:center; align-self:stretch; min-height:160px; padding:22px; border:1px solid rgba(255,255,255,.10); border-radius:24px; background:rgba(15,17,23,.46); box-shadow:inset 0 1px 0 rgba(255,255,255,.08); }
+  .hero-status-label { color:var(--muted); font-size:12px; font-weight:850; letter-spacing:.08em; text-transform:uppercase; }
+  .hero-big-stat { margin-top:8px; font-family:'DM Mono',monospace; font-size:42px; line-height:1; color:var(--accent); font-weight:650; letter-spacing:-1px; }
+  .hero-dday { margin-top:9px; align-self:flex-start; font-size:42px; line-height:1; padding:14px 18px; border-radius:20px; box-shadow:0 14px 35px rgba(79,142,247,.32); }
+  .hero-status-note { margin-top:11px; color:var(--muted); font-size:12px; line-height:1.5; }
+  @media(max-width:900px){ .hero { grid-template-columns:1fr; padding:26px; } .hero-status { min-height:auto; } }
+  @media(max-width:560px){ .hero { border-radius:24px; padding:22px; } .hero h1 { letter-spacing:-1.4px; } .hero-dday,.hero-big-stat { font-size:34px; } }
 
 
   /* ── Global Theme Switch ──
@@ -274,11 +254,23 @@
 <main class="shell">
   <!-- Hero: 연락처 페이지의 역할과 등록 현황을 한눈에 보여줍니다. -->
   <header class="hero" aria-label="Contact 개요">
+    <div class="hero-bg-orb orb-a"></div>
+    <div class="hero-bg-orb orb-b"></div>
     <div class="hero-content">
+      <div class="hero-kicker">Contact Dashboard</div>
       <h1>충북교육청 AI 교원연수<br><span>Contact management sheet</span></h1>
-      <p>NSD, 네이버, 업스테이지, 세종대, 교육청 담당자 연락처를 소속별로 관리합니다. 전화와 이메일은 카드에서 바로 열 수 있습니다.</p>
+      <p class="hero-desc">NSD, 네이버, 업스테이지, 세종대, 교육청 담당자 연락처를 소속별로 관리합니다. 전화와 이메일은 카드에서 바로 열 수 있습니다.</p>
+      <div class="hero-meta">
+        <span class="meta-chip"><span class="dot"></span>담당자 연락처</span>
+        <span class="meta-chip"><span class="dot" style="background:var(--green)"></span>실시간 업데이트</span>
+        <span class="meta-chip"><span class="dot" style="background:var(--accent2)"></span>전화·이메일 바로가기</span>
+      </div>
     </div>
-    <aside class="hero-stat"><div class="hero-stat-label">Total Contacts</div><div class="hero-stat-value" id="totalContacts">0</div></aside>
+    <aside class="hero-status" aria-label="연락처 요약">
+      <div class="hero-status-label">Total Contacts</div>
+      <div class="hero-big-stat" id="totalContacts">0</div>
+      <div class="hero-status-note">Contact 페이지에서 담당자 정보를 추가·수정·삭제할 수 있습니다.</div>
+    </aside>
   </header>
   <!-- 사용법: 처음에는 펼쳐진 상태이며 필요 시 접을 수 있습니다. -->
   <section class="usage-guide is-open" id="usageGuide"><div class="usage-heading"><div><h2>📖 Contact 사용법</h2><p>담당자 연락처를 추가하고, 카드의 수정 버튼으로 최신 정보로 업데이트합니다.</p></div><button class="usage-toggle-btn" id="usageToggleBtn" onclick="toggleUsageGuide()" type="button" aria-expanded="true">접기 ▴</button></div><div class="usage-body"><div class="usage-steps"><div class="usage-card"><h3>1. 연락처 추가</h3><ul><li>이름과 소속은 필수입니다.</li><li>전화번호와 이메일은 필요한 경우만 입력합니다.</li></ul></div><div class="usage-card"><h3>2. 소속별 확인</h3><ul><li>Contact는 소속별 섹션으로 자동 정렬됩니다.</li><li>검색어와 소속 필터를 함께 사용할 수 있습니다.</li></ul></div><div class="usage-card"><h3>3. 업데이트</h3><ul><li>카드 우측 상단의 <b>✏️</b> 버튼으로 수정합니다.</li><li>삭제는 Firebase의 contacts 노드에서 해당 항목만 제거합니다.</li></ul></div><div class="usage-card"><h3>4. 빠른 연락</h3><ul><li>전화번호는 <b>tel:</b>, 이메일은 <b>mailto:</b> 링크로 연결됩니다.</li></ul></div></div></div></section>

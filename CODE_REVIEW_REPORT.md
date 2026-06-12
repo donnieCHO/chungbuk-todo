@@ -184,3 +184,10 @@ contact.html: 연락처 추가 / 수정 / 삭제
 - details.html, drivelink.html, timetable.html의 상단 헤드라인을 내 Action(index.html) Hero 스타일과 같은 톤으로 통일했습니다.
 - 페이지 본문에서는 충북교육청 로고 이미지를 사용하지 않도록 재검수했습니다. 로고는 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지에만 사용합니다.
 - drivelink.html Hero의 전체 링크 수가 파일 링크 요약과 함께 갱신되도록 보강했습니다.
+
+
+## 2026-06-12 추가 정리 — 본문 로고 제거와 Hero 헤드라인 통일
+
+- 충북교육청 로고 이미지는 페이지 본문, Header, Hero 영역에 노출하지 않습니다.
+- 로고 자산은 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지 용도로만 유지합니다.
+- 5개 주요 페이지(index/details/drivelink/timetable/contact)의 첫 화면은 텍스트 기반 Hero 헤드라인과 우측 상태 카드 구조로 통일합니다.

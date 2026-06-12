@@ -1,6 +1,6 @@
 DEPLOYMENT AUDIT REPORT
-Generated: 2026-06-12 05:09:39
-Root: /mnt/data/todo_release_unified_headers_final
+Generated: 2026-06-12 05:22:47
+Root: /mnt/data/todo_release_no_visible_logo_consistent_headers_final
 
 FILE EXISTENCE CHECK
 - OK

@@ -271,3 +271,10 @@ tasks
 
 - `assets/cbe-logo.png`는 favicon, Apple Touch Icon, Open Graph/Twitter Card 이미지에만 사용한다.
 - `index.html`, `details.html`, `drivelink.html`, `timetable.html`, `contact.html`의 본문/헤더/Hero에는 `<img src="assets/cbe-logo.png">`를 넣지 않는다.
+
+
+## 2026-06-12 추가 정리 — 본문 로고 제거와 Hero 헤드라인 통일
+
+- 충북교육청 로고 이미지는 페이지 본문, Header, Hero 영역에 노출하지 않습니다.
+- 로고 자산은 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지 용도로만 유지합니다.
+- 5개 주요 페이지(index/details/drivelink/timetable/contact)의 첫 화면은 텍스트 기반 Hero 헤드라인과 우측 상태 카드 구조로 통일합니다.
