@@ -4,81 +4,14 @@
   배포 파일: timetable.html
   역할: 2박 3일 운영 시간표를 Google Calendar 스타일의 시간 그리드로 관리합니다.
   데이터: Firebase Realtime Database의 timetable_events, timetable_locations 노드를 사용합니다.
-  연결: index.html, details.html, drivelink.html, contact.html과 공통 내비게이션으로 상호 이동합니다.
+  연결: index.html, details.html, drivelink.html과 상호 이동합니다.
   장소: 일정별 locations 배열과 재사용 가능한 장소 태그 목록을 분리해 관리합니다.
 -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>충북교육청 AI 교원연수 — 운영 시간표</title>
-<meta name="description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
-<meta name="theme-color" content="#0f1117">
-<meta name="application-name" content="충북교육청 AI 교원연수 To Do">
-<meta property="og:type" content="website">
-<meta property="og:title" content="충북교육청 AI 교원연수 — 운영 시간표">
-<meta property="og:description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
-<meta property="og:image" content="assets/cbe-logo.png">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="충북교육청 AI 교원연수 — 운영 시간표">
-<meta name="twitter:description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
-<meta name="twitter:image" content="assets/cbe-logo.png">
-<link rel="icon" href="assets/favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
-
-<!-- 라이트/다크 모드 초기화: 화면이 그려지기 전에 저장된 테마를 먼저 적용해 깜빡임을 줄입니다. -->
-<script>
-(function(){
-  const STORAGE_KEY = 'todo.theme';
-  const DARK_THEME_COLOR = '#0f1117';
-  const LIGHT_THEME_COLOR = '#f6f8fc';
-
-  function getPreferredTheme(){
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === 'light' || saved === 'dark') return saved;
-    } catch (err) { /* localStorage 접근이 제한된 환경에서는 시스템 설정을 사용합니다. */ }
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-  }
-
-  function updateThemeButton(theme){
-    const btn = document.getElementById('themeToggle');
-    if (!btn) return;
-    const icon = document.getElementById('themeToggleIcon');
-    const text = document.getElementById('themeToggleText');
-    const isDark = theme === 'dark';
-    btn.setAttribute('aria-label', isDark ? '라이트 모드로 전환' : '다크 모드로 전환');
-    btn.setAttribute('title', isDark ? '라이트 모드로 전환' : '다크 모드로 전환');
-    if (icon) icon.textContent = isDark ? '☀️' : '🌙';
-    if (text) text.textContent = isDark ? 'Light' : 'Dark';
-  }
-
-  function applyTheme(theme){
-    const normalized = theme === 'light' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', normalized);
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', normalized === 'light' ? LIGHT_THEME_COLOR : DARK_THEME_COLOR);
-    updateThemeButton(normalized);
-  }
-
-  window.applyTodoTheme = applyTheme;
-  window.toggleTheme = function(){
-    const current = document.documentElement.getAttribute('data-theme') || getPreferredTheme();
-    const next = current === 'light' ? 'dark' : 'light';
-    try { localStorage.setItem(STORAGE_KEY, next); } catch (err) {}
-    applyTheme(next);
-  };
-
-  applyTheme(getPreferredTheme());
-  document.addEventListener('DOMContentLoaded', function(){
-    applyTheme(document.documentElement.getAttribute('data-theme') || getPreferredTheme());
-  });
-})();
-</script>
 <style>
-
   /* 시간표 페이지 전용 스타일: 시간 그리드, 드래그 프리뷰, 일정 편집 모달을 포함합니다. */
   @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
@@ -102,7 +35,7 @@
     --upstage: #8b5cf6;       /* 보라 */
 
     /* 그리드 설정 */
-    --row-h: 42px;            /* 30분 단위 행 높이: 제목·시간·장소 태그가 함께 보이도록 확대 */
+    --row-h: 24px;            /* 30분 단위 행 높이 */
     --time-col-w: 64px;
   }
 
@@ -124,43 +57,6 @@
   #syncStatus.syncing .sync-dot { animation:pulse 1s ease infinite; }
   @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
 
-  /* ── 공통 내비게이션 ──
-     다른 페이지(index/details/drivelink/contact)와 같은 순서, 같은 pill 스타일을 사용합니다.
-     현재 페이지인 timetable.html만 active 상태로 표시해 사용자가 위치를 바로 알 수 있게 했습니다. */
-
-  /* ── 통합 Hero Headline ──
-     내 Action 페이지의 헤드라인 톤과 동일하게, 각 페이지의 역할을
-     큰 제목·보조 영문 라인·메타 칩·우측 상태 카드로 정리합니다.
-     로고 이미지는 본문에 노출하지 않고 favicon/meta 용도로만 유지합니다. */
-  /* ── Unified Hero Header ──
-     내 Action 페이지와 같은 카드형 헤드라인 문법입니다.
-     화면에는 로고 이미지를 노출하지 않고, 텍스트 헤드라인과 우측 상태 카드만 사용합니다. */
-  .hero { position:relative; overflow:hidden; display:grid; grid-template-columns:minmax(0,1fr) 310px; gap:28px; align-items:stretch; margin:6px 0 18px; padding:34px; border:1px solid rgba(79,142,247,.34); border-radius:30px; background:radial-gradient(circle at 10% 10%, rgba(79,142,247,.22), transparent 34%), radial-gradient(circle at 85% 0%, rgba(124,106,247,.20), transparent 30%), linear-gradient(135deg, rgba(24,28,39,.98), rgba(18,22,34,.95)); box-shadow:0 24px 70px rgba(0,0,0,.36); }
-  .hero-bg-orb { position:absolute; width:220px; height:220px; border-radius:50%; filter:blur(18px); opacity:.42; pointer-events:none; }
-  .hero-bg-orb.orb-a { left:-80px; top:-80px; background:rgba(79,142,247,.40); }
-  .hero-bg-orb.orb-b { right:-92px; top:-64px; background:rgba(124,106,247,.36); }
-  .hero-content, .hero-status { position:relative; z-index:1; }
-  .hero-kicker { display:inline-flex; align-items:center; gap:8px; margin-bottom:13px; color:var(--accent); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
-  .hero-kicker::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 0 6px rgba(61,214,140,.13); }
-  .hero h1 { margin:0; font-size:clamp(32px,5.6vw,62px); line-height:.98; letter-spacing:-2.4px; font-weight:900; }
-  .hero h1 span { display:inline-block; margin-top:10px; color:transparent; background:linear-gradient(135deg,#e8ecf4 0%,#8fb9ff 48%,#c7bfff 100%); -webkit-background-clip:text; background-clip:text; font-size:clamp(23px,3.4vw,42px); letter-spacing:-1.4px; }
-  .hero-desc { max-width:720px; margin:18px 0 0; color:#b9c3d8; line-height:1.75; font-size:15px; }
-  .hero-meta { margin-top:20px; display:flex; flex-wrap:wrap; gap:10px 14px; color:var(--muted); font-size:13px; }
-  .meta-chip { display:inline-flex; align-items:center; gap:7px; white-space:nowrap; }
-  .meta-chip .dot { width:7px; height:7px; border-radius:50%; background:var(--accent); }
-  .hero-status { display:flex; flex-direction:column; justify-content:center; align-self:stretch; min-height:160px; padding:22px; border:1px solid rgba(255,255,255,.10); border-radius:24px; background:rgba(15,17,23,.46); box-shadow:inset 0 1px 0 rgba(255,255,255,.08); }
-  .hero-status-label { color:var(--muted); font-size:12px; font-weight:850; letter-spacing:.08em; text-transform:uppercase; }
-  .hero-big-stat { margin-top:8px; font-family:'DM Mono',monospace; font-size:42px; line-height:1; color:var(--accent); font-weight:650; letter-spacing:-1px; }
-  .hero-dday { margin-top:9px; align-self:flex-start; font-size:42px; line-height:1; padding:14px 18px; border-radius:20px; box-shadow:0 14px 35px rgba(79,142,247,.32); }
-  .hero-status-note { margin-top:11px; color:var(--muted); font-size:12px; line-height:1.5; }
-  @media(max-width:900px){ .hero { grid-template-columns:1fr; padding:26px; } .hero-status { min-height:auto; } }
-  @media(max-width:560px){ .hero { border-radius:24px; padding:22px; } .hero h1 { letter-spacing:-1.4px; } .hero-dday,.hero-big-stat { font-size:34px; } }
-
-  .nav { position:sticky; top:0; z-index:100; margin:0 -24px 24px; padding:8px 24px; background:rgba(15,17,23,.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid var(--border); }
-  .nav-inner { max-width:1200px; margin:0 auto; display:flex; gap:8px; flex-wrap:wrap; }
-  .nav a { text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:99px; border:1px solid var(--border); color:var(--muted); background:rgba(255,255,255,.02); font-size:13px; font-weight:700; transition:all .15s; white-space:nowrap; }
-  .nav a:hover, .nav a.active { color:var(--accent); border-color:rgba(79,142,247,.48); background:rgba(79,142,247,.1); }
-
   /* ── Header ── */
   .header {
     max-width:1200px;margin:0 auto 28px;
@@ -172,13 +68,27 @@
   .meta-chip { display:flex;align-items:center;gap:5px; }
   .meta-chip .dot { width:6px;height:6px;border-radius:50%;background:var(--accent); }
 
-  .toolbar-btn {
-    font-family:'Pretendard',sans-serif;font-size:13px;font-weight:700;
+  .back-btn {
+    font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;
     padding:8px 16px;border-radius:99px;border:1.5px solid var(--border);
-    background:rgba(255,255,255,.02);color:var(--muted);text-decoration:none;
-    transition:all .2s;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;
+    background:transparent;color:var(--muted);text-decoration:none;
+    transition:all .2s;display:inline-flex;align-items:center;gap:5px;
   }
-  .toolbar-btn:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08); }
+  .back-btn:hover { border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08); }
+  /* ── Auth 영역 ── */
+  .nav-auth { display:inline-flex; align-items:center; gap:8px; flex-shrink:0; }
+  .nav-user-photo { width:26px; height:26px; border-radius:50%; border:1.5px solid var(--border); vertical-align:middle; }
+  .nav-user-name { font-size:12px; color:var(--muted); font-weight:600; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nav-login-btn { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; border:1.5px solid rgba(79,142,247,.35); color:var(--accent); background:rgba(79,142,247,.08); border-radius:99px; padding:7px 13px; font-size:12px; font-weight:700; cursor:pointer; transition:all .16s; }
+  .nav-login-btn:hover { background:rgba(79,142,247,.18); }
+  .nav-logout-btn { border:1.5px solid var(--border); color:var(--muted); background:transparent; border-radius:99px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer; transition:all .16s; }
+  .nav-logout-btn:hover { color:var(--text); border-color:var(--text); }
+  #authGate { position:fixed; inset:0; background:var(--bg); z-index:9998; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; }
+  #authGate.hidden { display:none; }
+  .auth-gate-title { font-size:20px; font-weight:700; color:var(--text); }
+  .auth-gate-sub { font-size:14px; color:var(--muted); }
+  .auth-gate-btn { display:inline-flex; align-items:center; gap:10px; background:#fff; color:#3c4043; border:none; border-radius:99px; padding:12px 24px; font-size:15px; font-weight:600; cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,.25); transition:box-shadow .16s; }
+  .auth-gate-btn:hover { box-shadow:0 4px 20px rgba(0,0,0,.35); }
 
   /* ── 범례 + 액션 ── */
   .toolbar {
@@ -194,6 +104,7 @@
   .legend-dot { width:12px;height:12px;border-radius:4px; }
 
   .toolbar-actions { display:flex;gap:8px; }
+  .toolbar-hint { font-size:12px;color:var(--muted); }
 
   /* ── 시간표 그리드 ── */
   .timetable-wrap {
@@ -227,7 +138,7 @@
     border-right:1px solid var(--border);
     border-bottom:1px solid var(--border);
     font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;
-    padding:8px 6px;text-align:right;line-height:1;
+    padding:4px 6px;text-align:right;line-height:1;
   }
 
   /* 일정 컬럼 (시간 칸) */
@@ -251,31 +162,28 @@
   /* 일정 카드 */
   .tt-event {
     position:absolute;
-    left:5px;right:5px;
-    border-radius:9px;
-    padding:8px 10px 7px;
+    left:4px;right:4px;
+    border-radius:7px;
+    padding:5px 8px 4px;
     cursor:pointer;
     overflow:hidden;
     transition:transform .12s, box-shadow .12s, opacity .12s;
     border-left:3px solid;
-    font-size:12px;
+    font-size:11px;
     z-index:2;
     user-select:none;
-    display:flex;
-    flex-direction:column;
-    justify-content:flex-start;
   }
   .tt-event:hover { box-shadow:0 4px 14px rgba(0,0,0,.4); z-index:3; }
   .tt-event.common  { background:rgba(61,214,140,.18); border-left-color:var(--common);  color:var(--common); }
   .tt-event.sejong  { background:rgba(195,0,47,.22);  border-left-color:var(--sejong);  color:#ff6f80; }
   .tt-event.upstage { background:rgba(139,92,246,.22); border-left-color:var(--upstage); color:#c4b5fd; }
-  .tt-event-title { font-weight:800;line-height:1.32;color:var(--text);font-size:13px;margin-bottom:3px;letter-spacing:-.15px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
-  .tt-event-time  { font-family:'DM Mono',monospace;font-size:10.5px;opacity:.86;line-height:1.35; }
-  .tt-event-location { display:flex;flex-wrap:wrap;gap:4px;margin-top:6px; }
+  .tt-event-title { font-weight:700;line-height:1.25;color:var(--text);font-size:12px;margin-bottom:1px; }
+  .tt-event-time  { font-family:'DM Mono',monospace;font-size:10px;opacity:.85; }
+  .tt-event-location { display:flex;flex-wrap:wrap;gap:3px;margin-top:3px; }
   .tt-location-chip-mini {
     display:inline-flex;align-items:center;gap:2px;
-    font-family:'Pretendard',sans-serif;font-size:10px;font-weight:700;line-height:1.25;
-    padding:2px 7px;border-radius:99px;border:1px solid rgba(79,142,247,.36);
+    font-family:'Pretendard',sans-serif;font-size:9px;font-weight:700;line-height:1.2;
+    padding:1px 5px;border-radius:99px;border:1px solid rgba(79,142,247,.36);
     background:rgba(79,142,247,.12);color:#a9c8ff;max-width:100%;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
@@ -286,7 +194,7 @@
     left:4px;right:4px;
     background:rgba(79,142,247,.18);
     border:1.5px dashed var(--accent);
-    border-radius:9px;
+    border-radius:7px;
     pointer-events:none;
     z-index:5;
     display:flex;align-items:center;justify-content:center;
@@ -400,156 +308,12 @@
   /* 반응형 */
   @media(max-width:700px){
     body{padding:16px 12px;}
-    .nav{margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px;}
-    .nav a{font-size:12px;padding:7px 11px;}
     .timetable { font-size:12px; }
-    :root { --time-col-w:48px; --row-h:36px; }
+    :root { --time-col-w:48px; --row-h:22px; }
     .tt-day-num{font-size:15px;}
-    .tt-event{left:3px;right:3px;padding:6px 7px 5px;border-radius:8px;}
-    .tt-event-title{font-size:12px;line-height:1.25;}
-    .tt-event-location{gap:3px;margin-top:4px;}
-    .tt-location-chip-mini{font-size:9px;padding:1px 5px;}
+    .tt-event-title{font-size:11px;}
   }
-
-  /* ── 사용법 안내 ──
-     2단계 구조(주요 과제 → Action Item)를 처음 사용하는 참여자가
-     각 페이지의 역할과 핵심 조작 순서를 바로 이해할 수 있도록 배치한 안내 영역입니다. */
-  .usage-guide {
-    max-width:1200px;
-    margin:0 auto 18px;
-    background:rgba(79,142,247,.045);
-    border:1px solid rgba(79,142,247,.22);
-    border-radius:20px;
-    padding:18px;
-    box-shadow:0 12px 34px rgba(0,0,0,.18);
-  }
-  .usage-heading { display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px; }
-  .usage-heading h2 { font-size:18px;font-weight:800;letter-spacing:-.4px;color:var(--text); }
-  .usage-heading p { margin-top:4px;font-size:12px;line-height:1.6;color:var(--muted); }
-  .usage-pill { flex-shrink:0;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);border:1px solid rgba(79,142,247,.35);background:rgba(79,142,247,.10);border-radius:999px;padding:5px 10px; }
-  .usage-steps { display:grid;grid-template-columns:repeat(4,1fr);gap:10px; }
-  .usage-card { background:rgba(24,28,39,.72);border:1px solid var(--border);border-radius:14px;padding:13px 14px; }
-  .usage-card h3 { font-size:13px;font-weight:800;margin-bottom:7px;color:var(--accent); }
-  .usage-card ul,.usage-card ol { margin:0;padding-left:17px;display:flex;flex-direction:column;gap:5px; }
-  .usage-card li { font-size:12px;line-height:1.55;color:var(--muted); }
-  .usage-card b { color:var(--text);font-weight:700; }
-  .usage-note { margin-top:10px;font-size:12px;line-height:1.6;color:var(--muted);background:rgba(15,17,23,.45);border:1px dashed rgba(79,142,247,.25);border-radius:12px;padding:10px 12px; }
-  .usage-note b { color:var(--text); }
-  @media(max-width:900px){ .usage-steps{grid-template-columns:1fr 1fr;} }
-  @media(max-width:560px){ .usage-heading{flex-direction:column;} .usage-steps{grid-template-columns:1fr;} }
-
-
-
-  /* 드롭다운 UI 통일 */
-  select { appearance:none; -webkit-appearance:none; padding-right:38px !important; background-color:var(--surface2) !important; background-image:linear-gradient(45deg,transparent 50%, var(--accent) 50%),linear-gradient(135deg,var(--accent) 50%, transparent 50%); background-position:calc(100% - 18px) 52%, calc(100% - 12px) 52%; background-size:6px 6px, 6px 6px; background-repeat:no-repeat; }
-  select:hover, input:hover, textarea:hover { border-color:rgba(79,142,247,.34); }
-
-
-
-  /* ── Global Theme Switch ──
-     - 기본 변수는 기존 다크 모드 값을 유지합니다.
-     - html[data-theme="light"] 에서만 색상 토큰을 교체하므로 Firebase/렌더링 로직은 건드리지 않습니다.
-     - 선택한 테마는 localStorage(todo.theme)에 저장되어 모든 페이지에서 동일하게 유지됩니다. */
-  html[data-theme="dark"] { color-scheme: dark; }
-  html[data-theme="light"] {
-    color-scheme: light;
-    --bg:#f6f8fc;
-    --surface:#ffffff;
-    --surface2:#eef3fb;
-    --surface3:#e7edf7;
-    --border:#d8e1ef;
-    --text:#172033;
-    --muted:#66758f;
-    --ops:#334155;
-  }
-  html[data-theme="light"] body {
-    background:radial-gradient(circle at 10% -10%, rgba(79,142,247,.12), transparent 32%), var(--bg);
-  }
-  html[data-theme="light"] .nav {
-    background:rgba(246,248,252,.90);
-    border-bottom-color:var(--border);
-  }
-  html[data-theme="light"] #loadingOverlay { background:var(--bg); }
-  html[data-theme="light"] #syncStatus {
-    background:rgba(255,255,255,.94);
-    box-shadow:0 12px 30px rgba(49,63,93,.14);
-  }
-  html[data-theme="light"] input[type=date] { color-scheme:light; }
-  html[data-theme="dark"] input[type=date] { color-scheme:dark; }
-  html[data-theme="light"] select option { background:#fff; color:#172033; }
-  html[data-theme="light"] .panel,
-  html[data-theme="light"] .summary-card,
-  html[data-theme="light"] .major-card,
-  html[data-theme="light"] .modal,
-  html[data-theme="light"] .usage-guide,
-  html[data-theme="light"] .dashboard-panel,
-  html[data-theme="light"] .timetable-wrap,
-  html[data-theme="light"] .contact-card,
-  html[data-theme="light"] .link-card {
-    box-shadow:0 14px 36px rgba(49,63,93,.10);
-  }
-  html[data-theme="light"] .hero {
-    background:radial-gradient(circle at 10% 10%, rgba(79,142,247,.14), transparent 34%),
-               radial-gradient(circle at 86% 0%, rgba(124,106,247,.13), transparent 31%),
-               linear-gradient(135deg, rgba(255,255,255,.98), rgba(238,244,255,.95));
-    box-shadow:0 24px 70px rgba(49,63,93,.15);
-  }
-  html[data-theme="light"] .hero h1 span {
-    background:linear-gradient(135deg,#172033 0%,#4f8ef7 48%,#7c6af7 100%);
-    -webkit-background-clip:text;
-    background-clip:text;
-  }
-  html[data-theme="light"] .hero-desc { color:#4b5870; }
-  html[data-theme="light"] .hero-status {
-    background:rgba(255,255,255,.72);
-    border-color:rgba(79,142,247,.18);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
-  }
-  html[data-theme="light"] .hero-progress-track { background:rgba(216,225,239,.95); }
-  html[data-theme="light"] .usage-card,
-  html[data-theme="light"] .toolbar,
-  html[data-theme="light"] .tt-day-head,
-  html[data-theme="light"] .tt-corner { background:rgba(248,251,255,.92); }
-  html[data-theme="light"] .usage-note { background:rgba(238,244,255,.72); }
-  html[data-theme="light"] .modal-overlay { background:rgba(15,23,42,.34); }
-  .theme-toggle {
-    margin-left:auto;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:7px;
-    min-height:36px;
-    padding:8px 13px;
-    border-radius:999px;
-    border:1px solid var(--border);
-    background:rgba(255,255,255,.03);
-    color:var(--muted);
-    font-family:'Pretendard','Malgun Gothic',sans-serif;
-    font-size:12px;
-    font-weight:800;
-    cursor:pointer;
-    transition:color .16s, border-color .16s, background .16s, transform .16s;
-    white-space:nowrap;
-  }
-  .theme-toggle:hover {
-    color:var(--accent);
-    border-color:rgba(79,142,247,.48);
-    background:rgba(79,142,247,.10);
-    transform:translateY(-1px);
-  }
-  .theme-toggle-icon { line-height:1; }
-  .theme-toggle-text { font-family:'DM Mono',monospace; letter-spacing:.02em; }
-  html[data-theme="light"] .theme-toggle {
-    background:rgba(255,255,255,.72);
-    box-shadow:0 8px 20px rgba(49,63,93,.08);
-  }
-  @media(max-width:640px){
-    .theme-toggle { margin-left:0; width:100%; }
-  }
-
 </style>
-  <link rel="stylesheet" href="assets/ui-select.css">
-  <script src="assets/ui-select.js" defer></script>
 </head>
 <body>
 
@@ -558,22 +322,18 @@
   <div class="loading-text">시간표 불러오는 중...</div>
 </div>
 
-<div id="syncStatus"><span class="sync-dot"></span><span id="syncText">연결 중</span></div>
+<!-- 인증 게이트 -->
+<div id="authGate">
+  <div style="font-size:40px">🔐</div>
+  <div class="auth-gate-title">충북교육청 AI 교원연수 관리</div>
+  <div class="auth-gate-sub">Google 계정으로 로그인해야 이용할 수 있습니다</div>
+  <button class="auth-gate-btn" onclick="signInWithGoogle()">
+    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 11.838 17.64 9.53 17.64 9.2z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
+    Google로 로그인
+  </button>
+</div>
 
-<!-- 공통 메뉴: 다른 페이지와 동일한 순서로 제공하며, 현재 페이지인 운영 시간표만 active 처리합니다. -->
-<nav class="nav" aria-label="주요 메뉴">
-  <div class="nav-inner">
-    <a href="index.html">🏠 내 Action</a>
-    <a href="details.html">🧩 상세 관리</a>
-    <a href="drivelink.html">📁 파일 관리</a>
-    <a class="active" href="timetable.html">🕐 운영 시간표</a>
-    <a href="contact.html">👥 Contact</a>
-    <button class="theme-toggle" id="themeToggle" type="button" onclick="toggleTheme()" aria-label="라이트 모드로 전환" title="라이트/다크 모드 전환">
-      <span class="theme-toggle-icon" id="themeToggleIcon" aria-hidden="true">☀️</span>
-      <span class="theme-toggle-text" id="themeToggleText">Light</span>
-    </button>
-  </div>
-</nav>
+<div id="syncStatus"><span class="sync-dot"></span><span id="syncText">연결 중</span></div>
 
 <!-- 일정 편집 모달 -->
 <div class="modal-overlay hidden" id="eventModal">
@@ -672,26 +432,23 @@
   </div>
 </div>
 
-<!-- ── Hero: 운영 시간표 페이지도 내 Action과 같은 헤드라인 톤으로 통일합니다. ── -->
-<header class="hero" aria-label="운영 시간표 개요">
-  <div class="hero-bg-orb orb-a"></div>
-  <div class="hero-bg-orb orb-b"></div>
-  <div class="hero-content">
-    <div class="hero-kicker">Timetable Dashboard</div>
-    <h1>충북교육청 AI 교원연수<br><span>Timetable management sheet</span></h1>
-    <p class="hero-desc">2박 3일 연수의 강의, 식사, 이동, 멘토링, 발표 일정을 시간 그리드에서 드래그로 등록하고 장소 태그와 함께 관리합니다.</p>
-    <div class="hero-meta">
+<!-- ── Header ── -->
+<div class="header">
+  <div class="header-left">
+    <h1>충북교육청 <span>AI 교원연수</span> 운영 시간표</h1>
+    <div class="meta">
       <span class="meta-chip"><span class="dot"></span>2026년 8월 12~14일 · 2박 3일</span>
       <span class="meta-chip"><span class="dot" style="background:var(--green)"></span>세종대학교</span>
-      <span class="meta-chip"><span class="dot" style="background:var(--accent2)"></span>장소 태그 관리</span>
     </div>
   </div>
-  <aside class="hero-status" aria-label="운영 기간">
-    <div class="hero-status-label">운영 기간</div>
-    <div class="hero-big-stat">3D</div>
-    <div class="hero-status-note">빈 시간 칸을 드래그하면 선택한 시간 범위로 일정 입력창이 열립니다.</div>
-  </aside>
-</header>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <a class="back-btn" href="index.html">← 메인</a>
+    <a class="back-btn" href="details.html">상세 관리</a>
+    <a class="back-btn" href="drivelink.html">파일 관리</a>
+    <!-- 로그인 상태 표시 영역 -->
+    <div class="nav-auth" id="navAuth"></div>
+  </div>
+</div>
 
 <!-- 범례 + 안내 -->
 <div class="toolbar">
@@ -701,52 +458,10 @@
     <span class="legend-chip"><span class="legend-dot" style="background:var(--upstage)"></span>업스테이지</span>
   </div>
   <div class="toolbar-actions">
-    <button class="toolbar-btn" type="button" onclick="openLocationManager()">📍 장소 관리</button>
+    <button class="back-btn" type="button" onclick="openLocationManager()">📍 장소 관리</button>
+    <span class="toolbar-hint">💡 빈 칸을 드래그하면 새 일정, 일정을 클릭하면 편집할 수 있어요</span>
   </div>
 </div>
-
-
-
-<!-- 사용법 안내: 시간표 페이지는 행사 일정과 장소 태그를 함께 관리합니다. -->
-<section class="usage-guide" aria-labelledby="usage-timetable-title">
-  <div class="usage-heading">
-    <div>
-      <h2 id="usage-timetable-title">📖 운영 시간표 사용법</h2>
-      <p>시간 칸을 드래그해 일정을 만들고, 장소는 메모가 아니라 재사용 가능한 태그로 선택합니다.</p>
-    </div>
-    <span class="usage-pill">Timetable Guide</span>
-  </div>
-  <div class="usage-steps">
-    <div class="usage-card">
-      <h3>1. 빈 칸 드래그로 일정 추가</h3>
-      <ul>
-        <li>시간표의 <b>빈 시간 칸을 마우스로 드래그</b>하면 선택한 시간 범위로 새 일정 모달이 열립니다.</li>
-        <li>제목, 분류, 시작·종료 시간을 확인한 뒤 저장합니다.</li>
-      </ul>
-    </div>
-    <div class="usage-card">
-      <h3>2. 일정 클릭으로 편집</h3>
-      <ul>
-        <li>등록된 일정 카드를 클릭하면 편집 모달이 열립니다.</li>
-        <li>시간을 바꾸거나 삭제할 때도 같은 모달을 사용합니다.</li>
-      </ul>
-    </div>
-    <div class="usage-card">
-      <h3>3. 장소 태그 선택</h3>
-      <ul>
-        <li><b>군자관 4층</b>, <b>군자관 6층 식당</b>, <b>대양AI관 만찬장</b>이 기본값입니다.</li>
-        <li>일정마다 장소 태그를 여러 개 선택할 수 있습니다.</li>
-      </ul>
-    </div>
-    <div class="usage-card">
-      <h3>4. 새 장소 추가·편집</h3>
-      <ul>
-        <li>모달의 <b>+ 태그 추가</b> 또는 상단 <b>장소 관리</b>를 사용합니다.</li>
-        <li>장소명을 수정하면 기존 일정 표시도 함께 바뀝니다.</li>
-      </ul>
-    </div>
-  </div>
-</section>
 
 <!-- 시간표 그리드 -->
 <div class="timetable-wrap">
@@ -766,6 +481,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, onValue, update, remove, push, set }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 /* Firebase 설정: To Do와 같은 프로젝트를 사용하되 timetable_events 노드로 분리합니다. */
 const firebaseConfig = {
@@ -781,6 +498,40 @@ const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 const eventsRef = ref(db, 'timetable_events');
 const locationsRef = ref(db, 'timetable_locations');
+
+/* ── Firebase Auth ── */
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+let unsubscribeLocations = null;
+let unsubscribeEvents = null;
+
+function signInWithGoogle() {
+  signInWithPopup(auth, googleProvider).catch(err => {
+    console.error('로그인 오류:', err);
+    setSyncStatus('error', '로그인 실패');
+  });
+}
+window.signInWithGoogle = signInWithGoogle;
+
+function signOutUser() {
+  if (unsubscribeLocations) { unsubscribeLocations(); unsubscribeLocations = null; }
+  if (unsubscribeEvents) { unsubscribeEvents(); unsubscribeEvents = null; }
+  signOut(auth);
+}
+window.signOutUser = signOutUser;
+
+function renderNavAuth(user) {
+  const el = document.getElementById('navAuth');
+  if (!el) return;
+  if (user) {
+    el.innerHTML =
+      (user.photoURL ? `<img class="nav-user-photo" src="${user.photoURL.replace(/"/g,'')}" alt="">` : '') +
+      `<span class="nav-user-name">${(user.displayName || user.email).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>` +
+      `<button class="nav-logout-btn" onclick="signOutUser()">로그아웃</button>`;
+  } else {
+    el.innerHTML = `<button class="nav-login-btn" onclick="signInWithGoogle()">🔐 Google 로그인</button>`;
+  }
+}
 
 /* ── 설정 ── */
 const DAYS = [
@@ -804,7 +555,7 @@ const DEFAULT_LOCATIONS = [
 // CSS 미디어쿼리에서 --row-h가 바뀔 수 있으므로 JS는 매번 실제 값을 읽습니다.
 function getRowHeight() {
   const value = getComputedStyle(document.documentElement).getPropertyValue('--row-h').trim();
-  return Number.parseFloat(value) || 42;
+  return Number.parseFloat(value) || 24;
 }
 
 /* ── 상태 ── */
@@ -825,12 +576,6 @@ function setSyncStatus(state, text) {
   el.className = state; el.style.display = 'flex';
   document.getElementById('syncText').textContent = text;
 }
-// 비동기 저장/삭제 오류가 콘솔에만 남지 않도록 사용자에게 동기화 오류 상태를 표시합니다.
-window.addEventListener('unhandledrejection', event => {
-  console.error('Unhandled async error:', event.reason);
-  setSyncStatus('error', '저장/동기화 오류');
-});
-
 
 window.addEventListener('unhandledrejection', event => {
   console.error('비동기 처리 오류:', event.reason);
@@ -920,14 +665,14 @@ function renderEvents() {
     const card = document.createElement('div');
     card.className = `tt-event ${ev.cat || 'common'}`;
     const rowH = getRowHeight();
-    card.style.top    = `${startSlot * rowH + 3}px`;
-    card.style.height = `${duration * rowH - 6}px`;
+    card.style.top    = `${startSlot * rowH + 2}px`;
+    card.style.height = `${duration * rowH - 4}px`;
     card.dataset.key = key;
     const locationLabels = getEventLocationLabels(ev);
     const locationHtml = locationLabels.length ? `
       <div class="tt-event-location">
-        ${locationLabels.slice(0, 3).map(label => `<span class="tt-location-chip-mini">📍 ${escapeHtml(label)}</span>`).join('')}
-        ${locationLabels.length > 3 ? `<span class="tt-location-chip-mini">+${locationLabels.length - 3}</span>` : ''}
+        ${locationLabels.slice(0, 2).map(label => `<span class="tt-location-chip-mini">📍 ${escapeHtml(label)}</span>`).join('')}
+        ${locationLabels.length > 2 ? `<span class="tt-location-chip-mini">+${locationLabels.length - 2}</span>` : ''}
       </div>` : '';
     card.innerHTML = `
       <div class="tt-event-title">${escapeHtml(ev.title || '(제목 없음)')}</div>
@@ -1193,8 +938,8 @@ function showDragPreview() {
     colEl.appendChild(dragState.previewEl);
   }
   const rowH = getRowHeight();
-  dragState.previewEl.style.top = `${minSlot * rowH + 3}px`;
-  dragState.previewEl.style.height = `${duration * rowH - 6}px`;
+  dragState.previewEl.style.top = `${minSlot * rowH + 2}px`;
+  dragState.previewEl.style.height = `${duration * rowH - 4}px`;
   dragState.previewEl.textContent = `${slotToTime(minSlot)}–${slotToTime(maxSlot)}`;
 }
 
@@ -1320,44 +1065,52 @@ document.addEventListener('keydown', e => {
 /* ── 초기화 ── */
 renderGrid();
 initDrag();
-setSyncStatus('syncing','연결 중...');
 
 // 모바일 회전/리사이즈 시 CSS 변수 변경에 맞춰 일정 카드 위치를 다시 계산합니다.
 window.addEventListener('resize', () => renderEvents());
 
-// 장소 태그 목록은 일정과 별도 노드로 관리합니다.
-onValue(locationsRef, snap => {
-  const data = snap.val();
-  if (!data) {
-    seedDefaultLocations().catch(err => {
-      console.error('location seed error:', err);
-      setSyncStatus('error','장소 등록 오류');
-    });
-    locations = {};
+/* ── 인증 상태 변화 감지 → DB 구독 시작/중지 ── */
+onAuthStateChanged(auth, user => {
+  const gate = document.getElementById('authGate');
+  renderNavAuth(user);
+  if (user) {
+    gate.classList.add('hidden');
+    if (!unsubscribeLocations) {
+      setSyncStatus('syncing', '연결 중...');
+      unsubscribeLocations = onValue(locationsRef, snap => {
+        const data = snap.val();
+        if (!data) {
+          seedDefaultLocations().catch(err => {
+            console.error('location seed error:', err);
+            setSyncStatus('error', '장소 등록 오류');
+          });
+          locations = {};
+        } else {
+          locations = data;
+        }
+        renderLocationPicker();
+        renderLocationManageList();
+        renderEvents();
+      }, err => { console.error('locations error:', err); setSyncStatus('error', '장소 연결 오류'); });
+    }
+    if (!unsubscribeEvents) {
+      unsubscribeEvents = onValue(eventsRef, snap => {
+        events = snap.val() || {};
+        if (!isReady) {
+          isReady = true;
+          const ov = document.getElementById('loadingOverlay');
+          ov.classList.add('hidden');
+          setTimeout(() => ov.style.display = 'none', 400);
+        }
+        renderEvents();
+        setSyncStatus('synced', '실시간 동기화 중');
+      }, err => { console.error(err); setSyncStatus('error', '연결 오류'); });
+    }
   } else {
-    locations = data;
-  }
-  renderLocationPicker();
-  renderLocationManageList();
-  renderEvents();
-}, err => {
-  console.error('locations error:', err);
-  setSyncStatus('error','장소 연결 오류');
-});
-
-onValue(eventsRef, snap => {
-  events = snap.val() || {};
-  if (!isReady) {
-    isReady = true;
+    gate.classList.remove('hidden');
     const ov = document.getElementById('loadingOverlay');
-    ov.classList.add('hidden');
-    setTimeout(() => ov.style.display = 'none', 400);
+    if (ov) { ov.classList.add('hidden'); ov.style.display = 'none'; }
   }
-  renderEvents();
-  setSyncStatus('synced','실시간 동기화 중');
-}, err => {
-  console.error(err);
-  setSyncStatus('error','연결 오류');
 });
 </script>
 </body>
