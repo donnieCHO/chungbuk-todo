@@ -1,40 +1,43 @@
-SITE: /mnt/data/todo_release_location_tags
+DEPLOYMENT AUDIT REPORT
+Generated: 2026-06-12 05:22:47
+Root: /mnt/data/todo_release_no_visible_logo_consistent_headers_final
+
 FILE EXISTENCE CHECK
-- index.html: OK
-- details.html: OK
-- timetable.html: OK
-- drivelink.html: OK
-- dricelink.html: OK
-- README.md: OK
-- DEPLOYMENT_CHECKLIST.md: OK
+- OK
+
+LOGO / FAVICON ASSET CHECK
+- OK
 
 ENCODING / HTML STATIC CHECK
-- details.html: OK
-- dricelink.html: OK
-- drivelink.html: OK
-- index.html: OK
-- timetable.html: OK
+- OK
+
+DUPLICATE ID CHECK
+- OK
+
+INTERNAL LINK / NAVIGATION CHECK
+- OK
+
+INLINE HANDLER CHECK
+- OK
 
 JAVASCRIPT SYNTAX CHECK
-- details.html script 0: OK
-- dricelink.html script 0: OK
-- drivelink.html script 0: OK
-- index.html script 0: OK
-- timetable.html script 0: OK
+- OK
+
+REQUIRED FEATURE MARKER CHECK
+- OK
+
+USAGE GUIDE / COMMENT CHECK
+- OK
+
+THEME TOGGLE / BODY LOGO CHECK
+- OK
+
+CUSTOM DROPDOWN UI CHECK
+- OK
 
 LOCAL STATIC SERVE CHECK
-- index.html: HTTP 200
-- details.html: HTTP 200
-- timetable.html: HTTP 200
-- drivelink.html: HTTP 200
-- dricelink.html: HTTP 200
-- README.md: HTTP 200
-- DEPLOYMENT_CHECKLIST.md: HTTP 200
-- DEPLOYMENT_AUDIT_REPORT.txt: HTTP 200
+- OK
 
-FEATURE CHECKLIST NOTE
-- timetable.html: 장소 태그 UI, timetable_locations 노드, locations 배열 저장 로직 포함
-- Firebase 실제 읽기/쓰기 권한은 배포 URL에서 수동 테스트 필요
-
-RESULT
+SUMMARY
 PASS
+Static deployment checks passed. Firebase live read/write still requires browser-based manual verification after deployment.
