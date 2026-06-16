@@ -823,6 +823,9 @@ let editKey = null;       // 현재 편집 중인 이벤트 키 (null = 신규)
 let currentCat = 'common'; // 모달에서 선택된 분류
 let selectedLocations = []; // 모달에서 선택된 장소 태그 key 배열
 let locationSeedAttempted = false;
+// 장소 필터 상태: 최신 버전에서 이 변수가 누락되면 onValue 콜백에서 ReferenceError가 발생해
+// timetable_events 데이터가 있어도 일정 카드가 렌더링되지 않습니다. 기본값은 전체 장소입니다.
+let locationFilter = 'all';
 
 // 드래그 상태
 let dragState = null;     // { dayKey, startSlot, currentSlot, previewEl }

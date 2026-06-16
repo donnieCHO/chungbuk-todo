@@ -400,3 +400,10 @@ deletedBy: '작업자 라벨'
 ```
 
 자세한 운영 절차는 `OPERATIONS_SAFETY_GUIDE.md`를 참고하세요.
+
+### 운영 시간표 데이터가 사라진 것처럼 보일 때
+
+최신 버전에서는 일정 삭제가 즉시 삭제가 아니라 `deleted:true` soft delete로 처리됩니다. 삭제된 일정은 일반 시간표에서 숨겨지고 `admin.html`의 휴지통에서 복구할 수 있습니다.
+
+또한 2026-06-16 배포본에서 `timetable.html`의 장소 필터 상태 변수 `locationFilter` 누락으로 일정 렌더링이 중단될 수 있던 문제를 수정했습니다. Firebase의 `timetable_events` 데이터 자체는 변경하지 않았고, 화면 표시 오류만 수정했습니다.
+

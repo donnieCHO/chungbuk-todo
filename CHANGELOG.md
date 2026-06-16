@@ -195,3 +195,10 @@
 - Contact 전용 layout/form/card/modal/usage-guide 스타일을 복구했습니다.
 - soft delete 안내 문구를 현재 동작에 맞게 수정했습니다.
 - class 사용/정의 정적 점검 결과, contact.html의 본문 주요 클래스 누락 0건을 확인했습니다.
+
+## 2026-06-16 — 운영 시간표 데이터 표시 오류 수정
+
+- `timetable.html`에서 장소 필터 상태 변수 `locationFilter`가 선언되지 않아 Firebase `timetable_events` 데이터가 있어도 일정 카드 렌더링이 중단될 수 있던 문제를 수정했습니다.
+- 기본값을 `all`로 선언해 장소 필터가 초기화되기 전에도 전체 일정이 정상 표시되도록 했습니다.
+- Firebase Rules, Auth, DB 구조, 실제 시간표 데이터는 변경하지 않았습니다.
+
