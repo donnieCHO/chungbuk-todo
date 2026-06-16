@@ -227,8 +227,16 @@
 - 관리 도구에 주요 과제 관리/삭제 리스트와 전체 Action Item 리스트 관리 영역을 추가했습니다.
 - 상세 관리 페이지는 주요 과제 상세 보기, 카드 내부 Action 추가, 댓글·대댓글, 링크 관리에 집중하도록 정리했습니다.
 
-## UI Timeline / Timetable / Admin 배열 개선
 
-- 내 Action Timeline을 선택 담당자 기준 미완료 Action 전체가 날짜별로 보이도록 개선했습니다.
-- 운영 시간표 일정 카드를 `제목 · 장소 · 시간` 한 줄 ellipsis 구조로 변경했습니다.
-- 관리 도구에서 입력 폼 아래에 전체 주요 과제 리스트와 전체 Action Item 리스트가 오도록 배열을 명확히 정리했습니다.
+## 2026-06-16 — Timeline/Admin/Timetable UI 보강
+
+- 내 Action 페이지에 전체 Action Timeline을 추가해 담당자 필터 적용 후에도 due date 기준 전체 Action 흐름을 확인할 수 있게 했습니다.
+- 내 Action 기본 담당자 필터를 전체로 변경해 최초 접속 시 데이터가 비어 보이는 상황을 줄였습니다.
+- 운영 시간표 일정 카드를 제목-장소-시간 1줄 표시로 변경하고, 긴 내용은 말줄임표 처리했습니다.
+- 관리 도구의 입력 폼 아래에 주요 과제/Action Item 전체 리스트가 명확히 보이도록 섹션명을 정리했습니다.
+
+## 2026-06-16 — Firebase 연결 중 표시 / 내 Action 렌더링 오류 수정
+
+- `index.html`의 `renderTimelineAction()`에서 호출하던 `categoryInfo()` helper 누락을 수정했습니다.
+- Firebase `tasks` 데이터 수신 후 화면 렌더링 오류로 인해 우하단 배지가 `연결 중`에 머무르던 문제를 해결했습니다.
+- `onValue(tasksRef, ...)` 렌더링 구간에 `try/catch`를 추가해 향후 렌더링 오류 발생 시 명확한 오류 상태를 표시하도록 개선했습니다.

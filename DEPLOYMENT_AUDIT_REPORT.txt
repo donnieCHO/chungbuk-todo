@@ -1,49 +1,60 @@
-DEPLOYMENT AUDIT REPORT
+FIREBASE RUNTIME FIX AUDIT REPORT
+===================================
+Generated: 2026-06-16
 
-FILE / ENCODING / BODY LOGO CHECK
-- index.html: OK
-- details.html: OK
-- admin.html: OK
-- timetable.html: OK
-- contact.html: OK
-- drivelink.html: OK
-- dricelink.html: OK
+FILE EXISTENCE CHECK
+- OK: index.html
+- OK: details.html
+- OK: admin.html
+- OK: timetable.html
+- OK: contact.html
+- OK: drivelink.html
+- OK: dricelink.html
+
+INDEX RUNTIME FIX CHECK
+- OK: categoryInfo helper present
+- OK: render callback try/catch present
+- OK: categoryInfo call resolved
+
+ENCODING / HTML STATIC CHECK
+- OK: index.html: utf8/bom/doctype/meta/body-logo
+- OK: details.html: utf8/bom/doctype/meta/body-logo
+- OK: admin.html: utf8/bom/doctype/meta/body-logo
+- OK: timetable.html: utf8/bom/doctype/meta/body-logo
+- OK: contact.html: utf8/bom/doctype/meta/body-logo
+- OK: drivelink.html: utf8/bom/doctype/meta/body-logo
+- OK: dricelink.html: utf8/bom/doctype/meta/body-logo
 
 JAVASCRIPT SYNTAX CHECK
-- index.html script 0: OK
-- index.html script 4: OK
-- details.html script 0: OK
-- details.html script 4: OK
-- admin.html script 3: OK
-- admin.html script 4: OK
-- timetable.html script 0: OK
-- timetable.html script 4: OK
-- contact.html script 0: OK
-- contact.html script 4: OK
-- drivelink.html script 0: OK
-- drivelink.html script 4: OK
-- dricelink.html script 2: OK
-
-FEATURE MARKER CHECK
-- index unified timeline: OK
-- index all timeline renderer: OK
-- timetable one-line event separator: OK
-- timetable detailed edit modal: OK
-- admin major full list: OK
-- admin action full list: OK
-- admin backup below lists: OK
-- report added: OK
+- OK: index.html script 0: syntax
+- OK: index.html script 4: syntax
+- OK: details.html script 0: syntax
+- OK: details.html script 4: syntax
+- OK: admin.html script 3: syntax
+- OK: admin.html script 4: syntax
+- OK: timetable.html script 0: syntax
+- OK: timetable.html script 4: syntax
+- OK: contact.html script 0: syntax
+- OK: contact.html script 4: syntax
+- OK: drivelink.html script 0: syntax
+- OK: drivelink.html script 4: syntax
+- OK: dricelink.html script 2: syntax
+- OK: assets/app-config.js: syntax
+- OK: assets/runtime-safety.js: syntax
+- OK: assets/ui-select.js: syntax
 
 LOCAL STATIC SERVE CHECK
-- index.html: HTTP 200
-- details.html: HTTP 200
-- admin.html: HTTP 200
-- timetable.html: HTTP 200
-- contact.html: HTTP 200
-- drivelink.html: HTTP 200
-- dricelink.html: HTTP 200
-- assets/ui-select.js: HTTP 200
-- assets/runtime-safety.js: HTTP 200
-- assets/safety.css: HTTP 200
+- OK: index.html: HTTP 200
+- OK: details.html: HTTP 200
+- OK: admin.html: HTTP 200
+- OK: timetable.html: HTTP 200
+- OK: contact.html: HTTP 200
+- OK: drivelink.html: HTTP 200
+- OK: dricelink.html: HTTP 200
+- OK: assets/ui-select.css: HTTP 200
+- OK: assets/ui-select.js: HTTP 200
+- OK: assets/runtime-safety.js: HTTP 200
+- OK: assets/app-config.js: HTTP 200
 
-SUMMARY: PASS
+SUMMARY
+PASS

@@ -264,23 +264,54 @@
     z-index:2;
     user-select:none;
     display:flex;
-    align-items:center;
-    min-width:0;
+    flex-direction:column;
+    justify-content:flex-start;
   }
   .tt-event:hover { box-shadow:0 4px 14px rgba(0,0,0,.4); z-index:3; }
   .tt-event.common  { background:rgba(61,214,140,.18); border-left-color:var(--common);  color:var(--common); }
   .tt-event.sejong  { background:rgba(195,0,47,.22);  border-left-color:var(--sejong);  color:#ff6f80; }
   .tt-event.upstage { background:rgba(139,92,246,.22); border-left-color:var(--upstage); color:#c4b5fd; }
-  .tt-event-title { font-weight:850;color:var(--text);font-size:12.5px;letter-spacing:-.15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1; }
-  .tt-event-sep { color:currentColor;opacity:.45;margin:0 4px;flex-shrink:0; }
-  .tt-event-time  { font-family:'DM Mono',monospace;font-size:9.5px;opacity:.7;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:58px;flex-shrink:0; }
-  .tt-event-location { font-size:10.5px;font-weight:800;color:#a9c8ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:36%;flex-shrink:1; }
+  .tt-event-title { font-weight:850;line-height:1.22;color:var(--text);font-size:12.5px;margin-bottom:3px;letter-spacing:-.15px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+  .tt-event.compact .tt-event-title { -webkit-line-clamp:1; }
+  .tt-event-time  { font-family:'DM Mono',monospace;font-size:9.5px;opacity:.62;line-height:1.25;margin-top:2px; }
+  .tt-event-location { display:flex;flex-wrap:wrap;gap:3px;margin-top:4px; }
   .tt-location-chip-mini {
     display:inline-flex;align-items:center;gap:2px;
     font-family:'Pretendard',sans-serif;font-size:9.5px;font-weight:800;line-height:1.15;
     padding:2px 6px;border-radius:99px;border:1px solid rgba(79,142,247,.36);
     background:rgba(79,142,247,.12);color:#a9c8ff;max-width:100%;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* 일정 카드 표시: 제목-장소-시간을 1줄로 압축해 좁은 세로 칸에서도 핵심 정보가 보이게 합니다. */
+  .tt-event-line {
+    display:grid;
+    grid-template-columns:minmax(0,1.3fr) minmax(0,.95fr) auto;
+    align-items:center;
+    gap:6px;
+    width:100%;
+    height:100%;
+    min-width:0;
+    white-space:nowrap;
+  }
+  .tt-event-line-title,
+  .tt-event-line-location,
+  .tt-event-line-time {
+    display:block;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    line-height:1.2;
+  }
+  .tt-event-line-title { color:var(--text);font-size:12px;font-weight:900;letter-spacing:-.1px; }
+  .tt-event-line-location { color:#a9c8ff;font-size:10.5px;font-weight:850; }
+  .tt-event-line-time { font-family:'DM Mono',monospace;font-size:9px;opacity:.68;justify-self:end; }
+  @media(max-width:700px){
+    .tt-event-line{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr) auto;gap:4px;}
+    .tt-event-line-title{font-size:11px;}
+    .tt-event-line-location{font-size:9.5px;}
+    .tt-event-line-time{font-size:8.5px;}
   }
 
   /* 드래그 중인 placeholder */
@@ -409,9 +440,8 @@
     :root { --time-col-w:48px; --row-h:36px; }
     .tt-day-num{font-size:15px;}
     .tt-event{left:3px;right:3px;padding:6px 7px 5px;border-radius:8px;}
-    .tt-event-title{font-size:11.5px;}
-    .tt-event-location{font-size:10px;max-width:38%;}
-    .tt-event-time{font-size:9px;max-width:50px;}
+    .tt-event-title{font-size:12px;line-height:1.25;}
+    .tt-event-location{gap:3px;margin-top:4px;}
     .tt-location-chip-mini{font-size:9px;padding:1px 5px;}
   }
 
@@ -839,16 +869,31 @@ function setSyncStatus(state, text) {
   document.getElementById('syncText').textContent = text;
   window.TodoSafe?.recordSyncState?.(state, text);
 }
+
+// 활동 로그는 운영 추적용 보조 기능입니다.
+// activity_logs 쓰기 권한이 없거나 네트워크가 불안정해도 시간표 저장/수정 자체가 실패하지 않도록 try/catch로 격리합니다.
+async function logActivity(type, targetPath, title, snapshot={}) {
+  try {
+    const logRef = push(ref(db, 'activity_logs'));
+    await update(ref(db), {
+      [`activity_logs/${logRef.key}`]: {
+        type,
+        targetPath,
+        title,
+        actorLabel: window.TodoSafe?.actorLabel?.() || 'unknown',
+        createdAt: Date.now(),
+        snapshot
+      }
+    });
+  } catch (err) {
+    console.warn('activity log failed:', err);
+  }
+}
+
 // 비동기 저장/삭제 오류가 콘솔에만 남지 않도록 사용자에게 동기화 오류 상태를 표시합니다.
 window.addEventListener('unhandledrejection', event => {
   console.error('Unhandled async error:', event.reason);
   setSyncStatus('error', '저장/동기화 오류');
-});
-
-
-window.addEventListener('unhandledrejection', event => {
-  console.error('비동기 처리 오류:', event.reason);
-  setSyncStatus('error','저장/연결 오류');
 });
 
 /* ── 시간 헬퍼 ── */
@@ -939,17 +984,20 @@ function renderEvents() {
     card.style.height = `${duration * rowH - 6}px`;
     card.dataset.key = key;
     const locationLabels = getEventLocationLabels(ev);
-    const locationText = locationLabels.length ? locationLabels.join(', ') : '장소 미정';
-    card.title = `${ev.title || '(제목 없음)'} · ${locationText} · ${ev.start}–${ev.end}`;
+    const locationText = locationLabels.length ? locationLabels.slice(0, 2).join(', ') + (locationLabels.length > 2 ? ` +${locationLabels.length - 2}` : '') : '장소 미정';
+    const titleText = ev.title || '(제목 없음)';
+    const timeText = `${ev.start}–${ev.end}`;
+    card.setAttribute('title', `${titleText} · ${locationLabels.join(', ') || '장소 미정'} · ${timeText}${ev.memo ? `\n${ev.memo}` : ''}`);
     card.innerHTML = `
-      <div class="tt-event-title">${escapeHtml(ev.title || '(제목 없음)')}</div>
-      <span class="tt-event-sep">·</span>
-      <div class="tt-event-location">📍 ${escapeHtml(locationText)}</div>
-      <span class="tt-event-sep">·</span>
-      <div class="tt-event-time">${ev.start}–${ev.end}</div>
+      <div class="tt-event-line">
+        <span class="tt-event-line-title">${escapeHtml(titleText)}</span>
+        <span class="tt-event-line-location">📍 ${escapeHtml(locationText)}</span>
+        <span class="tt-event-line-time">${escapeHtml(timeText)}</span>
+      </div>
     `;
     card.addEventListener('click', (e) => {
       e.stopPropagation();
+      // 상세 일정은 기존 편집 모달에서 제목, 날짜, 장소, 시간, 메모 전체를 확인하고 수정할 수 있습니다.
       openEditModal(key, ev);
     });
     col.appendChild(card);
@@ -1259,7 +1307,7 @@ function openEditModal(key, ev) {
   editKey = key;
   currentCat = ev.cat || 'common';
   selectedLocations = getEventLocationKeys(ev);
-  document.getElementById('modalTitle').textContent = '📌 상세 일정 / 편집';
+  document.getElementById('modalTitle').textContent = '✏️ 일정 편집';
   document.getElementById('ev-title').value = ev.title || '';
   document.getElementById('ev-day').value   = ev.day;
   document.getElementById('ev-start').value = ev.start;

@@ -216,7 +216,6 @@
 /* Timeline list for My Action
    날짜를 먼저 보여주고, 해당 날짜의 Action Item을 옆에 붙여서 한눈에 마감 흐름을 볼 수 있게 합니다. */
 .timeline-list{display:flex;flex-direction:column;gap:12px}.timeline-day{display:grid;grid-template-columns:118px minmax(0,1fr);gap:14px;align-items:start;position:relative}.timeline-day::before{content:'';position:absolute;left:58px;top:42px;bottom:-14px;width:2px;background:var(--border);opacity:.7}.timeline-day:last-child::before{display:none}.timeline-date{position:sticky;top:80px;z-index:1;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;min-height:72px;border:1px solid var(--border);border-radius:18px;background:linear-gradient(135deg,rgba(79,142,247,.08),rgba(255,255,255,.02)),var(--surface);box-shadow:0 8px 24px rgba(0,0,0,.12)}.timeline-date .date-main{font-family:'DM Mono',monospace;font-size:22px;font-weight:800;color:var(--accent);line-height:1}.timeline-date .date-sub{font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.02em}.timeline-date.over .date-main{color:var(--red)}.timeline-date.today .date-main{color:var(--green)}.timeline-date.near .date-main{color:var(--yellow)}.timeline-actions{display:flex;flex-direction:column;gap:8px}.timeline-action-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:11px;align-items:start;border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:11px 12px;transition:border-color .15s,transform .15s}.timeline-action-card:hover{border-color:rgba(79,142,247,.38);transform:translateY(-1px)}.timeline-action-card.done{opacity:.58}.timeline-action-card.done .action-text{text-decoration:line-through;color:var(--muted)}.timeline-major{font-size:11px;color:var(--muted);font-weight:800;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.timeline-meta{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}.timeline-empty{padding:18px;border:1px dashed var(--border);border-radius:16px;color:var(--muted);text-align:center;background:rgba(255,255,255,.015)}
-.section-desc{margin:-4px 0 14px;color:var(--muted);font-size:13px;line-height:1.6}
 @media(max-width:720px){.timeline-day{grid-template-columns:1fr}.timeline-day::before{display:none}.timeline-date{position:relative;top:auto;align-items:flex-start;padding:13px 15px;min-height:auto}.timeline-date .date-main{font-size:18px}.timeline-action-card{grid-template-columns:auto minmax(0,1fr)}}
 
 
@@ -559,7 +558,7 @@
         </div>
         <div class="usage-card">
           <h3>4. 현황과 완료 확인</h3>
-          <ul><li>전체 현황은 상단 대시보드에서 확인합니다.</li><li><b>왼쪽 원형 체크를 누르면 완료가 됩니다.</b> 완료된 Action Item은 기본적으로 접혀 있고, 우측 <b>펼치기</b> 버튼으로 볼 수 있습니다.</li></ul>
+          <ul><li>전체 현황은 상단 대시보드에서 확인합니다.</li><li><b>왼쪽 원형 체크를 누르면 완료가 됩니다.</b> 완료된 Action Item은 기본적으로 접혀 있고, 우측 <b>펼치기</b> 버튼으로 볼 수 있습니다. 전체 Action Timeline에서는 due date가 먼 항목까지 날짜별로 확인할 수 있습니다.</li></ul>
         </div>
       </div>
       <div class="usage-note"><b>입력 원칙:</b> “업무명”보다 “다음 행동”을 Action Item으로 적으면, 메인 화면에서 오늘 해야 할 일이 훨씬 선명하게 보입니다. 예: “숙박 후보 3곳 견적 비교표 만들기”.</div>
@@ -615,10 +614,19 @@
     </div>
   </section>
 
-  <section class="section" id="sec-action-timeline">
-    <div class="section-head"><h2>📅 내 Action Timeline</h2><span class="badge" id="countTimeline">0</span></div>
-    <p class="section-desc">내 보기 설정에서 선택한 담당자와 관련된 미완료 Action Item을 Due Date 순서로 날짜별 표시합니다.</p>
-    <div class="major-list" id="timelineList"></div>
+  <section class="section" id="sec-now">
+    <div class="section-head"><h2>🔥 지금 해야 할 일 · Timeline</h2><span class="badge" id="countNow">0</span></div>
+    <div class="major-list" id="nowList"></div>
+  </section>
+
+  <section class="section" id="sec-week">
+    <div class="section-head"><h2>🗓 이번 주 Action · Timeline</h2><span class="badge" id="countWeek">0</span></div>
+    <div class="major-list" id="weekList"></div>
+  </section>
+
+  <section class="section" id="sec-all-timeline">
+    <div class="section-head"><h2>📆 전체 Action Timeline</h2><span class="badge" id="countAllTimeline">0</span></div>
+    <div class="major-list" id="allTimelineList"></div>
   </section>
 
   <section class="section collapsible-section collapsed" id="sec-done">
@@ -748,7 +756,7 @@ let rawTasks = {};
 let majorTasks = {};
 let legacyTasks = [];
 let isReady = false;
-let ownerFilter = localStorage.getItem('todo.ownerFilter') || 'ops';
+let ownerFilter = localStorage.getItem('todo.ownerFilter') || 'all';
 let sortMode = localStorage.getItem('todo.sortMode') || 'deadline';
 let searchQuery = '';
 let seedAttempted = false;
@@ -822,10 +830,13 @@ function normalizeCategory(value) {
   }
   return raw;
 }
-function categoryTag(cat) {
+function categoryInfo(cat) {
   const label = normalizeCategory(cat);
   const cfg = Object.values(CATEGORY_CONFIG).find(c => c.label === label);
-  if (!cfg) return `<span class="tag">${escapeHtml(label)}</span>`;
+  return cfg ? { ...cfg, label } : { label, icon:'📌', color:'#6b7a9e', aliases:[] };
+}
+function categoryTag(cat) {
+  const cfg = categoryInfo(cat);
   return `<span class="tag category-tag" style="color:${cfg.color};border-color:${cfg.color}66;background:${cfg.color}14">${cfg.icon} ${escapeHtml(cfg.label)}</span>`;
 }
 function normalizeOwner(value) {
@@ -1105,21 +1116,23 @@ function visibleActionsForMajor(major, section) {
   return actionList(major).filter(([,action]) => {
     if (ownerFilter !== 'all' && !actionRelatedToOwner(action, ownerFilter)) return false;
     if (q) {
-      const memoText = Object.values(action.memos || {}).filter(m => !m?.deleted).map(m => {
-        const replies = Object.values(m.replies || {}).filter(r => !r?.deleted).map(r => `${r.writer || ''} ${r.text || ''}`).join(' ');
-        return `${m.writer || ''} ${m.text || ''} ${replies}`;
-      }).join(' ');
+      const memoText = Object.values(action.memos || {}).map(m => `${m?.text || ''} ${Object.values(m?.replies || {}).map(r => r?.text || '').join(' ')}`).join(' ');
       const hay = `${major.title} ${major.description} ${major.cat} ${action.text} ${ownerLabel(action.owner)} ${waitingDisplay(action.waitingFor)} ${memoText}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
+
     if (section === 'done') return action.done;
     if (action.done) return false;
-    if (section === 'all') return true;
+
     const diff = getDaysLeft(action.deadline);
-    if (section === 'now') return (diff !== null && diff <= 0) || action.priority === 'high' || action.status === 'doing' || action.status === 'review';
+    if (section === 'now') {
+      // 오늘/기한초과, 그리고 due date가 아직 없는 최우선 Action을 놓치지 않도록 포함합니다.
+      return (diff !== null && diff <= 0) || (!action.deadline && action.priority === 'high');
+    }
     if (section === 'week') return diff !== null && diff > 0 && diff <= 7;
+    if (section === 'all') return true;
     return true;
-  }).sort(([,a],[,b]) => actionSortValue(a, { includeDone: section === 'done' }) - actionSortValue(b, { includeDone: section === 'done' }) || actionSortScore(b) - actionSortScore(a) || (a.order||0) - (b.order||0));
+  }).sort(([,a],[,b]) => actionSortValue(a) - actionSortValue(b) || actionSortScore(b) - actionSortScore(a) || (a.order||0) - (b.order||0));
 }
 function actionSortScore(action) {
   let score = 0;
@@ -1173,18 +1186,15 @@ function renderTimelineAction(item) {
   </div>`;
 }
 function renderTimelineSection(section, listId, countId, emptyText) {
-  const listEl = document.getElementById(listId);
-  const countEl = document.getElementById(countId);
-  if (!listEl) return;
   const majors = sortedMajors(Object.values(majorTasks));
   const flat = [];
   majors.forEach(major => {
     visibleActionsForMajor(major, section).forEach(([actionKey, action]) => flat.push({ major, actionKey, action }));
   });
-  flat.sort((a,b) => actionSortValue(a.action, { includeDone:section === 'done' }) - actionSortValue(b.action, { includeDone:section === 'done' }) || actionSortScore(b.action) - actionSortScore(a.action));
-  if (countEl) countEl.textContent = flat.length;
+  flat.sort((a,b) => actionSortValue(a.action, { includeDone:section === 'done' }) - actionSortValue(b.action, { includeDone:section === 'done' }));
+  document.getElementById(countId).textContent = flat.length;
   if (!flat.length) {
-    listEl.innerHTML = `<div class="timeline-empty">${emptyText}</div>`;
+    document.getElementById(listId).innerHTML = `<div class="timeline-empty">${emptyText}</div>`;
     return;
   }
   const grouped = new Map();
@@ -1193,26 +1203,22 @@ function renderTimelineSection(section, listId, countId, emptyText) {
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key).push(item);
   });
-  const sortedGroups = [...grouped.entries()].sort(([a],[b]) => {
-    if (a === 'no-date' && b === 'no-date') return 0;
-    if (a === 'no-date') return 1;
-    if (b === 'no-date') return -1;
-    return new Date(a) - new Date(b);
-  });
-  const html = sortedGroups.map(([dateKey, items]) => {
+  const html = [...grouped.entries()].map(([dateKey, items]) => {
     const info = dateBucketInfo(dateKey);
     return `<div class="timeline-day">
       <div class="timeline-date ${info.cls}"><div class="date-main">${escapeHtml(info.main)}</div><div class="date-sub">${escapeHtml(info.sub)}</div></div>
       <div class="timeline-actions">${items.map(renderTimelineAction).join('')}</div>
     </div>`;
   }).join('');
-  listEl.innerHTML = `<div class="timeline-list">${html}</div>`;
+  document.getElementById(listId).innerHTML = `<div class="timeline-list">${html}</div>`;
 }
 function renderAll() {
   document.getElementById('legacyPanel').style.display = legacyTasks.length ? '' : 'none';
   setSummary();
   setMajorSelect();
-  renderTimelineSection('all', 'timelineList', 'countTimeline', '현재 보기 기준 표시할 미완료 Action Item이 없습니다.');
+  renderTimelineSection('now', 'nowList', 'countNow', '지금 바로 처리할 Action Item이 없습니다.');
+  renderTimelineSection('week', 'weekList', 'countWeek', '이번 주에 마감되는 Action Item이 없습니다.');
+  renderTimelineSection('all', 'allTimelineList', 'countAllTimeline', '현재 보기 기준 등록된 미완료 Action Item이 없습니다.');
   renderTimelineSection('done', 'doneList', 'countDone', '완료된 Action Item이 없습니다.');
 }
 
@@ -1305,20 +1311,29 @@ document.getElementById('quickText').addEventListener('keydown', e => {
 });
 
 onValue(tasksRef, snap => {
-  rawTasks = snap.val() || {};
-  if (!snap.exists()) {
-    seedInitialData();
+  try {
+    rawTasks = snap.val() || {};
+    if (!snap.exists()) {
+      seedInitialData();
+      hideLoading();
+      setSyncStatus('synced', '초기 데이터 준비 중');
+      return;
+    }
+    const normalized = normalizeData(rawTasks);
+    majorTasks = normalized.majors;
+    legacyTasks = normalized.legacy;
     hideLoading();
-    return;
+    renderAll();
+    setSyncStatus('synced', '실시간 동기화 중');
+  } catch (err) {
+    console.error('tasks render error:', err);
+    hideLoading();
+    setSyncStatus('error', '화면 렌더링 오류');
+    const target = document.getElementById('allTimelineList') || document.getElementById('nowList');
+    if (target) target.innerHTML = '<div class="timeline-empty">데이터는 수신했지만 화면 렌더링 중 오류가 발생했습니다. 새로고침 후에도 반복되면 관리자에게 index.html 최신본 적용을 요청하세요.</div>';
   }
-  const normalized = normalizeData(rawTasks);
-  majorTasks = normalized.majors;
-  legacyTasks = normalized.legacy;
-  hideLoading();
-  renderAll();
-  setSyncStatus('synced', '실시간 동기화 중');
 }, err => {
-  console.error(err);
+  console.error('tasks connection error:', err);
   hideLoading();
   setSyncStatus('error', '연결 오류');
 });
