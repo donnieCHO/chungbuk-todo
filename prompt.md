@@ -314,3 +314,8 @@ tasks
    - URL 스킴 검증
    - Firebase write 오류 처리
    - 동기화 상태에 다시 연결 버튼과 마지막 동기화 시각 표시
+
+
+### 댓글 / 대댓글 요구사항
+
+상세 관리 페이지의 Action Item은 1차 댓글과 하위 대댓글을 모두 지원해야 한다. DB는 기존 `memos` 노드를 유지하고 각 `memos/{memoKey}` 아래에 `replies/{replyKey}`를 추가한다. 댓글과 대댓글은 작성자별 색상을 적용하고, 삭제는 soft delete로 처리한다. 검색은 Action Item 본문뿐 아니라 댓글과 대댓글 텍스트까지 포함해야 한다.

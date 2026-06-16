@@ -415,3 +415,27 @@ deletedBy: '작업자 라벨'
 - `details.html`은 상세 조회, 주요 과제 카드 내부 Action Item 추가, 메모/링크 관리 중심으로 사용합니다.
 - `index.html`은 due date 기준 타임라인 형태로 내 Action을 보여줍니다.
 - `timetable.html` 일정 카드는 제목과 장소를 우선 표시하고 시간은 보조 정보로 작게 표시합니다.
+
+
+### 댓글 / 대댓글 스레드 구조
+
+상세 관리 페이지의 Action Item 댓글은 기존 `memos` 노드를 유지하면서, 각 댓글 아래에 `replies` 하위 노드를 추가하는 방식으로 확장했습니다. 기존 댓글 데이터와 호환됩니다.
+
+```txt
+tasks
+└── {majorTaskKey}
+    └── actions
+        └── {actionKey}
+            └── memos
+                └── {memoKey}
+                    ├── writer
+                    ├── text
+                    ├── ts
+                    └── replies
+                        └── {replyKey}
+                            ├── writer
+                            ├── text
+                            └── ts
+```
+
+운영자는 Action Item에 1차 댓글을 남기고, 각 댓글 아래에서 바로 대댓글을 달아 회신·확인 과정을 이어갈 수 있습니다. 댓글과 대댓글 삭제는 `deleted:true` soft delete 방식으로 처리되며, 관리 도구의 휴지통에서 복구 또는 완전 삭제할 수 있습니다.

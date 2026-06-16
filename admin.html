@@ -121,7 +121,27 @@ function setSyncStatus(state,text){const el=document.getElementById('syncStatus'
 function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function fmt(ts){if(!ts)return '';const d=new Date(ts);if(Number.isNaN(d.getTime()))return '';return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
 function countActions(tasks={}){let count=0;Object.values(tasks).forEach(m=>{if(m?.deleted)return;Object.values(m?.actions||{}).forEach(a=>{if(!a?.deleted)count++})});return count}
-function collectDeleted(data){const rows=[];Object.entries(data.tasks||{}).forEach(([mk,m])=>{if(m?.deleted)rows.push({path:`tasks/${mk}`,type:'주요 과제',title:m.title||m.text||mk,deletedAt:m.deletedAt,snapshot:m});Object.entries(m?.actions||{}).forEach(([ak,a])=>{if(a?.deleted)rows.push({path:`tasks/${mk}/actions/${ak}`,type:'Action Item',title:a.text||ak,deletedAt:a.deletedAt,snapshot:a})});Object.entries(m?.links||{}).forEach(([lk,l])=>{if(l?.deleted)rows.push({path:`tasks/${mk}/links/${lk}`,type:'주요 과제 링크',title:l.label||l.url||lk,deletedAt:l.deletedAt,snapshot:l})});Object.entries(m?.actions||{}).forEach(([ak,a])=>Object.entries(a?.links||{}).forEach(([lk,l])=>{if(l?.deleted)rows.push({path:`tasks/${mk}/actions/${ak}/links/${lk}`,type:'Action 링크',title:l.label||l.url||lk,deletedAt:l.deletedAt,snapshot:l})}))});Object.entries(data.contacts||{}).forEach(([k,c])=>{if(c?.deleted)rows.push({path:`contacts/${k}`,type:'Contact',title:c.name||k,deletedAt:c.deletedAt,snapshot:c})});Object.entries(data.timetable_events||{}).forEach(([k,e])=>{if(e?.deleted)rows.push({path:`timetable_events/${k}`,type:'시간표',title:e.title||k,deletedAt:e.deletedAt,snapshot:e})});Object.entries(data.timetable_locations||{}).forEach(([k,l])=>{if(l?.deleted)rows.push({path:`timetable_locations/${k}`,type:'장소 태그',title:l.label||k,deletedAt:l.deletedAt,snapshot:l})});return rows.sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0))}
+function collectDeleted(data){
+  const rows=[];
+  Object.entries(data.tasks||{}).forEach(([mk,m])=>{
+    if(m?.deleted)rows.push({path:`tasks/${mk}`,type:'주요 과제',title:m.title||m.text||mk,deletedAt:m.deletedAt,snapshot:m});
+    Object.entries(m?.actions||{}).forEach(([ak,a])=>{
+      if(a?.deleted)rows.push({path:`tasks/${mk}/actions/${ak}`,type:'Action Item',title:a.text||ak,deletedAt:a.deletedAt,snapshot:a});
+      Object.entries(a?.memos||{}).forEach(([memoKey,memo])=>{
+        if(memo?.deleted)rows.push({path:`tasks/${mk}/actions/${ak}/memos/${memoKey}`,type:'댓글',title:memo.text||memoKey,deletedAt:memo.deletedAt,snapshot:memo});
+        Object.entries(memo?.replies||{}).forEach(([replyKey,reply])=>{
+          if(reply?.deleted)rows.push({path:`tasks/${mk}/actions/${ak}/memos/${memoKey}/replies/${replyKey}`,type:'대댓글',title:reply.text||replyKey,deletedAt:reply.deletedAt,snapshot:reply});
+        });
+      });
+      Object.entries(a?.links||{}).forEach(([lk,l])=>{if(l?.deleted)rows.push({path:`tasks/${mk}/actions/${ak}/links/${lk}`,type:'Action 링크',title:l.label||l.url||lk,deletedAt:l.deletedAt,snapshot:l})});
+    });
+    Object.entries(m?.links||{}).forEach(([lk,l])=>{if(l?.deleted)rows.push({path:`tasks/${mk}/links/${lk}`,type:'주요 과제 링크',title:l.label||l.url||lk,deletedAt:l.deletedAt,snapshot:l})});
+  });
+  Object.entries(data.contacts||{}).forEach(([k,c])=>{if(c?.deleted)rows.push({path:`contacts/${k}`,type:'Contact',title:c.name||k,deletedAt:c.deletedAt,snapshot:c})});
+  Object.entries(data.timetable_events||{}).forEach(([k,e])=>{if(e?.deleted)rows.push({path:`timetable_events/${k}`,type:'시간표',title:e.title||k,deletedAt:e.deletedAt,snapshot:e})});
+  Object.entries(data.timetable_locations||{}).forEach(([k,l])=>{if(l?.deleted)rows.push({path:`timetable_locations/${k}`,type:'장소 태그',title:l.label||k,deletedAt:l.deletedAt,snapshot:l})});
+  return rows.sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0));
+}
 async function logActivity(type,targetPath,title,snap={}){try{const logRef=push(ref(db,'activity_logs'));await update(ref(db),{[`activity_logs/${logRef.key}`]:{type,targetPath,title,actorLabel:window.TodoSafe?.actorLabel?.()||'unknown',createdAt:Date.now(),snapshot:snap}})}catch(err){console.warn(err)}}
 window.saveActorLabel=()=>{const value=document.getElementById('actorLabel').value.trim();window.TodoSafe?.setActorLabel?.(value);alert('작업자 라벨을 저장했습니다.')};
 window.backupAll=async()=>{setSyncStatus('syncing','백업 생성 중...');const snap=await get(rootRef);window.TodoSafe.downloadJson(`chungbuk-ai-training2026-backup-${window.TodoSafe.timestampForFile()}.json`,snap.val()||{});setSyncStatus('synced','백업 완료')};

@@ -3,7 +3,7 @@
 <!--
   배포 파일: details.html
   역할: 주요 과제와 세부 Action Item을 모두 관리하는 상세 관리 페이지입니다.
-  핵심 UX: 주요 과제 카드 안에서 Action Item, 담당자, 회신 대기 태그, 기한, 메모, 파일 링크를 함께 관리합니다.
+  핵심 UX: 주요 과제 카드 안에서 Action Item, 담당자, 회신 대기 태그, 기한, 댓글·대댓글, 파일 링크를 함께 관리합니다.
   데이터: Firebase Realtime Database의 tasks 노드를 사용하며, 기존 평면 To Do(tasks/{taskKey}.text) 마이그레이션 기능을 포함합니다.
   연결: index.html(내 Action 대시보드), timetable.html(운영 시간표), drivelink.html(파일 링크 모음), contact.html(담당자 연락처)과 상호 이동합니다.
   배포: 빌드 도구 없이 GitHub Pages에 바로 배포할 수 있습니다.
@@ -232,21 +232,39 @@
   .sub-panel { padding:0 12px 12px 53px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .mini-box { border:1px solid rgba(42,48,80,.75); background:var(--surface2); border-radius:13px; padding:10px; min-width:0; }
   .mini-title { font-size:11px; color:var(--muted); font-weight:850; letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; display:flex; justify-content:space-between; }
-  .memo-list,.link-list { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
-  .memo-item { display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:start; font-size:12px; line-height:1.45; border-left:3px solid var(--accent); background:rgba(255,255,255,.025); border-radius:9px; padding:7px 8px; }
-  .memo-item.memo-ops { border-left-color:var(--ops); background:rgba(232,236,244,.045); }
-  .memo-item.memo-naver { border-left-color:var(--naver); background:rgba(0,199,60,.065); }
-  .memo-item.memo-upstage { border-left-color:var(--upstage); background:rgba(139,92,246,.065); }
-  .memo-item.memo-sejong { border-left-color:var(--sejong); background:rgba(195,0,47,.075); }
-  .memo-item.memo-education { border-left-color:var(--edu); background:rgba(245,200,66,.065); }
-  .memo-writer { font-weight:850; color:var(--accent); }
+  /* 댓글 / 대댓글 스레드
+     DB 구조는 기존 memos 노드 아래에 replies 하위 노드를 추가하는 방식입니다.
+     tasks/{majorKey}/actions/{actionKey}/memos/{memoKey}/replies/{replyKey} */
+  .memo-list,.link-list { display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+  .comment-thread { border-left:3px solid var(--accent); background:rgba(255,255,255,.025); border-radius:11px; padding:8px; overflow:hidden; }
+  .comment-thread.memo-ops { border-left-color:var(--ops); background:rgba(232,236,244,.045); }
+  .comment-thread.memo-naver { border-left-color:var(--naver); background:rgba(0,199,60,.065); }
+  .comment-thread.memo-upstage { border-left-color:var(--upstage); background:rgba(139,92,246,.065); }
+  .comment-thread.memo-sejong { border-left-color:var(--sejong); background:rgba(195,0,47,.075); }
+  .comment-thread.memo-education { border-left-color:var(--edu); background:rgba(245,200,66,.065); }
+  .memo-item { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:8px; align-items:start; font-size:12px; line-height:1.45; }
+  .memo-writer { font-weight:850; color:var(--accent); white-space:nowrap; }
   .memo-writer.memo-ops { color:var(--ops); }
   .memo-writer.memo-naver { color:var(--naver); }
   .memo-writer.memo-upstage { color:var(--upstage); }
   .memo-writer.memo-sejong { color:#ff8a9b; }
   .memo-writer.memo-education { color:var(--edu); }
-  .memo-text { color:var(--text); }
-  .memo-date { color:var(--muted); font-family:'DM Mono',monospace; font-size:10px; }
+  .memo-body { min-width:0; }
+  .memo-text { color:var(--text); word-break:break-word; }
+  .memo-date { color:var(--muted); font-family:'DM Mono',monospace; font-size:10px; margin-top:3px; }
+  .reply-list { margin:8px 0 0 16px; padding-left:10px; border-left:1px dashed rgba(107,122,158,.36); display:flex; flex-direction:column; gap:6px; }
+  .reply-item { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:7px; align-items:start; background:rgba(15,17,23,.22); border:1px solid rgba(42,48,80,.65); border-radius:9px; padding:6px 7px; font-size:12px; line-height:1.45; }
+  .reply-item.reply-ops { border-color:rgba(232,236,244,.18); }
+  .reply-item.reply-naver { border-color:rgba(0,199,60,.22); background:rgba(0,199,60,.035); }
+  .reply-item.reply-upstage { border-color:rgba(139,92,246,.25); background:rgba(139,92,246,.035); }
+  .reply-item.reply-sejong { border-color:rgba(195,0,47,.28); background:rgba(195,0,47,.035); }
+  .reply-item.reply-education { border-color:rgba(245,200,66,.25); background:rgba(245,200,66,.035); }
+  .reply-prefix { color:var(--muted); font-family:'DM Mono',monospace; font-size:11px; padding-top:1px; }
+  .reply-body { min-width:0; }
+  .reply-text { color:var(--text); word-break:break-word; }
+  .reply-input-row { display:grid; grid-template-columns:.7fr minmax(0,1fr) auto; gap:6px; align-items:center; margin:8px 0 0 16px; padding-left:10px; border-left:1px dashed rgba(107,122,158,.28); }
+  .reply-input-row input,.reply-input-row select { padding:7px 8px; border-radius:8px; font-size:12px; }
+  .comment-help { display:block; margin-top:5px; color:var(--muted); font-size:10px; line-height:1.35; }
   .link-chip { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--accent); text-decoration:none; border:1px solid rgba(79,142,247,.28); background:rgba(79,142,247,.08); border-radius:999px; padding:5px 8px; font-size:12px; min-width:0; }
   .link-chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .inline-add { display:grid; grid-template-columns:.75fr 1fr auto; gap:6px; align-items:center; }
@@ -621,7 +639,7 @@
       <p class="hero-desc">강의, 장소, 운영, 사후처리 카테고리 안에서 주요 과제를 만들고, 각 과제 내부에 실행 단위 Action Item을 등록·수정·삭제합니다.</p>
       <div class="hero-meta">
         <span class="meta-chip"><span class="dot"></span>카테고리 → 주요 과제 → Action Item</span>
-        <span class="meta-chip"><span class="dot" style="background:var(--green)"></span>메모·링크는 Action Item 단위로 관리</span>
+        <span class="meta-chip"><span class="dot" style="background:var(--green)"></span>댓글·대댓글·링크는 Action Item 단위로 관리</span>
         <span class="meta-chip"><span class="dot" style="background:var(--accent2)"></span>Firebase Realtime Database</span>
       </div>
     </div>
@@ -666,9 +684,9 @@
         </ul>
       </div>
       <div class="usage-card">
-        <h3>3. 메모·링크 관리</h3>
+        <h3>3. 댓글·대댓글·링크 관리</h3>
         <ul>
-          <li>진행 상황은 Action Item의 <b>메모</b>에 남깁니다.</li>
+          <li>진행 상황은 Action Item의 <b>댓글</b>에 남기고, 각 댓글 아래에 <b>대댓글</b>로 확인·회신을 이어갈 수 있습니다.</li>
           <li>자료는 Google Drive 등 외부에 올리고 <b>링크</b>만 첨부합니다.</li>
         </ul>
       </div>
@@ -686,7 +704,7 @@
   <section class="panel legacy-alert" id="migration" style="display:none">
     <div class="panel-title">
       <h2>⚠️ 기존 평면 To Do 데이터 변환</h2>
-      <p>기존 `tasks/{key}` 평면 항목을 카테고리별 주요 과제로 묶고, 각 항목을 세부 Action Item으로 이동합니다. 링크와 메모도 Action Item으로 함께 옮깁니다.</p>
+      <p>기존 `tasks/{key}` 평면 항목을 카테고리별 주요 과제로 묶고, 각 항목을 세부 Action Item으로 이동합니다. 링크와 댓글도 Action Item으로 함께 옮깁니다.</p>
     </div>
     <button class="btn" onclick="migrateLegacyTasks()">2단계 구조로 자동 변환</button>
   </section>
@@ -695,7 +713,7 @@
     <div class="panel-title">
       <div>
         <h2>To Do 등록은 관리 도구로 이동했습니다</h2>
-        <p>주요 과제 생성과 일괄 Action Item 등록은 <b>관리 도구</b>에서 진행합니다. 이 페이지에서는 아래 주요 과제 리스트를 보며 각 과제 내부에서 Action Item을 추가하고, 메모와 링크를 관리합니다.</p>
+        <p>주요 과제 생성과 일괄 Action Item 등록은 <b>관리 도구</b>에서 진행합니다. 이 페이지에서는 아래 주요 과제 리스트를 보며 각 과제 내부에서 Action Item을 추가하고, 댓글·대댓글과 링크를 관리합니다.</p>
       </div>
       <a class="btn secondary" href="admin.html#todo-registration">관리 도구에서 등록하기</a>
     </div>
@@ -710,7 +728,7 @@
       <div class="field"><label for="ownerFilter">담당자 필터</label><select id="ownerFilter" onchange="setOwnerFilter(this.value)"></select></div>
       <div class="field"><label for="statusFilter">완료 필터</label><select id="statusFilter" onchange="setStatusFilter(this.value)"><option value="all">전체</option><option value="open">미완료</option><option value="done">완료</option></select></div>
       <div class="field"><label for="sortMode">주요 과제 정렬</label><select id="sortMode" onchange="setSortMode(this.value)"><option value="deadline">Action Due Date</option><option value="priority">우선순위</option><option value="progress">진행률 낮은 순</option><option value="owner">책임자</option><option value="order">입력 순</option></select></div>
-      <div class="field"><label for="searchInput">검색</label><input id="searchInput" type="text" placeholder="과제/Action/메모 검색" oninput="setSearchQuery(this.value)"></div>
+      <div class="field"><label for="searchInput">검색</label><input id="searchInput" type="text" placeholder="과제/Action/댓글 검색" oninput="setSearchQuery(this.value)"></div>
     </div>
   </section>
 
@@ -725,7 +743,7 @@
       <span class="tag">주요 과제 전용</span>
     </div>
     <div class="major-admin-toolbar">
-      <span>삭제 버튼은 <b>해당 주요 과제와 내부 Action Item, 메모, 링크를 함께 삭제</b>합니다. 운영 전에는 Firebase JSON 백업을 권장합니다.</span>
+      <span>삭제 버튼은 <b>해당 주요 과제와 내부 Action Item, 댓글·대댓글, 링크를 함께 휴지통으로 이동</b>합니다. 운영 전에는 Firebase JSON 백업을 권장합니다.</span>
       <span class="major-admin-count" id="majorAdminCount">주요 과제 0개</span>
     </div>
     <div class="major-admin-list" id="majorAdminList"></div>
@@ -767,7 +785,7 @@
   ---------------------------------------------------------------------------
   전체 관리 페이지입니다. flat To Do 목록을 2단계 구조로 전환합니다.
   - 주요 과제: 관리 단위, 대표 기한, 책임자, 우선순위, 진행률 표시
-  - Action Item: 실제 실행 단위, 담당자, 회신 대기 태그, 기한, 완료, 메모, 링크 관리
+  - Action Item: 실제 실행 단위, 담당자, 회신 대기 태그, 기한, 완료, 댓글·대댓글, 링크 관리
   - 마이그레이션: 기존 tasks/{key}.text 구조를 카테고리별 주요 과제로 묶어서 변환
 */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1293,14 +1311,24 @@ function sortedMajors(majors) {
   });
   return arr;
 }
+function memoThreadSearchText(memos = {}) {
+  // 댓글뿐 아니라 각 댓글 아래의 대댓글까지 검색 대상에 포함합니다.
+  return Object.values(memos || {}).filter(m => !m?.deleted).map(m => {
+    const replies = Object.values(m.replies || {})
+      .filter(r => !r?.deleted)
+      .map(r => `${r.writer || ''} ${r.text || ''}`)
+      .join(' ');
+    return `${m.writer || ''} ${m.text || ''} ${replies}`;
+  }).join(' ');
+}
 function actionMatchesFilters(major, action) {
   if (ownerFilter !== 'all' && !actionRelatedToOwner(action, ownerFilter)) return false;
   if (statusFilter === 'open' && action.done) return false;
   if (statusFilter === 'done' && !action.done) return false;
-    const q = searchQuery.trim().toLowerCase();
+  const q = searchQuery.trim().toLowerCase();
   if (q) {
-    const memoText = Object.values(action.memos || {}).map(m => `${m.writer || ''} ${m.text || ''}`).join(' ');
-    const linkText = Object.values(action.links || {}).map(l => `${l.label || ''} ${l.url || ''}`).join(' ');
+    const memoText = memoThreadSearchText(action.memos || {});
+    const linkText = Object.values(action.links || {}).filter(l => !l?.deleted).map(l => `${l.label || ''} ${l.url || ''}`).join(' ');
     const hay = `${major.title} ${major.description} ${major.cat} ${action.text} ${ownerLabel(action.owner)} ${waitingDisplay(action.waitingFor)} ${memoText} ${linkText}`.toLowerCase();
     if (!hay.includes(q)) return false;
   }
@@ -1320,7 +1348,7 @@ function setSummary() {
 }
 // ─────────────────────────────────────────────────────────────
 // 렌더링
-// 주요 과제 카드와 그 안의 Action Item, 메모, 링크 영역을 한 번에 그립니다.
+// 주요 과제 카드와 그 안의 Action Item, 댓글·대댓글, 링크 영역을 한 번에 그립니다.
 // ─────────────────────────────────────────────────────────────
 function renderMajorList() {
   const wrap = document.getElementById('majorList');
@@ -1382,6 +1410,7 @@ function renderMajorCard(major) {
 }
 function renderActionCard(major, actionKey, action) {
   const memos = Object.entries(action.memos || {}).filter(([,m]) => !m?.deleted).sort(([,a],[,b]) => (a.ts||0) - (b.ts||0));
+  const replyCount = memos.reduce((sum, [,m]) => sum + Object.values(m.replies || {}).filter(r => !r?.deleted).length, 0);
   const links = Object.entries(action.links || {}).filter(([,l]) => !l?.deleted).sort(([,a],[,b]) => (a.ts||0) - (b.ts||0));
   const agencyTags = (action.agencies || []).filter(a => a !== action.owner).map(ownerTag).join('');
   return `<div class="action-card ${action.done ? 'done' : ''}" id="action-${major.key}-${actionKey}">
@@ -1398,13 +1427,14 @@ function renderActionCard(major, actionKey, action) {
     </div>
     <div class="sub-panel">
       <div class="mini-box">
-        <div class="mini-title"><span>메모</span><span>${memos.length}</span></div>
-        <div class="memo-list">${memos.length ? memos.map(([mk,m]) => renderMemo(major.key, actionKey, mk, m)).join('') : '<div class="empty" style="padding:10px">메모 없음</div>'}</div>
+        <div class="mini-title"><span>댓글 / 대댓글</span><span>${memos.length} / ${replyCount}</span></div>
+        <div class="memo-list">${memos.length ? memos.map(([mk,m]) => renderMemo(major.key, actionKey, mk, m)).join('') : '<div class="empty" style="padding:10px">댓글 없음</div>'}</div>
         <div class="inline-add">
           <select id="memoWriter-${major.key}-${actionKey}">${ownerOptionsHtml(false)}</select>
-          <input id="memoText-${major.key}-${actionKey}" type="text" placeholder="진행 상황 메모">
-          <button class="btn small secondary" onclick="addMemo('${major.key}','${actionKey}')">추가</button>
+          <input id="memoText-${major.key}-${actionKey}" data-memo-input="true" data-major-key="${major.key}" data-action-key="${actionKey}" type="text" placeholder="Action Item에 댓글 남기기">
+          <button class="btn small secondary" onclick="addMemo('${major.key}','${actionKey}')">댓글 추가</button>
         </div>
+        <span class="comment-help">각 댓글 아래의 입력줄에서 대댓글을 달아 확인 요청과 답변을 이어갈 수 있습니다.</span>
       </div>
       <div class="mini-box">
         <div class="mini-title"><span>파일/링크</span><span>${links.length}</span></div>
@@ -1421,11 +1451,35 @@ function renderActionCard(major, actionKey, action) {
 function renderMemo(majorKey, actionKey, memoKey, memo) {
   const writerKey = normalizeOwner(memo.writer);
   const writerCls = OWNER_CONFIG[writerKey]?.cls || 'ops';
-  return `<div class="memo-item memo-${writerCls}" title="${escapeAttr(ownerLabel(writerKey))} 메모">
-    <span class="memo-writer memo-${writerCls}">${escapeHtml(displayOwnerName(memo.writer))}</span>
-    <span class="memo-text">${escapeHtml(memo.text || '')}</span>
-    <button class="btn small ghost" onclick="deleteMemo('${majorKey}','${actionKey}','${memoKey}')" title="메모 삭제">×</button>
-    <span></span><span class="memo-date">${formatTs(memo.ts)}</span><span></span>
+  const replies = Object.entries(memo.replies || {}).filter(([,r]) => !r?.deleted).sort(([,a],[,b]) => (a.ts||0) - (b.ts||0));
+  return `<div class="comment-thread memo-${writerCls}" title="${escapeAttr(ownerLabel(writerKey))} 댓글">
+    <div class="memo-item">
+      <span class="memo-writer memo-${writerCls}">${escapeHtml(displayOwnerName(memo.writer))}</span>
+      <div class="memo-body">
+        <div class="memo-text">${escapeHtml(memo.text || '')}</div>
+        <div class="memo-date">${formatTs(memo.ts)}${replies.length ? ` · 답글 ${replies.length}` : ''}</div>
+      </div>
+      <button class="btn small ghost" onclick="deleteMemo('${majorKey}','${actionKey}','${memoKey}')" title="댓글 삭제">×</button>
+    </div>
+    ${replies.length ? `<div class="reply-list">${replies.map(([rk,r]) => renderMemoReply(majorKey, actionKey, memoKey, rk, r)).join('')}</div>` : ''}
+    <div class="reply-input-row">
+      <select id="replyWriter-${majorKey}-${actionKey}-${memoKey}">${ownerOptionsHtml(false)}</select>
+      <input id="replyText-${majorKey}-${actionKey}-${memoKey}" data-reply-input="true" data-major-key="${majorKey}" data-action-key="${actionKey}" data-memo-key="${memoKey}" type="text" placeholder="이 댓글에 대댓글 달기">
+      <button class="btn small secondary" onclick="addMemoReply('${majorKey}','${actionKey}','${memoKey}')">답글</button>
+    </div>
+  </div>`;
+}
+function renderMemoReply(majorKey, actionKey, memoKey, replyKey, reply) {
+  const writerKey = normalizeOwner(reply.writer);
+  const writerCls = OWNER_CONFIG[writerKey]?.cls || 'ops';
+  return `<div class="reply-item reply-${writerCls}" title="${escapeAttr(ownerLabel(writerKey))} 대댓글">
+    <span class="reply-prefix">↳</span>
+    <div class="reply-body">
+      <span class="memo-writer memo-${writerCls}">${escapeHtml(displayOwnerName(reply.writer))}</span>
+      <span class="reply-text"> ${escapeHtml(reply.text || '')}</span>
+      <div class="memo-date">${formatTs(reply.ts)}</div>
+    </div>
+    <button class="btn small ghost" onclick="deleteMemoReply('${majorKey}','${actionKey}','${memoKey}','${replyKey}')" title="대댓글 삭제">×</button>
   </div>`;
 }
 function renderLink(majorKey, actionKey, linkKey, link) {
@@ -1641,31 +1695,67 @@ window.addMemo = async (majorKey, actionKey) => {
   if (window.TodoSafe?.guardReadOnly?.()) return;
   const writer = document.getElementById(`memoWriter-${majorKey}-${actionKey}`).value;
   const input = document.getElementById(`memoText-${majorKey}-${actionKey}`);
-  const text = window.TodoSafe?.limitByType?.(input.value, 'memo', '메모') ?? input.value.trim();
+  const text = window.TodoSafe?.limitByType?.(input.value, 'memo', '댓글') ?? input.value.trim();
   if (text === null) return;
   if (!text) { input.focus(); return; }
   const memoRef = push(ref(db, `tasks/${majorKey}/actions/${actionKey}/memos`));
   const now = Date.now();
   setSyncStatus('syncing', '저장 중...');
   await update(ref(db), {
-    [`tasks/${majorKey}/actions/${actionKey}/memos/${memoRef.key}`]: { writer:ownerLabel(writer), text, ts:now },
+    [`tasks/${majorKey}/actions/${actionKey}/memos/${memoRef.key}`]: { writer:ownerLabel(writer), text, ts:now, replies:{} },
     [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
     [`tasks/${majorKey}/updatedAt`]: now
   });
   await logActivity('memo.create', `tasks/${majorKey}/actions/${actionKey}/memos/${memoRef.key}`, text);
   input.value = '';
 };
+window.addMemoReply = async (majorKey, actionKey, memoKey) => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
+  const writerEl = document.getElementById(`replyWriter-${majorKey}-${actionKey}-${memoKey}`);
+  const input = document.getElementById(`replyText-${majorKey}-${actionKey}-${memoKey}`);
+  if (!writerEl || !input) return;
+  const writer = writerEl.value;
+  const text = window.TodoSafe?.limitByType?.(input.value, 'memo', '대댓글') ?? input.value.trim();
+  if (text === null) return;
+  if (!text) { input.focus(); return; }
+  const replyRef = push(ref(db, `tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/replies`));
+  const now = Date.now();
+  setSyncStatus('syncing', '저장 중...');
+  await update(ref(db), {
+    [`tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/replies/${replyRef.key}`]: { writer:ownerLabel(writer), text, ts:now },
+    [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
+    [`tasks/${majorKey}/updatedAt`]: now
+  });
+  await logActivity('memo.reply.create', `tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/replies/${replyRef.key}`, text);
+  input.value = '';
+};
 window.deleteMemo = async (majorKey, actionKey, memoKey) => {
   if (window.TodoSafe?.guardReadOnly?.()) return;
-  if (!confirm('이 메모를 휴지통으로 보낼까요?')) return;
+  if (!confirm('이 댓글을 휴지통으로 보낼까요? 하위 대댓글도 함께 숨겨집니다.')) return;
   const now = Date.now();
   setSyncStatus('syncing', '삭제 중...');
   await update(ref(db), {
     [`tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/deleted`]: true,
     [`tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/deletedAt`]: now,
+    [`tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/deletedBy`]: window.TodoSafe?.actorLabel?.() || 'unknown',
     [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
     [`tasks/${majorKey}/updatedAt`]: now
   });
+  await logActivity('memo.softDelete', `tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}`, '댓글 휴지통 이동');
+};
+window.deleteMemoReply = async (majorKey, actionKey, memoKey, replyKey) => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
+  if (!confirm('이 대댓글을 휴지통으로 보낼까요?')) return;
+  const now = Date.now();
+  setSyncStatus('syncing', '삭제 중...');
+  await update(ref(db), {
+    [`tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/replies/${replyKey}/deleted`]: true,
+    [`tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/replies/${replyKey}/deletedAt`]: now,
+    [`tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/replies/${replyKey}/deletedBy`]: window.TodoSafe?.actorLabel?.() || 'unknown',
+    [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
+    [`tasks/${majorKey}/updatedAt`]: now
+  });
+  await logActivity('memo.reply.softDelete', `tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/replies/${replyKey}`, '대댓글 휴지통 이동');
 };
 window.addLink = async (majorKey, actionKey) => {
   if (window.TodoSafe?.guardReadOnly?.()) return;
@@ -1844,8 +1934,17 @@ document.addEventListener('keydown', e => {
 }));
 document.getElementById('majorList')?.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
-  if (!e.target.id?.startsWith('actionText-') && !e.target.id?.startsWith('actionDeadline-')) return;
-  const majorKey = e.target.id.replace(/^action(Text|Deadline)-/, '');
+  const target = e.target;
+  if (target?.dataset?.memoInput === 'true') {
+    window.addMemo(target.dataset.majorKey, target.dataset.actionKey);
+    return;
+  }
+  if (target?.dataset?.replyInput === 'true') {
+    window.addMemoReply(target.dataset.majorKey, target.dataset.actionKey, target.dataset.memoKey);
+    return;
+  }
+  if (!target.id?.startsWith('actionText-') && !target.id?.startsWith('actionDeadline-')) return;
+  const majorKey = target.id.replace(/^action(Text|Deadline)-/, '');
   window.addActionItem(majorKey);
 });
 
