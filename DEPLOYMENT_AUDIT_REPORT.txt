@@ -1,92 +1,49 @@
 DEPLOYMENT AUDIT REPORT
-=======================
-Generated: 2026-06-16 05:46:07
 
-FILE EXISTENCE CHECK
-- OK: index.html
-- OK: details.html
-- OK: drivelink.html
-- OK: timetable.html
-- OK: contact.html
-- OK: admin.html
-- OK: dricelink.html
-- OK: README.md
-- OK: DEPLOYMENT_CHECKLIST.md
-- OK: DEPLOYMENT_AUDIT_REPORT.txt
-- OK: CODE_REVIEW_REPORT.md
-- OK: CHANGELOG.md
-- OK: prompt.md
-- OK: robots.txt
-- OK: OPERATIONS_SAFETY_GUIDE.md
-- OK: assets/app-config.js
-- OK: assets/runtime-safety.js
-- OK: assets/safety.css
-- OK: assets/ui-select.js
-- OK: assets/ui-select.css
-- OK: assets/cbe-logo.png
-- OK: assets/favicon.ico
-- OK: assets/favicon-64.png
-- OK: assets/favicon-32.png
-- OK: assets/favicon-16.png
-- OK: assets/apple-touch-icon.png
-
-ENCODING / HTML STATIC CHECK
-- OK: index.html: doctype
-- OK: details.html: doctype
-- OK: drivelink.html: doctype
-- OK: timetable.html: doctype
-- OK: contact.html: doctype
-- OK: admin.html: doctype
-- OK: dricelink.html: doctype
-
-NAVIGATION CHECK
-- OK: index.html: nav basic
-- OK: details.html: nav basic
-- OK: drivelink.html: nav basic
-- OK: timetable.html: nav basic
-- OK: contact.html: nav basic
-- OK: admin.html: nav basic
-
-FEATURE MARKER CHECK
-- OK: admin.html: feature markers
-- OK: assets/runtime-safety.js: feature markers
-- OK: assets/app-config.js: feature markers
-- OK: details.html: feature markers
-- OK: timetable.html: feature markers
-- OK: contact.html: feature markers
-- OK: robots.txt: feature markers
+FILE / ENCODING / BODY LOGO CHECK
+- index.html: OK
+- details.html: OK
+- admin.html: OK
+- timetable.html: OK
+- contact.html: OK
+- drivelink.html: OK
+- dricelink.html: OK
 
 JAVASCRIPT SYNTAX CHECK
-- OK: assets/app-config.js: syntax
-- OK: assets/runtime-safety.js: syntax
-- OK: assets/ui-select.js: syntax
-- OK: index.html script 0: syntax
-- OK: index.html script 4: syntax
-- OK: details.html script 0: syntax
-- OK: details.html script 4: syntax
-- OK: drivelink.html script 0: syntax
-- OK: drivelink.html script 4: syntax
-- OK: timetable.html script 0: syntax
-- OK: timetable.html script 4: syntax
-- OK: contact.html script 0: syntax
-- OK: contact.html script 4: syntax
-- OK: admin.html script 3: syntax
-- OK: admin.html script 4: syntax
-- OK: dricelink.html script 2: syntax
+- index.html script 0: OK
+- index.html script 4: OK
+- details.html script 0: OK
+- details.html script 4: OK
+- admin.html script 3: OK
+- admin.html script 4: OK
+- timetable.html script 0: OK
+- timetable.html script 4: OK
+- contact.html script 0: OK
+- contact.html script 4: OK
+- drivelink.html script 0: OK
+- drivelink.html script 4: OK
+- dricelink.html script 2: OK
+
+FEATURE MARKER CHECK
+- index unified timeline: OK
+- index all timeline renderer: OK
+- timetable one-line event separator: OK
+- timetable detailed edit modal: OK
+- admin major full list: OK
+- admin action full list: OK
+- admin backup below lists: OK
+- report added: OK
 
 LOCAL STATIC SERVE CHECK
-- OK: index.html: HTTP 200
-- OK: details.html: HTTP 200
-- OK: drivelink.html: HTTP 200
-- OK: timetable.html: HTTP 200
-- OK: contact.html: HTTP 200
-- OK: admin.html: HTTP 200
-- OK: dricelink.html: HTTP 200
-- OK: robots.txt: HTTP 200
-- OK: OPERATIONS_SAFETY_GUIDE.md: HTTP 200
-- OK: assets/runtime-safety.js: HTTP 200
-- OK: assets/app-config.js: HTTP 200
-- OK: assets/safety.css: HTTP 200
+- index.html: HTTP 200
+- details.html: HTTP 200
+- admin.html: HTTP 200
+- timetable.html: HTTP 200
+- contact.html: HTTP 200
+- drivelink.html: HTTP 200
+- dricelink.html: HTTP 200
+- assets/ui-select.js: HTTP 200
+- assets/runtime-safety.js: HTTP 200
+- assets/safety.css: HTTP 200
 
-SUMMARY
-PASS
+SUMMARY: PASS

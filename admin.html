@@ -111,11 +111,13 @@ html[data-theme="light"]{--bg:#f6f8fc;--surface:#fff;--surface2:#f1f5fb;--surfac
     </div>
   </section>
 
+  <div class="admin-list-note">아래 두 리스트는 등록 폼 바로 아래에 배치한 운영 관리 영역입니다. 입력 후 Firebase 반영 결과를 즉시 확인할 수 있습니다.</div>
+
   <section class="panel admin-management-panel danger-zone" id="task-admin">
     <div class="panel-title">
       <div>
-        <h2>2. 주요 과제 관리/삭제</h2>
-        <p>상세 관리에서 분리한 주요 과제 전용 관리 영역입니다. 수정과 삭제는 이곳에서만 진행합니다.</p>
+        <h2>2. 전체 주요 과제 리스트</h2>
+        <p>입력 폼 아래에서 전체 주요 과제를 확인하고 수정·휴지통 이동을 처리합니다.</p>
       </div>
       <span class="tag">Major Task Admin</span>
     </div>
@@ -131,7 +133,7 @@ html[data-theme="light"]{--bg:#f6f8fc;--surface:#fff;--surface2:#f1f5fb;--surfac
   <section class="panel admin-management-panel" id="action-admin">
     <div class="panel-title">
       <div>
-        <h2>3. Action Item 리스트 관리</h2>
+        <h2>3. 전체 Action Item 리스트</h2>
         <p>모든 주요 과제에 흩어져 있는 Action Item을 하나의 리스트로 모아 due date 기준으로 관리합니다.</p>
       </div>
       <span class="tag">Action Item Admin</span>
@@ -144,11 +146,11 @@ html[data-theme="light"]{--bg:#f6f8fc;--surface:#fff;--surface2:#f1f5fb;--surfac
     <div class="admin-list" id="actionAdminList"><div class="empty-admin">Action Item 목록을 불러오는 중...</div></div>
   </section>
 
-  <section class="panel"><div class="panel-title"><div><h2>4. 전체 데이터 백업</h2><p>배포 전후, 대량 수정 전, Firebase Rules 변경 전에는 반드시 JSON 백업을 내려받으세요.</p></div></div><div class="btn-row"><button class="btn" onclick="backupAll()">전체 백업 JSON</button><button class="btn ghost" onclick="backupNode('tasks')">tasks만 백업</button><button class="btn ghost" onclick="backupNode('contacts')">contacts만 백업</button><button class="btn ghost" onclick="backupNode('timetable_events')">시간표만 백업</button><button class="btn ghost" onclick="backupNode('timetable_locations')">장소 태그만 백업</button></div></section>
+  <section class="panel"><div class="panel-title"><div><h2>4. 백업</h2><p>배포 전후, 대량 수정 전, Firebase Rules 변경 전에는 반드시 JSON 백업을 내려받으세요.</p></div></div><div class="btn-row"><button class="btn" onclick="backupAll()">전체 백업 JSON</button><button class="btn ghost" onclick="backupNode('tasks')">tasks만 백업</button><button class="btn ghost" onclick="backupNode('contacts')">contacts만 백업</button><button class="btn ghost" onclick="backupNode('timetable_events')">시간표만 백업</button><button class="btn ghost" onclick="backupNode('timetable_locations')">장소 태그만 백업</button></div></section>
 
   <section class="panel"><div class="panel-title"><div><h2>5. 스키마 메타</h2><p>DB 구조 버전과 앱 버전을 meta 노드에 기록합니다. 앱 구조 변경 전후에 눌러두면 유지보수 이력이 남습니다.</p></div></div><div class="btn-row"><button class="btn" onclick="updateMeta()">meta 갱신</button><button class="btn ghost" onclick="backupNode('meta')">meta 백업</button></div></section>
 
-  <section class="panel"><div class="panel-title"><div><h2>6. 휴지통</h2><p>삭제 버튼은 실제 삭제 대신 deleted:true 상태로 표시합니다. 여기에서 복구하거나 완전 삭제할 수 있습니다.</p></div></div><div class="table" id="trashList"><div class="row"><div>휴지통을 불러오는 중...</div></div></div></section>
+  <section class="panel"><div class="panel-title"><div><h2>6. 휴지통 / 복구</h2><p>삭제 버튼은 실제 삭제 대신 deleted:true 상태로 표시합니다. 여기에서 복구하거나 완전 삭제할 수 있습니다.</p></div></div><div class="table" id="trashList"><div class="row"><div>휴지통을 불러오는 중...</div></div></div></section>
 
   <section class="panel"><div class="panel-title"><div><h2>7. 활동 로그</h2><p>클라이언트에서 남기는 보조 로그입니다. 오픈 규칙에서는 완전한 감사 로그가 아니므로 참고용으로만 사용하세요.</p></div><button class="btn ghost" onclick="backupNode('activity_logs')">로그 백업</button></div><div class="log-list" id="logList"><div class="row"><div>로그를 불러오는 중...</div></div></div></section>
 </main>
