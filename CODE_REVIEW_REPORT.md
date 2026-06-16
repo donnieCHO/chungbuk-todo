@@ -215,3 +215,11 @@ contact.html: 연락처 추가 / 수정 / 삭제
 - 현재 구조는 Firebase Rules가 오픈 상태라는 전제입니다.
 - 클라이언트 side soft delete와 readOnlyMode는 보안 장치가 아니라 운영 실수 방지 장치입니다.
 - URL과 Firebase endpoint를 아는 사용자는 Firebase Rules가 허용하는 범위 내에서 접근할 수 있습니다.
+
+
+## 2026-06-16 Contact CSS 복구
+
+- contact.html에서 연락처 전용 CSS 블록이 누락되어 summary-card, panel, form-grid, contact-card, modal 등이 브라우저 기본 스타일로 보이는 문제를 수정했습니다.
+- Contact 전용 layout/form/card/modal/usage-guide 스타일을 복구했습니다.
+- soft delete 안내 문구를 현재 동작에 맞게 수정했습니다.
+- class 사용/정의 정적 점검 결과, contact.html의 본문 주요 클래스 누락 0건을 확인했습니다.

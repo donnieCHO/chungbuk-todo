@@ -187,3 +187,11 @@
 - Contact 페이지에 개인정보 운영 안내를 추가했습니다.
 - Contact 페이지 숨김용 feature flag와 전체 read-only feature flag를 `app-config.js`에 추가했습니다.
 - 운영 시간표에 장소 필터, 인쇄 버튼, 일정 복제 버튼, 시간 겹침 경고, 인쇄용 CSS를 추가했습니다.
+
+
+## 2026-06-16 Contact CSS 복구
+
+- contact.html에서 연락처 전용 CSS 블록이 누락되어 summary-card, panel, form-grid, contact-card, modal 등이 브라우저 기본 스타일로 보이는 문제를 수정했습니다.
+- Contact 전용 layout/form/card/modal/usage-guide 스타일을 복구했습니다.
+- soft delete 안내 문구를 현재 동작에 맞게 수정했습니다.
+- class 사용/정의 정적 점검 결과, contact.html의 본문 주요 클래스 누락 0건을 확인했습니다.
