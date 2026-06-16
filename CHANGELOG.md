@@ -158,3 +158,32 @@
 - 충북교육청 로고 이미지는 페이지 본문, Header, Hero 영역에 노출하지 않습니다.
 - 로고 자산은 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지 용도로만 유지합니다.
 - 5개 주요 페이지(index/details/drivelink/timetable/contact)의 첫 화면은 텍스트 기반 Hero 헤드라인과 우측 상태 카드 구조로 통일합니다.
+
+## 2026-06-16 — 오픈 Firebase 운영 안전장치 일괄 반영
+
+- Firebase/Auth 구조는 변경하지 않고, 180일 오픈 규칙 운영을 전제로 한 클라이언트 안전장치를 추가했습니다.
+- `admin.html` 관리 도구를 추가했습니다.
+  - 전체 DB JSON 백업
+  - 노드별 백업(tasks, contacts, timetable_events, timetable_locations, meta, activity_logs)
+  - 스키마 메타 갱신
+  - 휴지통 항목 복구 / 완전 삭제
+  - 활동 로그 확인
+  - 작업자 라벨 저장
+- `robots.txt`와 모든 HTML의 `noindex,nofollow,noarchive` 메타를 추가했습니다.
+- `assets/app-config.js`, `assets/runtime-safety.js`, `assets/safety.css`를 추가해 공통 feature flag, read-only 모드, 입력 제한, URL 검증, 동기화 재연결 버튼을 관리합니다.
+- 주요 과제, Action Item, Contact, 시간표 일정, 장소 태그, 링크 삭제를 즉시 삭제 대신 `deleted:true` 기반 soft delete로 변경했습니다.
+- 메인/상세/파일/시간표/Contact 페이지의 목록 렌더링은 `deleted:true` 항목을 기본적으로 숨깁니다.
+- Action 생성/완료/삭제, 주요 과제 삭제, Contact 삭제, 시간표 생성/수정/복제/삭제 등 주요 액션에 `activity_logs` 기록을 추가했습니다.
+- 입력 길이 제한을 적용했습니다.
+  - 주요 과제명 80자
+  - Action Item 160자
+  - 메모 500자
+  - 링크 라벨 80자
+  - 연락처 메모 300자
+  - 시간표 제목 80자
+  - 시간표 메모 300자
+  - 장소명 60자
+- 파일 링크는 `http://`, `https://`만 허용하도록 안전 URL 검증을 보강했습니다.
+- Contact 페이지에 개인정보 운영 안내를 추가했습니다.
+- Contact 페이지 숨김용 feature flag와 전체 read-only feature flag를 `app-config.js`에 추가했습니다.
+- 운영 시간표에 장소 필터, 인쇄 버튼, 일정 복제 버튼, 시간 겹침 경고, 인쇄용 CSS를 추가했습니다.

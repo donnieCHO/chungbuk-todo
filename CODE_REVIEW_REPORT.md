@@ -191,3 +191,27 @@ contact.html: 연락처 추가 / 수정 / 삭제
 - 충북교육청 로고 이미지는 페이지 본문, Header, Hero 영역에 노출하지 않습니다.
 - 로고 자산은 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지 용도로만 유지합니다.
 - 5개 주요 페이지(index/details/drivelink/timetable/contact)의 첫 화면은 텍스트 기반 Hero 헤드라인과 우측 상태 카드 구조로 통일합니다.
+
+---
+
+## 추가 코드 리뷰 — 오픈 Firebase 운영 안전장치
+
+### 반영 항목
+
+- 모든 HTML에 noindex 메타 적용
+- robots.txt 추가
+- 관리 도구(admin.html) 추가
+- 공통 설정(app-config.js) 추가
+- 런타임 안전 헬퍼(runtime-safety.js) 추가
+- soft delete 패턴 적용
+- 삭제 항목 기본 숨김 처리
+- 활동 로그(activity_logs) 기록 추가
+- JSON 백업 다운로드 기능 추가
+- Contact 개인정보 안내 추가
+- 운영 시간표 필터/인쇄/복제/겹침 경고 추가
+
+### 남은 운영상 주의
+
+- 현재 구조는 Firebase Rules가 오픈 상태라는 전제입니다.
+- 클라이언트 side soft delete와 readOnlyMode는 보안 장치가 아니라 운영 실수 방지 장치입니다.
+- URL과 Firebase endpoint를 아는 사용자는 Firebase Rules가 허용하는 범위 내에서 접근할 수 있습니다.

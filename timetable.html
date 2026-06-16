@@ -10,6 +10,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="googlebot" content="noindex,nofollow,noarchive">
 <title>충북교육청 AI 교원연수 — 운영 시간표</title>
 <meta name="description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
 <meta name="theme-color" content="#0f1117">
@@ -548,7 +550,10 @@
   }
 
 </style>
+  <link rel="stylesheet" href="assets/safety.css">
   <link rel="stylesheet" href="assets/ui-select.css">
+    <script src="assets/app-config.js"></script>
+  <script src="assets/runtime-safety.js" defer></script>
   <script src="assets/ui-select.js" defer></script>
 </head>
 <body>
@@ -567,7 +572,7 @@
     <a href="details.html">🧩 상세 관리</a>
     <a href="drivelink.html">📁 파일 관리</a>
     <a class="active" href="timetable.html">🕐 운영 시간표</a>
-    <a href="contact.html">👥 Contact</a>
+    <a href="contact.html">👥 Contact</a><a href="admin.html">🛡️ 관리 도구</a>
     <button class="theme-toggle" id="themeToggle" type="button" onclick="toggleTheme()" aria-label="라이트 모드로 전환" title="라이트/다크 모드 전환">
       <span class="theme-toggle-icon" id="themeToggleIcon" aria-hidden="true">☀️</span>
       <span class="theme-toggle-text" id="themeToggleText">Light</span>
@@ -633,6 +638,7 @@
     </div>
     <div class="modal-footer">
       <div class="modal-footer-left">
+        <button class="btn-mini ghost" id="btnDuplicateEvent" onclick="duplicateEvent()" style="display:none">복제</button>
         <button class="btn-del-event" id="btnDelEvent" onclick="deleteEvent()" style="display:none">삭제</button>
       </div>
       <div class="modal-footer-right">
@@ -701,7 +707,9 @@
     <span class="legend-chip"><span class="legend-dot" style="background:var(--upstage)"></span>업스테이지</span>
   </div>
   <div class="toolbar-actions">
+    <div class="toolbar-filter"><label for="locationFilter">장소</label><select id="locationFilter" onchange="setLocationFilter(this.value)"><option value="all">전체 장소</option></select></div>
     <button class="toolbar-btn" type="button" onclick="openLocationManager()">📍 장소 관리</button>
+    <button class="toolbar-btn" type="button" onclick="window.print()">🖨️ 인쇄</button>
   </div>
 </div>
 
@@ -824,6 +832,7 @@ function setSyncStatus(state, text) {
   const el = document.getElementById('syncStatus');
   el.className = state; el.style.display = 'flex';
   document.getElementById('syncText').textContent = text;
+  window.TodoSafe?.recordSyncState?.(state, text);
 }
 // 비동기 저장/삭제 오류가 콘솔에만 남지 않도록 사용자에게 동기화 오류 상태를 표시합니다.
 window.addEventListener('unhandledrejection', event => {
@@ -909,7 +918,8 @@ function renderEvents() {
   // 기존 이벤트 카드 제거
   document.querySelectorAll('.tt-event').forEach(el => el.remove());
 
-  Object.entries(events).forEach(([key, ev]) => {
+  Object.entries(events).filter(([,ev]) => !ev?.deleted).forEach(([key, ev]) => {
+    if (locationFilter !== 'all' && !getEventLocationKeys(ev).includes(locationFilter)) return;
     const col = document.getElementById(`col-${ev.day}`);
     if (!col) return;
     const startSlot = timeToSlot(ev.start);
@@ -952,7 +962,7 @@ function escapeAttr(s) {
 
 /* ── 장소 태그 헬퍼 ── */
 function orderedLocationEntries() {
-  return Object.entries(locations).sort(([,a],[,b]) => {
+  return Object.entries(locations).filter(([,loc]) => !loc?.deleted).sort(([,a],[,b]) => {
     const ao = Number(a.order || 0);
     const bo = Number(b.order || 0);
     if (ao !== bo) return ao - bo;
@@ -997,6 +1007,25 @@ function getEventLocationLabels(ev) {
   return getEventLocationKeys(ev).map(getLocationLabel).filter(Boolean);
 }
 
+function fillLocationFilter() {
+  const sel = document.getElementById('locationFilter');
+  if (!sel) return;
+  const current = sel.value || locationFilter;
+  sel.innerHTML = '<option value="all">전체 장소</option>' + orderedLocationEntries().map(([key, loc]) => `<option value="${escapeAttr(key)}">${escapeHtml(loc.label || '')}</option>`).join('');
+  sel.value = [...sel.options].some(o => o.value === current) ? current : 'all';
+  locationFilter = sel.value;
+}
+window.setLocationFilter = (value) => {
+  locationFilter = value || 'all';
+  renderEvents();
+};
+function hasTimeOverlap(day, start, end, ignoreKey=null) {
+  return Object.entries(events).some(([key, ev]) => {
+    if (key === ignoreKey || ev?.deleted || ev.day !== day) return false;
+    return start < ev.end && end > ev.start;
+  });
+}
+
 function renderLocationPicker() {
   const wrap = document.getElementById('ev-location-tags');
   if (!wrap) return;
@@ -1022,7 +1051,9 @@ window.toggleLocationSelection = (key) => {
 };
 
 async function createLocationTag(label) {
-  const normalized = normalizeLocationLabel(label);
+  if (window.TodoSafe?.guardReadOnly?.()) return '';
+  const normalized = window.TodoSafe?.limitByType?.(label, 'locationLabel', '장소명');
+  if (normalized === null) return '';
   if (!normalized) return null;
 
   const existingKey = findLocationKeyByLabel(normalized);
@@ -1084,6 +1115,7 @@ function renderLocationManageList() {
 }
 
 window.saveManagedLocation = async (key) => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   const input = document.getElementById(`lm-${key}`);
   const label = normalizeLocationLabel(input?.value || '');
   if (!label) { input?.focus(); return; }
@@ -1101,10 +1133,12 @@ window.saveManagedLocation = async (key) => {
 };
 
 window.deleteManagedLocation = async (key) => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   const label = getLocationLabel(key);
   if (!confirm(`'${label}' 장소 태그를 삭제할까요?\n이 장소가 지정된 일정에서는 해당 장소 표시도 함께 제거됩니다.`)) return;
   const updates = {};
-  updates[`timetable_locations/${key}`] = null;
+  updates[`timetable_locations/${key}/deleted`] = true;
+  updates[`timetable_locations/${key}/deletedAt`] = Date.now();
   Object.entries(events).forEach(([eventKey, ev]) => {
     const locs = getEventLocationKeys(ev);
     if (locs.includes(key)) {
@@ -1211,6 +1245,7 @@ function openNewModal(dayKey, startTime, endTime) {
   document.getElementById('ev-memo').value  = '';
   document.getElementById('ev-location-new').value = '';
   document.getElementById('btnDelEvent').style.display = 'none';
+  document.getElementById('btnDuplicateEvent').style.display = 'none';
   refreshCatBtns();
   renderLocationPicker();
   document.getElementById('eventModal').classList.remove('hidden');
@@ -1229,6 +1264,7 @@ function openEditModal(key, ev) {
   document.getElementById('ev-memo').value  = ev.memo || '';
   document.getElementById('ev-location-new').value = '';
   document.getElementById('btnDelEvent').style.display = '';
+  document.getElementById('btnDuplicateEvent').style.display = '';
   refreshCatBtns();
   renderLocationPicker();
   document.getElementById('eventModal').classList.remove('hidden');
@@ -1253,13 +1289,17 @@ window.closeModal = () => {
 };
 
 window.saveEvent = async () => {
-  const title = document.getElementById('ev-title').value.trim();
+  if (window.TodoSafe?.guardReadOnly?.()) return;
+  const title = window.TodoSafe?.limitByType?.(document.getElementById('ev-title').value, 'timetableTitle', '일정 제목') ?? document.getElementById('ev-title').value.trim();
+  if (title === null) return;
   const day   = document.getElementById('ev-day').value;
   const start = document.getElementById('ev-start').value;
   const end   = document.getElementById('ev-end').value;
-  const memo  = document.getElementById('ev-memo').value.trim();
+  const memo  = window.TodoSafe?.limitByType?.(document.getElementById('ev-memo').value, 'timetableMemo', '일정 메모') ?? document.getElementById('ev-memo').value.trim();
+  if (memo === null) return;
   if (!title) { document.getElementById('ev-title').focus(); return; }
   if (!start || !end || start >= end) { alert('시간을 올바르게 입력해주세요'); return; }
+  if (hasTimeOverlap(day, start, end, editKey) && !confirm('같은 날짜에 겹치는 일정이 있습니다. 그래도 저장할까요?')) return;
 
   setSyncStatus('syncing','저장 중...');
   const payload = {
@@ -1270,18 +1310,35 @@ window.saveEvent = async () => {
   };
   if (editKey) {
     await update(ref(db, `timetable_events/${editKey}`), payload);
+    await logActivity('timetable.update', `timetable_events/${editKey}`, title, payload);
   } else {
     payload.createdAt = Date.now();
-    await push(eventsRef, payload);
+    const newRef = await push(eventsRef, payload);
+    await logActivity('timetable.create', `timetable_events/${newRef.key}`, title, payload);
   }
   closeModal();
 };
 
+window.duplicateEvent = async () => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
+  if (!editKey || !events[editKey]) return;
+  const ev = events[editKey];
+  const now = Date.now();
+  const payload = { ...ev, title: `${ev.title || '일정'} 복사본`, createdAt: now, updatedAt: now, deleted: false };
+  delete payload.deletedAt; delete payload.deletedBy;
+  setSyncStatus('syncing','복제 중...');
+  const newRef = await push(eventsRef, payload);
+  await logActivity('timetable.duplicate', `timetable_events/${newRef.key}`, payload.title, payload);
+  closeModal();
+};
+
 window.deleteEvent = async () => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   if (!editKey) return;
-  if (!confirm('이 일정을 삭제할까요?')) return;
-  setSyncStatus('syncing','저장 중...');
-  await remove(ref(db, `timetable_events/${editKey}`));
+  if (!confirm('이 일정을 휴지통으로 보낼까요? 관리 도구에서 복구할 수 있습니다.')) return;
+  setSyncStatus('syncing','삭제 중...');
+  await update(ref(db, `timetable_events/${editKey}`), { deleted:true, deletedAt:Date.now(), deletedBy:window.TodoSafe?.actorLabel?.()||'unknown', updatedAt:Date.now() });
+  await logActivity('timetable.softDelete', `timetable_events/${editKey}`, events[editKey]?.title || '일정', events[editKey] || {});
   closeModal();
 };
 
@@ -1337,6 +1394,7 @@ onValue(locationsRef, snap => {
   } else {
     locations = data;
   }
+  fillLocationFilter();
   renderLocationPicker();
   renderLocationManageList();
   renderEvents();

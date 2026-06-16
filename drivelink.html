@@ -10,6 +10,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="googlebot" content="noindex,nofollow,noarchive">
 <title>충북교육청 AI 교원연수 — 파일 링크 관리</title>
 <meta name="description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
 <meta name="theme-color" content="#0f1117">
@@ -312,13 +314,16 @@
   }
 
 </style>
+  <link rel="stylesheet" href="assets/safety.css">
   <link rel="stylesheet" href="assets/ui-select.css">
+    <script src="assets/app-config.js"></script>
+  <script src="assets/runtime-safety.js" defer></script>
   <script src="assets/ui-select.js" defer></script>
 </head>
 <body>
 <div id="loadingOverlay"><div class="spinner"></div><div class="loading-text">파일 링크를 불러오는 중...</div></div>
 <div id="syncStatus" class="syncing"><span class="sync-dot"></span><span id="syncText">연결 중</span></div>
-<nav class="nav" aria-label="주요 메뉴"><div class="nav-inner"><a href="index.html">🏠 내 Action</a><a href="details.html">🧩 상세 관리</a><a class="active" href="drivelink.html">📁 파일 관리</a><a href="timetable.html">🕐 운영 시간표</a><a href="contact.html">👥 Contact</a>
+<nav class="nav" aria-label="주요 메뉴"><div class="nav-inner"><a href="index.html">🏠 내 Action</a><a href="details.html">🧩 상세 관리</a><a class="active" href="drivelink.html">📁 파일 관리</a><a href="timetable.html">🕐 운영 시간표</a><a href="contact.html">👥 Contact</a><a href="admin.html">🛡️ 관리 도구</a>
     <button class="theme-toggle" id="themeToggle" type="button" onclick="toggleTheme()" aria-label="라이트 모드로 전환" title="라이트/다크 모드 전환">
       <span class="theme-toggle-icon" id="themeToggleIcon" aria-hidden="true">☀️</span>
       <span class="theme-toggle-text" id="themeToggleText">Light</span>
@@ -434,7 +439,8 @@ let isReady = false;
 // 공통 헬퍼
 // 동기화 상태, HTML escape, 안전한 외부 URL 변환을 담당합니다.
 // ─────────────────────────────────────────────────────────────
-function setSyncStatus(state, text) { const el = document.getElementById('syncStatus'); el.className = state; document.getElementById('syncText').textContent = text; }
+function setSyncStatus(state, text) { const el = document.getElementById('syncStatus'); el.className = state; document.getElementById('syncText').textContent = text;
+  window.TodoSafe?.recordSyncState?.(state, text); }
 // 비동기 삭제/저장 오류가 발생하면 우하단 동기화 배지에 오류 상태를 표시합니다.
 window.addEventListener('unhandledrejection', event => { console.error('Unhandled async error:', event.reason); setSyncStatus('error', '저장/동기화 오류'); });
 function hideLoading(){ if(isReady) return; isReady = true; const ov = document.getElementById('loadingOverlay'); ov.classList.add('hidden'); setTimeout(() => { ov.style.display = 'none'; }, 360); }
@@ -453,15 +459,15 @@ function fillFilters(){ document.getElementById('ownerFilter').innerHTML = OWNER
 function extractLinks(data){
   const rows = [];
   Object.entries(data || {}).forEach(([majorKey, major]) => {
-    if (!major || typeof major !== 'object') return;
+    if (!major || typeof major !== 'object' || major.deleted) return;
     const isMajor = !!(major.actions || major.title);
     if (isMajor) {
-      Object.entries(major.links || {}).forEach(([linkKey, link]) => rows.push({ type:'major', majorKey, actionKey:'', linkKey, majorTitle:major.title || major.text || '(주요 과제)', actionText:'', owner:normalizeOwner(major.owner || major.writer), cat:major.cat || '기타', url:link.url, label:link.label, ts:link.ts || major.updatedAt || 0 }));
-      Object.entries(major.actions || {}).forEach(([actionKey, action]) => {
-        Object.entries(action.links || {}).forEach(([linkKey, link]) => rows.push({ type:'action', majorKey, actionKey, linkKey, majorTitle:major.title || '(주요 과제)', actionText:action.text || '(Action)', owner:normalizeOwner(action.owner || major.owner), cat:major.cat || '기타', url:link.url, label:link.label, ts:link.ts || action.updatedAt || 0 }));
+      Object.entries(major.links || {}).filter(([,link]) => !link?.deleted).forEach(([linkKey, link]) => rows.push({ type:'major', majorKey, actionKey:'', linkKey, majorTitle:major.title || major.text || '(주요 과제)', actionText:'', owner:normalizeOwner(major.owner || major.writer), cat:major.cat || '기타', url:link.url, label:link.label, ts:link.ts || major.updatedAt || 0 }));
+      Object.entries(major.actions || {}).filter(([,action]) => !action?.deleted).forEach(([actionKey, action]) => {
+        Object.entries(action.links || {}).filter(([,link]) => !link?.deleted).forEach(([linkKey, link]) => rows.push({ type:'action', majorKey, actionKey, linkKey, majorTitle:major.title || '(주요 과제)', actionText:action.text || '(Action)', owner:normalizeOwner(action.owner || major.owner), cat:major.cat || '기타', url:link.url, label:link.label, ts:link.ts || action.updatedAt || 0 }));
       });
     } else if (major.text) {
-      Object.entries(major.links || {}).forEach(([linkKey, link]) => rows.push({ type:'legacy', majorKey, actionKey:'', linkKey, majorTitle:'기존 평면 To Do', actionText:major.text || '(기존 항목)', owner:normalizeOwner(major.owner || major.writer), cat:major.cat || '기타', url:link.url, label:link.label, ts:link.ts || major.updatedAt || 0 }));
+      Object.entries(major.links || {}).filter(([,link]) => !link?.deleted).forEach(([linkKey, link]) => rows.push({ type:'legacy', majorKey, actionKey:'', linkKey, majorTitle:'기존 평면 To Do', actionText:major.text || '(기존 항목)', owner:normalizeOwner(major.owner || major.writer), cat:major.cat || '기타', url:link.url, label:link.label, ts:link.ts || major.updatedAt || 0 }));
     }
   });
   return rows.sort((a,b) => (b.ts || 0) - (a.ts || 0));
@@ -508,15 +514,18 @@ window.setSearchQuery = (value) => { searchQuery = value; renderLinks(); };
 window.setOwnerFilter = (value) => { ownerFilter = value; renderLinks(); };
 window.setTypeFilter = (value) => { typeFilter = value; renderLinks(); };
 window.deleteLink = async (type, majorKey, actionKey, linkKey) => {
-  if(!confirm('To Do에 저장된 이 링크를 삭제할까요? 원본 파일은 삭제되지 않습니다.')) return;
+  if (window.TodoSafe?.guardReadOnly?.()) return;
+  if(!confirm('To Do에 저장된 이 링크를 휴지통으로 보낼까요? 원본 파일은 삭제되지 않습니다.')) return;
   const now = Date.now();
   const updates = {};
   if(type === 'action') {
-    updates[`tasks/${majorKey}/actions/${actionKey}/links/${linkKey}`] = null;
+    updates[`tasks/${majorKey}/actions/${actionKey}/links/${linkKey}/deleted`] = true;
+    updates[`tasks/${majorKey}/actions/${actionKey}/links/${linkKey}/deletedAt`] = now;
     updates[`tasks/${majorKey}/actions/${actionKey}/updatedAt`] = now;
     updates[`tasks/${majorKey}/updatedAt`] = now;
   } else {
-    updates[`tasks/${majorKey}/links/${linkKey}`] = null;
+    updates[`tasks/${majorKey}/links/${linkKey}/deleted`] = true;
+    updates[`tasks/${majorKey}/links/${linkKey}/deletedAt`] = now;
     updates[`tasks/${majorKey}/updatedAt`] = now;
   }
   setSyncStatus('syncing', '삭제 중...');

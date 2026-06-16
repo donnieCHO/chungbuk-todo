@@ -11,6 +11,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="googlebot" content="noindex,nofollow,noarchive">
 <title>충북교육청 AI 교원연수 — 상세 관리</title>
 <meta name="description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
 <meta name="theme-color" content="#0f1117">
@@ -581,7 +583,10 @@
   }
 
 </style>
+  <link rel="stylesheet" href="assets/safety.css">
   <link rel="stylesheet" href="assets/ui-select.css">
+    <script src="assets/app-config.js"></script>
+  <script src="assets/runtime-safety.js" defer></script>
   <script src="assets/ui-select.js" defer></script>
 </head>
 <body>
@@ -594,7 +599,7 @@
     <a class="active" href="details.html">🧩 상세 관리</a>
     <a href="drivelink.html">📁 파일 관리</a>
     <a href="timetable.html">🕐 운영 시간표</a>
-    <a href="contact.html">👥 Contact</a>
+    <a href="contact.html">👥 Contact</a><a href="admin.html">🛡️ 관리 도구</a>
     <button class="theme-toggle" id="themeToggle" type="button" onclick="toggleTheme()" aria-label="라이트 모드로 전환" title="라이트/다크 모드 전환">
       <span class="theme-toggle-icon" id="themeToggleIcon" aria-hidden="true">☀️</span>
       <span class="theme-toggle-text" id="themeToggleText">Light</span>
@@ -970,6 +975,37 @@ function setSyncStatus(state, text) {
   const el = document.getElementById('syncStatus');
   el.className = state;
   document.getElementById('syncText').textContent = text;
+  window.TodoSafe?.recordSyncState?.(state, text);
+}
+
+async function logActivity(type, targetPath, title, snapshot={}) {
+  try {
+    const logRef = push(ref(db, 'activity_logs'));
+    await update(ref(db), {
+      [`activity_logs/${logRef.key}`]: {
+        type, targetPath, title,
+        actorLabel: window.TodoSafe?.actorLabel?.() || 'unknown',
+        createdAt: Date.now(), snapshot
+      }
+    });
+  } catch (err) {
+    console.warn('activity log failed:', err);
+  }
+}
+async function safeUpdate(updates, successText='실시간 동기화 중', activity=null) {
+  if (window.TodoSafe?.guardReadOnly?.()) return false;
+  try {
+    setSyncStatus('syncing', '저장 중...');
+    await update(ref(db), updates);
+    if (activity) await logActivity(activity.type, activity.targetPath, activity.title, activity.snapshot || {});
+    setSyncStatus('synced', successText);
+    return true;
+  } catch (err) {
+    console.error(err);
+    setSyncStatus('error', '저장 오류');
+    alert('저장 중 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.');
+    return false;
+  }
 }
 // 비동기 저장 오류가 콘솔에만 남지 않도록 사용자에게 동기화 오류 상태를 표시합니다.
 window.addEventListener('unhandledrejection', event => {
@@ -1076,7 +1112,9 @@ function safeExternalUrl(url) {
   }
 }
 function actionList(major) {
-  return Object.entries(major.actions || {}).map(([key, action]) => [key, action]);
+  return Object.entries(major.actions || {})
+    .filter(([, action]) => !action?.deleted)
+    .map(([key, action]) => [key, action]);
 }
 function actionRelatedToOwner(action, ownerKey) {
   const target = normalizeOwner(ownerKey);
@@ -1113,6 +1151,8 @@ function normalizeAction(key, raw, major) {
     order: raw.order || raw.createdAt || raw.updatedAt || 0,
     createdAt: raw.createdAt || 0,
     updatedAt: raw.updatedAt || 0,
+    deleted: !!raw.deleted,
+    deletedAt: raw.deletedAt || 0,
     memos: raw.memos || {},
     links: raw.links || {}
   };
@@ -1131,10 +1171,13 @@ function normalizeMajor(key, raw) {
     order: raw.order || raw.createdAt || raw.updatedAt || 0,
     createdAt: raw.createdAt || 0,
     updatedAt: raw.updatedAt || 0,
+    deleted: !!raw.deleted,
+    deletedAt: raw.deletedAt || 0,
     actions: {},
     links: raw.links || {}
   };
   Object.entries(raw.actions || {}).forEach(([actionKey, actionRaw]) => {
+    if (actionRaw?.deleted) return;
     major.actions[actionKey] = normalizeAction(actionKey, actionRaw, major);
   });
   return major;
@@ -1143,9 +1186,9 @@ function normalizeData(data) {
   const majors = {};
   const legacy = [];
   Object.entries(data || {}).forEach(([key, raw]) => {
-    if (!raw || typeof raw !== 'object') return;
+    if (!raw || typeof raw !== 'object' || raw.deleted) return;
     if (raw.actions || raw.title || raw.type === 'major') majors[key] = normalizeMajor(key, raw);
-    else if (raw.text) legacy.push([key, raw]);
+    else if (raw.text && !raw.deleted) legacy.push([key, raw]);
   });
   return { majors, legacy };
 }
@@ -1360,8 +1403,8 @@ function renderMajorCard(major) {
   </article>`;
 }
 function renderActionCard(major, actionKey, action) {
-  const memos = Object.entries(action.memos || {}).sort(([,a],[,b]) => (a.ts||0) - (b.ts||0));
-  const links = Object.entries(action.links || {}).sort(([,a],[,b]) => (a.ts||0) - (b.ts||0));
+  const memos = Object.entries(action.memos || {}).filter(([,m]) => !m?.deleted).sort(([,a],[,b]) => (a.ts||0) - (b.ts||0));
+  const links = Object.entries(action.links || {}).filter(([,l]) => !l?.deleted).sort(([,a],[,b]) => (a.ts||0) - (b.ts||0));
   const agencyTags = (action.agencies || []).filter(a => a !== action.owner).map(ownerTag).join('');
   return `<div class="action-card ${action.done ? 'done' : ''}" id="action-${major.key}-${actionKey}">
     <div class="action-main">
@@ -1474,7 +1517,9 @@ window.setSortMode = (value) => { sortMode = value; localStorage.setItem('todo.d
 window.setSearchQuery = (value) => { searchQuery = value; renderAll(); };
 
 window.addMajorTask = async () => {
-  const title = document.getElementById('majorTitle').value.trim();
+  if (window.TodoSafe?.guardReadOnly?.()) return;
+  const title = window.TodoSafe?.limitByType?.(document.getElementById('majorTitle').value, 'majorTitle', '주요 과제명') ?? document.getElementById('majorTitle').value.trim();
+  if (title === null) return;
   if (!title) { document.getElementById('majorTitle').focus(); return; }
   const now = Date.now();
   const newRef = push(tasksRef);
@@ -1482,7 +1527,7 @@ window.addMajorTask = async () => {
   await update(ref(db), {
     [`tasks/${newRef.key}`]: {
       title,
-      description: document.getElementById('majorDescription').value.trim(),
+      description: window.TodoSafe?.limitText?.(document.getElementById('majorDescription').value, 300, '주요 과제 설명') ?? document.getElementById('majorDescription').value.trim(),
       cat: normalizeCategory(document.getElementById('majorCat').value || '운영'),
       owner: document.getElementById('majorOwner').value,
       priority: document.getElementById('majorPriority').value,
@@ -1490,12 +1535,15 @@ window.addMajorTask = async () => {
       status:'todo', done:false, order:now, createdAt:now, updatedAt:now, actions:{}
     }
   });
+  await logActivity('major.create', `tasks/${newRef.key}`, title);
   ['majorTitle','majorDescription','majorDeadline'].forEach(id => document.getElementById(id).value = '');
 };
 window.addActionItem = async (majorKey) => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   const textEl = document.getElementById(`actionText-${majorKey}`);
   const deadlineEl = document.getElementById(`actionDeadline-${majorKey}`);
-  const text = textEl?.value.trim();
+  const text = window.TodoSafe?.limitByType?.(textEl?.value, 'actionText', 'Action Item') ?? textEl?.value.trim();
+  if (text === null) return;
   const deadline = deadlineEl?.value || '';
   if (!text) { textEl?.focus(); return; }
   if (!deadline) { alert('Action Item의 due date를 입력해주세요.'); deadlineEl?.focus(); return; }
@@ -1516,6 +1564,7 @@ window.addActionItem = async (majorKey) => {
     },
     [`tasks/${majorKey}/updatedAt`]: now
   });
+  await logActivity('action.create', `tasks/${majorKey}/actions/${actionRef.key}`, text);
   textEl.value = '';
   deadlineEl.value = '';
   document.getElementById(`waiting-${majorKey}`).innerHTML = waitingPickerHtml(`waiting-${majorKey}`);
@@ -1523,10 +1572,12 @@ window.addActionItem = async (majorKey) => {
 };
 
 window.addActionFromGlobalForm = async () => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   const majorKey = document.getElementById('actionMajor')?.value || '';
   const textEl = document.getElementById('actionText');
   const deadlineEl = document.getElementById('actionDeadline');
-  const text = textEl?.value.trim();
+  const text = window.TodoSafe?.limitByType?.(textEl?.value, 'actionText', 'Action Item') ?? textEl?.value.trim();
+  if (text === null) return;
   const deadline = deadlineEl?.value || '';
   if (!majorKey) { alert('Action Item을 넣을 주요 과제를 먼저 선택해주세요.'); document.getElementById('actionMajor')?.focus(); return; }
   if (!text) { textEl?.focus(); return; }
@@ -1550,6 +1601,7 @@ window.addActionFromGlobalForm = async () => {
     },
     [`tasks/${majorKey}/updatedAt`]: now
   });
+  await logActivity('action.create', `tasks/${majorKey}/actions/${actionRef.key}`, text);
   textEl.value = '';
   deadlineEl.value = '';
   document.getElementById('actionWaitingForPicker').innerHTML = waitingPickerHtml('actionWaitingForPicker');
@@ -1558,6 +1610,7 @@ window.addActionFromGlobalForm = async () => {
   textEl.focus();
 };
 window.toggleAction = async (majorKey, actionKey) => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   const action = majorTasks[majorKey]?.actions?.[actionKey];
   if (!action) return;
   const done = !action.done;
@@ -1569,8 +1622,10 @@ window.toggleAction = async (majorKey, actionKey) => {
     [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
     [`tasks/${majorKey}/updatedAt`]: now
   });
+  await logActivity(done ? 'action.done' : 'action.reopen', `tasks/${majorKey}/actions/${actionKey}`, action.text, action);
 };
 window.deleteMajorTask = async (majorKey) => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   const major = majorTasks[majorKey];
   if (!major) return;
   const actionCount = actionList(major).length;
@@ -1578,31 +1633,38 @@ window.deleteMajorTask = async (majorKey) => {
     `주요 과제 "${major.title}"를 삭제할까요?`,
     '',
     `삭제 범위: 주요 과제 1개 + 내부 Action Item ${actionCount}개`,
-    'Action Item의 메모와 링크 기록도 함께 삭제됩니다.',
-    '',
-    '이 작업은 되돌릴 수 없습니다.'
+    '이제 바로 삭제하지 않고 휴지통 상태(deleted:true)로 보냅니다.',
+    '관리 도구에서 복구하거나 완전 삭제할 수 있습니다.'
   ].join('\n');
   if (!confirm(message)) return;
-  setSyncStatus('syncing', '삭제 중...');
-  try {
-    await remove(ref(db, `tasks/${majorKey}`));
-    setSyncStatus('synced', '삭제 완료');
-  } catch (err) {
-    console.error(err);
-    setSyncStatus('error', '삭제 오류');
-    alert('주요 과제 삭제 중 오류가 발생했습니다. Firebase 권한과 네트워크 상태를 확인해주세요.');
-  }
+  const now = Date.now();
+  await safeUpdate({
+    [`tasks/${majorKey}/deleted`]: true,
+    [`tasks/${majorKey}/deletedAt`]: now,
+    [`tasks/${majorKey}/deletedBy`]: window.TodoSafe?.actorLabel?.() || 'unknown',
+    [`tasks/${majorKey}/updatedAt`]: now
+  }, '휴지통으로 이동됨', { type:'major.softDelete', targetPath:`tasks/${majorKey}`, title:major.title, snapshot:major });
 };
 window.deleteActionItem = async (majorKey, actionKey) => {
-  if (!confirm('이 Action Item을 삭제할까요?')) return;
+  if (window.TodoSafe?.guardReadOnly?.()) return;
+  const action = majorTasks[majorKey]?.actions?.[actionKey];
+  if (!action) return;
+  if (!confirm('이 Action Item을 휴지통으로 보낼까요? 관리 도구에서 복구할 수 있습니다.')) return;
   const now = Date.now();
-  setSyncStatus('syncing', '삭제 중...');
-  await update(ref(db), { [`tasks/${majorKey}/actions/${actionKey}`]: null, [`tasks/${majorKey}/updatedAt`]: now });
+  await safeUpdate({
+    [`tasks/${majorKey}/actions/${actionKey}/deleted`]: true,
+    [`tasks/${majorKey}/actions/${actionKey}/deletedAt`]: now,
+    [`tasks/${majorKey}/actions/${actionKey}/deletedBy`]: window.TodoSafe?.actorLabel?.() || 'unknown',
+    [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
+    [`tasks/${majorKey}/updatedAt`]: now
+  }, '휴지통으로 이동됨', { type:'action.softDelete', targetPath:`tasks/${majorKey}/actions/${actionKey}`, title:action.text, snapshot:action });
 };
 window.addMemo = async (majorKey, actionKey) => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   const writer = document.getElementById(`memoWriter-${majorKey}-${actionKey}`).value;
   const input = document.getElementById(`memoText-${majorKey}-${actionKey}`);
-  const text = input.value.trim();
+  const text = window.TodoSafe?.limitByType?.(input.value, 'memo', '메모') ?? input.value.trim();
+  if (text === null) return;
   if (!text) { input.focus(); return; }
   const memoRef = push(ref(db, `tasks/${majorKey}/actions/${actionKey}/memos`));
   const now = Date.now();
@@ -1612,39 +1674,46 @@ window.addMemo = async (majorKey, actionKey) => {
     [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
     [`tasks/${majorKey}/updatedAt`]: now
   });
+  await logActivity('memo.create', `tasks/${majorKey}/actions/${actionKey}/memos/${memoRef.key}`, text);
   input.value = '';
 };
 window.deleteMemo = async (majorKey, actionKey, memoKey) => {
-  if (!confirm('이 메모를 삭제할까요?')) return;
+  if (window.TodoSafe?.guardReadOnly?.()) return;
+  if (!confirm('이 메모를 휴지통으로 보낼까요?')) return;
   const now = Date.now();
   setSyncStatus('syncing', '삭제 중...');
   await update(ref(db), {
-    [`tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}`]: null,
+    [`tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/deleted`]: true,
+    [`tasks/${majorKey}/actions/${actionKey}/memos/${memoKey}/deletedAt`]: now,
     [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
     [`tasks/${majorKey}/updatedAt`]: now
   });
 };
 window.addLink = async (majorKey, actionKey) => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   const urlEl = document.getElementById(`linkUrl-${majorKey}-${actionKey}`);
   const labelEl = document.getElementById(`linkLabel-${majorKey}-${actionKey}`);
-  const href = safeExternalUrl(urlEl.value);
-  if (href === '#') { urlEl.focus(); return; }
+  const href = window.TodoSafe?.safeExternalUrl?.(urlEl.value) || safeExternalUrl(urlEl.value);
+  if (!href || href === '#') { alert('http 또는 https URL만 추가할 수 있습니다.'); urlEl.focus(); return; }
   const linkRef = push(ref(db, `tasks/${majorKey}/actions/${actionKey}/links`));
   const now = Date.now();
   setSyncStatus('syncing', '저장 중...');
   await update(ref(db), {
-    [`tasks/${majorKey}/actions/${actionKey}/links/${linkRef.key}`]: { url:href, label:labelEl.value.trim(), ts:now },
+    [`tasks/${majorKey}/actions/${actionKey}/links/${linkRef.key}`]: { url:href, label:(window.TodoSafe?.limitByType?.(labelEl.value, 'linkLabel', '링크 라벨') ?? labelEl.value.trim()), ts:now },
     [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
     [`tasks/${majorKey}/updatedAt`]: now
   });
+  await logActivity('link.create', `tasks/${majorKey}/actions/${actionKey}/links/${linkRef.key}`, labelEl.value.trim() || href);
   urlEl.value = ''; labelEl.value = '';
 };
 window.deleteLink = async (majorKey, actionKey, linkKey) => {
-  if (!confirm('이 링크를 삭제할까요?')) return;
+  if (window.TodoSafe?.guardReadOnly?.()) return;
+  if (!confirm('이 링크를 휴지통으로 보낼까요?')) return;
   const now = Date.now();
   setSyncStatus('syncing', '삭제 중...');
   await update(ref(db), {
-    [`tasks/${majorKey}/actions/${actionKey}/links/${linkKey}`]: null,
+    [`tasks/${majorKey}/actions/${actionKey}/links/${linkKey}/deleted`]: true,
+    [`tasks/${majorKey}/actions/${actionKey}/links/${linkKey}/deletedAt`]: now,
     [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
     [`tasks/${majorKey}/updatedAt`]: now
   });
@@ -1687,6 +1756,7 @@ window.closeEditModal = () => {
   document.getElementById('editModal').classList.add('hidden');
 };
 window.saveEditModal = async () => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   const type = document.getElementById('editType').value;
   const majorKey = document.getElementById('editMajorKey').value;
   const now = Date.now();
@@ -1722,6 +1792,7 @@ window.saveEditModal = async () => {
       [`tasks/${majorKey}/updatedAt`]: now
     });
   }
+  await logActivity(type === 'major' ? 'major.update' : 'action.update', type === 'major' ? `tasks/${majorKey}` : `tasks/${majorKey}/actions/${document.getElementById('editActionKey').value}`, '수정');
   window.closeEditModal();
 };
 // ─────────────────────────────────────────────────────────────

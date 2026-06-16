@@ -184,3 +184,20 @@ contact.html: 소속 필터, 연락처 소속, 수정 모달
 - 충북교육청 로고 이미지는 페이지 본문, Header, Hero 영역에 노출하지 않습니다.
 - 로고 자산은 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지 용도로만 유지합니다.
 - 5개 주요 페이지(index/details/drivelink/timetable/contact)의 첫 화면은 텍스트 기반 Hero 헤드라인과 우측 상태 카드 구조로 통일합니다.
+
+---
+
+## 오픈 Firebase 운영 안전장치 점검
+
+- [ ] `admin.html`이 배포 루트에 포함되어 있는가?
+- [ ] `robots.txt`가 배포 루트에 포함되어 있는가?
+- [ ] `assets/app-config.js`, `assets/runtime-safety.js`, `assets/safety.css`가 업로드되어 있는가?
+- [ ] 모든 HTML에 `noindex,nofollow,noarchive` 메타가 들어 있는가?
+- [ ] 내비게이션에 `관리 도구` 링크가 표시되는가?
+- [ ] `admin.html`에서 전체 백업 JSON이 다운로드되는가?
+- [ ] 주요 과제 삭제 후 일반 화면에서는 숨겨지고, 관리 도구 휴지통에는 표시되는가?
+- [ ] 휴지통에서 복구하면 일반 화면에 다시 표시되는가?
+- [ ] 휴지통에서 완전 삭제하면 Firebase 경로가 제거되는가?
+- [ ] 활동 로그가 생성되는가?
+- [ ] Contact 페이지에 개인정보 운영 안내가 표시되는가?
+- [ ] 시간표에서 장소 필터, 인쇄 버튼, 일정 복제, 겹침 경고가 동작하는가?

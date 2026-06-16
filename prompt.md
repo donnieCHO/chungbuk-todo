@@ -278,3 +278,39 @@ tasks
 - 충북교육청 로고 이미지는 페이지 본문, Header, Hero 영역에 노출하지 않습니다.
 - 로고 자산은 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지 용도로만 유지합니다.
 - 5개 주요 페이지(index/details/drivelink/timetable/contact)의 첫 화면은 텍스트 기반 Hero 헤드라인과 우측 상태 카드 구조로 통일합니다.
+
+---
+
+## 추가 요구사항 — 오픈 Firebase 운영 안전장치
+
+동일한 구조의 앱을 다시 만들 때는 아래 기능을 반드시 포함하세요.
+
+1. `admin.html` 관리 도구
+   - 전체 JSON 백업
+   - 노드별 백업
+   - soft delete 휴지통
+   - 복구 / 완전 삭제
+   - activity_logs 보기
+   - meta schemaVersion 기록
+
+2. 공통 자산
+   - `assets/app-config.js`
+   - `assets/runtime-safety.js`
+   - `assets/safety.css`
+
+3. 삭제 정책
+   - 주요 과제, Action Item, Contact, 시간표 일정, 장소 태그, 링크는 즉시 삭제하지 말고 `deleted:true`로 처리
+   - 일반 화면에서는 deleted 항목을 렌더링하지 않음
+   - admin.html에서만 복구/완전 삭제 가능
+
+4. 검색 노출 방지
+   - 모든 HTML에 noindex/nofollow/noarchive 메타
+   - robots.txt 포함
+
+5. 운영 실수 방지
+   - readOnlyMode feature flag
+   - Contact 페이지 숨김 feature flag
+   - 입력값 길이 제한
+   - URL 스킴 검증
+   - Firebase write 오류 처리
+   - 동기화 상태에 다시 연결 버튼과 마지막 동기화 시각 표시

@@ -1,0 +1,55 @@
+/* Open Firebase 운영 보조 UI */
+.sync-refresh-btn {
+  margin-left:6px;
+  border:1px solid currentColor;
+  border-radius:999px;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  font-size:11px;
+  padding:2px 7px;
+  cursor:pointer;
+  opacity:.76;
+}
+.sync-refresh-btn:hover { opacity:1; background:rgba(255,255,255,.08); }
+.sync-last { opacity:.68; font-family:'DM Mono',monospace; }
+.safety-banner {
+  max-width:1120px;
+  margin:0 auto 14px;
+  padding:10px 14px;
+  border:1px solid rgba(245,200,66,.42);
+  border-radius:12px;
+  background:rgba(245,200,66,.09);
+  color:var(--yellow,#f5c842);
+  font-size:13px;
+  font-weight:700;
+}
+html[data-readonly] button:not(.theme-toggle):not(.sync-refresh-btn),
+html[data-readonly] input,
+html[data-readonly] textarea,
+html[data-readonly] select {
+  cursor:not-allowed;
+}
+@media print {
+  .nav,
+  .theme-toggle,
+  .toolbar,
+  #syncStatus,
+  #loadingOverlay,
+  .usage-guide,
+  .btn,
+  .icon-btn,
+  .toolbar-btn,
+  .modal-overlay {
+    display:none !important;
+  }
+  body { background:#fff !important; color:#111 !important; padding:0 !important; }
+  .hero,.panel,.timetable-wrap,.contact-card,.link-card,.major-card,.summary-card {
+    box-shadow:none !important;
+    border-color:#ddd !important;
+    background:#fff !important;
+    color:#111 !important;
+    break-inside:avoid;
+  }
+  a { color:#111 !important; text-decoration:none !important; }
+}

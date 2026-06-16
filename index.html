@@ -11,6 +11,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="googlebot" content="noindex,nofollow,noarchive">
 <title>충북교육청 AI 교원연수 — To Do List management sheet</title>
 <meta name="description" content="충북교육청 AI 교원연수 To Do List management sheet — 주요 과제와 Action Item, 운영 시간표, 파일 링크, Contact를 실시간으로 관리하는 협업 대시보드입니다.">
 <meta name="theme-color" content="#0f1117">
@@ -451,7 +453,10 @@
   }
 
 </style>
+  <link rel="stylesheet" href="assets/safety.css">
   <link rel="stylesheet" href="assets/ui-select.css">
+    <script src="assets/app-config.js"></script>
+  <script src="assets/runtime-safety.js" defer></script>
   <script src="assets/ui-select.js" defer></script>
 </head>
 <body>
@@ -464,7 +469,7 @@
     <a href="details.html">🧩 상세 관리</a>
     <a href="drivelink.html">📁 파일 관리</a>
     <a href="timetable.html">🕐 운영 시간표</a>
-    <a href="contact.html">👥 Contact</a>
+    <a href="contact.html">👥 Contact</a><a href="admin.html">🛡️ 관리 도구</a>
     <button class="theme-toggle" id="themeToggle" type="button" onclick="toggleTheme()" aria-label="라이트 모드로 전환" title="라이트/다크 모드 전환">
       <span class="theme-toggle-icon" id="themeToggleIcon" aria-hidden="true">☀️</span>
       <span class="theme-toggle-text" id="themeToggleText">Light</span>
@@ -775,6 +780,14 @@ function setSyncStatus(state, text) {
   const el = document.getElementById('syncStatus');
   el.className = state;
   document.getElementById('syncText').textContent = text;
+  window.TodoSafe?.recordSyncState?.(state, text);
+}
+
+async function logActivity(type, targetPath, title, snapshot={}) {
+  try {
+    const logRef = push(ref(db, 'activity_logs'));
+    await update(ref(db), { [`activity_logs/${logRef.key}`]: { type, targetPath, title, actorLabel: window.TodoSafe?.actorLabel?.() || 'unknown', createdAt: Date.now(), snapshot } });
+  } catch (err) { console.warn('activity log failed:', err); }
 }
 // 비동기 저장 오류가 콘솔에만 남지 않도록 사용자에게 동기화 오류 상태를 표시합니다.
 window.addEventListener('unhandledrejection', event => {
@@ -856,7 +869,9 @@ function deadlineTag(deadline) {
   return `<span class="tag ${cls}">📅 ${label}</span>`;
 }
 function actionList(major) {
-  return Object.entries(major.actions || {}).map(([key, action]) => [key, action]);
+  return Object.entries(major.actions || {})
+    .filter(([, action]) => !action?.deleted)
+    .map(([key, action]) => [key, action]);
 }
 function actionRelatedToOwner(action, ownerKey) {
   const target = normalizeOwner(ownerKey);
@@ -897,6 +912,8 @@ function normalizeAction(key, raw, major) {
     order: raw.order || raw.createdAt || raw.updatedAt || 0,
     createdAt: raw.createdAt || 0,
     updatedAt: raw.updatedAt || 0,
+    deleted: !!raw.deleted,
+    deletedAt: raw.deletedAt || 0,
     memos: raw.memos || {},
     links: raw.links || {}
   };
@@ -915,10 +932,13 @@ function normalizeMajor(key, raw) {
     order: raw.order || raw.createdAt || raw.updatedAt || 0,
     createdAt: raw.createdAt || 0,
     updatedAt: raw.updatedAt || 0,
+    deleted: !!raw.deleted,
+    deletedAt: raw.deletedAt || 0,
     actions: {},
     links: raw.links || {}
   };
   Object.entries(raw.actions || {}).forEach(([actionKey, actionRaw]) => {
+    if (actionRaw?.deleted) return;
     major.actions[actionKey] = normalizeAction(actionKey, actionRaw, major);
   });
   return major;
@@ -927,9 +947,9 @@ function normalizeData(data) {
   const majors = {};
   const legacy = [];
   Object.entries(data || {}).forEach(([key, raw]) => {
-    if (!raw || typeof raw !== 'object') return;
+    if (!raw || typeof raw !== 'object' || raw.deleted) return;
     if (raw.actions || raw.title || raw.type === 'major') majors[key] = normalizeMajor(key, raw);
-    else if (raw.text) legacy.push([key, raw]);
+    else if (raw.text && !raw.deleted) legacy.push([key, raw]);
   });
   return { majors, legacy };
 }
@@ -1135,8 +1155,8 @@ function renderMajorCard(major, actions) {
   </article>`;
 }
 function renderActionRow(major, actionKey, action) {
-  const linkCount = Object.keys(action.links || {}).length;
-  const memoCount = Object.keys(action.memos || {}).length;
+  const linkCount = Object.values(action.links || {}).filter(l => !l?.deleted).length;
+  const memoCount = Object.values(action.memos || {}).filter(m => !m?.deleted).length;
   return `<div class="action-row ${action.done ? 'done' : ''}" id="action-${major.key}-${actionKey}">
     <button class="check complete-btn" onclick="toggleAction('${major.key}','${actionKey}')" title="왼쪽 원형 체크를 누르면 완료됩니다" aria-label="Action Item 완료 전환"><span>✓</span></button>
     <div class="action-body">
@@ -1208,9 +1228,11 @@ window.setSearchQuery = (value) => {
   renderAll();
 };
 window.quickAddAction = async () => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   const majorKey = document.getElementById('quickMajor').value;
   const textEl = document.getElementById('quickText');
-  const text = textEl.value.trim();
+  const text = window.TodoSafe?.limitByType?.(textEl.value, 'actionText', 'Action Item') ?? textEl.value.trim();
+  if (text === null) return;
   if (!majorKey) { alert('먼저 주요 과제를 만들어주세요.'); return; }
   if (!text) { textEl.focus(); return; }
   const owner = document.getElementById('quickOwner').value;
@@ -1227,11 +1249,13 @@ window.quickAddAction = async () => {
     },
     [`tasks/${majorKey}/updatedAt`]: now
   });
+  await logActivity('action.create', `tasks/${majorKey}/actions/${actionRef.key}`, text);
   textEl.value = '';
   document.getElementById('quickDeadline').value = '';
   document.getElementById('quickWaitingForPicker').innerHTML = waitingPickerHtml('quickWaitingForPicker');
 };
 window.toggleAction = async (majorKey, actionKey) => {
+  if (window.TodoSafe?.guardReadOnly?.()) return;
   const action = majorTasks[majorKey]?.actions?.[actionKey];
   if (!action) return;
   const done = !action.done;
@@ -1243,6 +1267,7 @@ window.toggleAction = async (majorKey, actionKey) => {
     [`tasks/${majorKey}/actions/${actionKey}/updatedAt`]: now,
     [`tasks/${majorKey}/updatedAt`]: now
   });
+  await logActivity(done ? 'action.done' : 'action.reopen', `tasks/${majorKey}/actions/${actionKey}`, action.text, action);
 };
 
 // ─────────────────────────────────────────────────────────────

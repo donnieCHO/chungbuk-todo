@@ -335,3 +335,68 @@ contact.html
 - 충북교육청 로고 이미지는 페이지 본문, Header, Hero 영역에 노출하지 않습니다.
 - 로고 자산은 favicon, apple-touch-icon, Open Graph/Twitter meta 이미지 용도로만 유지합니다.
 - 5개 주요 페이지(index/details/drivelink/timetable/contact)의 첫 화면은 텍스트 기반 Hero 헤드라인과 우측 상태 카드 구조로 통일합니다.
+
+---
+
+## 🛡️ 오픈 Firebase 운영 안전장치
+
+현재 배포본은 Firebase Realtime Database를 일정 기간 오픈 규칙으로 운영하는 상황을 고려해, 보안 규칙을 바꾸지 않고도 운영 실수를 줄일 수 있는 보조 기능을 포함합니다. 이 기능들은 Firebase Security Rules를 대체하지 않으며, URL을 아는 사람이 접근할 수 있다는 전제를 유지합니다.
+
+### 추가된 관리 도구
+
+`admin.html`에서 아래 기능을 사용할 수 있습니다.
+
+- 전체 데이터 JSON 백업 다운로드
+- 노드별 백업 다운로드
+- 삭제된 항목 휴지통 보기
+- 휴지통 항목 복구
+- 휴지통 항목 완전 삭제
+- 활동 로그 확인
+- `meta` 노드에 schemaVersion/appVersion 기록
+- 작업자 라벨 저장
+
+### 새로 추가된 공통 파일
+
+```txt
+assets/app-config.js       # 프로젝트 공통 설정, feature flag, 입력 길이 제한
+assets/runtime-safety.js   # read-only guard, URL 검증, JSON 다운로드, 동기화 재연결 버튼
+assets/safety.css          # 운영 안전장치 UI, print CSS
+robots.txt                 # 검색엔진 색인 차단 요청
+admin.html                 # 백업/휴지통/로그 관리 도구
+```
+
+### 삭제 정책
+
+주요 데이터 삭제는 즉시 삭제하지 않고 기본적으로 아래 필드를 추가합니다.
+
+```js
+deleted: true
+deletedAt: Date.now()
+deletedBy: '작업자 라벨'
+```
+
+화면에서는 `deleted:true` 항목을 숨기고, `admin.html`에서 복구하거나 완전 삭제할 수 있습니다.
+
+### 검색 노출 최소화
+
+모든 HTML에는 아래 메타가 포함되어 있습니다.
+
+```html
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="googlebot" content="noindex,nofollow,noarchive">
+```
+
+루트에는 `robots.txt`도 포함되어 있습니다. 단, 이는 보안 장치가 아니라 검색 노출을 줄이는 장치입니다.
+
+### 운영 권장 흐름
+
+```txt
+1. 대량 수정 전 admin.html에서 전체 백업
+2. 작업자 라벨 저장
+3. 상세 관리 / 시간표 / Contact에서 수정
+4. 삭제가 필요하면 soft delete 처리
+5. 실수 삭제 시 admin.html에서 복구
+6. 행사 종료 후 readOnlyMode를 true로 전환하거나 Firebase Rules를 읽기 전용으로 변경
+```
+
+자세한 운영 절차는 `OPERATIONS_SAFETY_GUIDE.md`를 참고하세요.
