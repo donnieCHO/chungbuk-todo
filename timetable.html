@@ -255,7 +255,7 @@
     position:absolute;
     left:5px;right:5px;
     border-radius:9px;
-    padding:8px 10px 7px;
+    padding:6px 8px 5px;
     cursor:pointer;
     overflow:hidden;
     transition:transform .12s, box-shadow .12s, opacity .12s;
@@ -271,13 +271,14 @@
   .tt-event.common  { background:rgba(61,214,140,.18); border-left-color:var(--common);  color:var(--common); }
   .tt-event.sejong  { background:rgba(195,0,47,.22);  border-left-color:var(--sejong);  color:#ff6f80; }
   .tt-event.upstage { background:rgba(139,92,246,.22); border-left-color:var(--upstage); color:#c4b5fd; }
-  .tt-event-title { font-weight:800;line-height:1.32;color:var(--text);font-size:13px;margin-bottom:3px;letter-spacing:-.15px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
-  .tt-event-time  { font-family:'DM Mono',monospace;font-size:10.5px;opacity:.86;line-height:1.35; }
-  .tt-event-location { display:flex;flex-wrap:wrap;gap:4px;margin-top:6px; }
+  .tt-event-title { font-weight:850;line-height:1.22;color:var(--text);font-size:12.5px;margin-bottom:3px;letter-spacing:-.15px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+  .tt-event.compact .tt-event-title { -webkit-line-clamp:1; }
+  .tt-event-time  { font-family:'DM Mono',monospace;font-size:9.5px;opacity:.62;line-height:1.25;margin-top:2px; }
+  .tt-event-location { display:flex;flex-wrap:wrap;gap:3px;margin-top:4px; }
   .tt-location-chip-mini {
     display:inline-flex;align-items:center;gap:2px;
-    font-family:'Pretendard',sans-serif;font-size:10px;font-weight:700;line-height:1.25;
-    padding:2px 7px;border-radius:99px;border:1px solid rgba(79,142,247,.36);
+    font-family:'Pretendard',sans-serif;font-size:9.5px;font-weight:800;line-height:1.15;
+    padding:2px 6px;border-radius:99px;border:1px solid rgba(79,142,247,.36);
     background:rgba(79,142,247,.12);color:#a9c8ff;max-width:100%;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
@@ -931,7 +932,7 @@ function renderEvents() {
     if (duration <= 0) return;
 
     const card = document.createElement('div');
-    card.className = `tt-event ${ev.cat || 'common'}`;
+    card.className = `tt-event ${ev.cat || 'common'} ${duration <= 2 ? 'compact' : ''}`;
     const rowH = getRowHeight();
     card.style.top    = `${startSlot * rowH + 3}px`;
     card.style.height = `${duration * rowH - 6}px`;
@@ -944,9 +945,8 @@ function renderEvents() {
       </div>` : '';
     card.innerHTML = `
       <div class="tt-event-title">${escapeHtml(ev.title || '(제목 없음)')}</div>
-      <div class="tt-event-time">${ev.start}–${ev.end}</div>
       ${locationHtml}
-      ${ev.memo ? `<div class="tt-event-time" style="opacity:.7;margin-top:2px">${escapeHtml(ev.memo).slice(0,40)}</div>` : ''}
+      <div class="tt-event-time">${ev.start}–${ev.end}</div>
     `;
     card.addEventListener('click', (e) => {
       e.stopPropagation();

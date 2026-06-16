@@ -213,6 +213,12 @@
   .tag.doing { color:var(--upstage); border-color:rgba(139,92,246,.42); background:rgba(139,92,246,.08); }
   .tag.done { color:var(--green); border-color:rgba(61,214,140,.35); background:rgba(61,214,140,.08); }
 
+/* Timeline list for My Action
+   날짜를 먼저 보여주고, 해당 날짜의 Action Item을 옆에 붙여서 한눈에 마감 흐름을 볼 수 있게 합니다. */
+.timeline-list{display:flex;flex-direction:column;gap:12px}.timeline-day{display:grid;grid-template-columns:118px minmax(0,1fr);gap:14px;align-items:start;position:relative}.timeline-day::before{content:'';position:absolute;left:58px;top:42px;bottom:-14px;width:2px;background:var(--border);opacity:.7}.timeline-day:last-child::before{display:none}.timeline-date{position:sticky;top:80px;z-index:1;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;min-height:72px;border:1px solid var(--border);border-radius:18px;background:linear-gradient(135deg,rgba(79,142,247,.08),rgba(255,255,255,.02)),var(--surface);box-shadow:0 8px 24px rgba(0,0,0,.12)}.timeline-date .date-main{font-family:'DM Mono',monospace;font-size:22px;font-weight:800;color:var(--accent);line-height:1}.timeline-date .date-sub{font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.02em}.timeline-date.over .date-main{color:var(--red)}.timeline-date.today .date-main{color:var(--green)}.timeline-date.near .date-main{color:var(--yellow)}.timeline-actions{display:flex;flex-direction:column;gap:8px}.timeline-action-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:11px;align-items:start;border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:11px 12px;transition:border-color .15s,transform .15s}.timeline-action-card:hover{border-color:rgba(79,142,247,.38);transform:translateY(-1px)}.timeline-action-card.done{opacity:.58}.timeline-action-card.done .action-text{text-decoration:line-through;color:var(--muted)}.timeline-major{font-size:11px;color:var(--muted);font-weight:800;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.timeline-meta{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}.timeline-empty{padding:18px;border:1px dashed var(--border);border-radius:16px;color:var(--muted);text-align:center;background:rgba(255,255,255,.015)}
+@media(max-width:720px){.timeline-day{grid-template-columns:1fr}.timeline-day::before{display:none}.timeline-date{position:relative;top:auto;align-items:flex-start;padding:13px 15px;min-height:auto}.timeline-date .date-main{font-size:18px}.timeline-action-card{grid-template-columns:auto minmax(0,1fr)}}
+
+
   /* ── Dashboard status panel ──
      요약 숫자 아래에 오늘/이번 주/회신 대기/다음 마감 정보를 한 번 더 크게 보여주는 대시보드입니다.
      상세 리스트 섹션은 지금 해야 할 일과 이번 주 Action으로 단순화하고, 전체 현황은 이 영역에서 파악합니다. */
@@ -609,12 +615,12 @@
   </section>
 
   <section class="section" id="sec-now">
-    <div class="section-head"><h2>🔥 지금 해야 할 일</h2><span class="badge" id="countNow">0</span></div>
+    <div class="section-head"><h2>🔥 지금 해야 할 일 · Timeline</h2><span class="badge" id="countNow">0</span></div>
     <div class="major-list" id="nowList"></div>
   </section>
 
   <section class="section" id="sec-week">
-    <div class="section-head"><h2>🗓 이번 주 Action</h2><span class="badge" id="countWeek">0</span></div>
+    <div class="section-head"><h2>🗓 이번 주 Action · Timeline</h2><span class="badge" id="countWeek">0</span></div>
     <div class="major-list" id="weekList"></div>
   </section>
 
@@ -1131,66 +1137,74 @@ function actionSortScore(action) {
 // 렌더링
 // 주요 과제 카드 안에 현재 섹션에 해당하는 Action Item만 선별해 출력합니다.
 // ─────────────────────────────────────────────────────────────
-function renderMajorCard(major, actions) {
-  const p = progressOf(major);
-  const deadline = deadlineTag(major.deadline);
-  const actionHtml = actions.slice(0, 6).map(([actionKey, action]) => renderActionRow(major, actionKey, action)).join('');
-  const more = actions.length > 6 ? `<div class="empty" style="padding:10px">나머지 ${actions.length - 6}개는 상세 관리에서 확인하세요</div>` : '';
-  return `<article class="major-card" id="major-${major.key}">
-    <div class="major-top">
-      <div class="major-title-wrap">
-        <div class="major-title">
-          <a href="details.html#major-${major.key}" title="상세 관리에서 열기">${escapeHtml(major.title)}</a>
-          ${priorityTag(major.priority)} ${statusTag(major.status, major.done)}
-        </div>
-        ${major.description ? `<div class="major-desc">${escapeHtml(major.description)}</div>` : ''}
-        <div class="major-meta">${ownerTag(major.owner)}${categoryTag(major.cat)}${deadline}</div>
-      </div>
-      <div class="major-progress">
-        <div class="progress-num">${p.done}/${p.total} · ${p.pct}%</div>
-        <div class="progress-track"><div class="progress-fill" style="width:${p.pct}%"></div></div>
-      </div>
-    </div>
-    <div class="action-list">${actionHtml || '<div class="empty">표시할 Action Item이 없습니다</div>'}${more}</div>
-  </article>`;
+function dateBucketKey(action) {
+  return action.deadline || 'no-date';
 }
-function renderActionRow(major, actionKey, action) {
+function dateBucketInfo(dateKey) {
+  if (dateKey === 'no-date') return { main:'미정', sub:'Due date 없음', cls:'' };
+  const diff = getDaysLeft(dateKey);
+  const date = new Date(dateKey);
+  const main = `${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')}`;
+  let sub = '예정';
+  let cls = '';
+  if (diff < 0) { sub = `${Math.abs(diff)}일 지남`; cls = 'over'; }
+  else if (diff === 0) { sub = '오늘'; cls = 'today'; }
+  else if (diff <= 7) { sub = `${diff}일 남음`; cls = 'near'; }
+  else { sub = `${diff}일 남음`; }
+  return { main, sub, cls };
+}
+function renderTimelineAction(item) {
+  const { major, actionKey, action } = item;
   const linkCount = Object.values(action.links || {}).filter(l => !l?.deleted).length;
   const memoCount = Object.values(action.memos || {}).filter(m => !m?.deleted).length;
-  return `<div class="action-row ${action.done ? 'done' : ''}" id="action-${major.key}-${actionKey}">
+  return `<div class="timeline-action-card ${action.done ? 'done' : ''}" id="action-${major.key}-${actionKey}">
     <button class="check complete-btn" onclick="toggleAction('${major.key}','${actionKey}')" title="왼쪽 원형 체크를 누르면 완료됩니다" aria-label="Action Item 완료 전환"><span>✓</span></button>
     <div class="action-body">
+      <div class="timeline-major">${escapeHtml(major.title)} · ${escapeHtml(categoryInfo(major.cat).label)}</div>
       <div class="action-text">${escapeHtml(action.text)}</div>
-      <div class="action-meta">
+      <div class="timeline-meta">
         ${ownerTag(action.owner)}${priorityTag(action.priority)}${deadlineTag(action.deadline)}
         ${waitingDisplay(action.waitingFor) ? `<span class="tag waiting">회신: ${escapeHtml(waitingDisplay(action.waitingFor))}</span>` : ''}
         ${linkCount ? `<span class="tag">🔗 ${linkCount}</span>` : ''}${memoCount ? `<span class="tag">💬 ${memoCount}</span>` : ''}
       </div>
     </div>
-    <div class="action-tools">
-      <a class="icon-btn" href="details.html#action-${major.key}-${actionKey}" title="상세 보기">상세</a>
-    </div>
+    <div class="action-tools"><a class="icon-btn" href="details.html#action-${major.key}-${actionKey}" title="상세 보기">상세</a></div>
   </div>`;
 }
-function renderSection(section, listId, countId, emptyText) {
+function renderTimelineSection(section, listId, countId, emptyText) {
   const majors = sortedMajors(Object.values(majorTasks));
-  let totalActions = 0;
-  const html = majors.map(major => {
-    const actions = visibleActionsForMajor(major, section);
-    if (!actions.length) return '';
-    totalActions += actions.length;
-    return renderMajorCard(major, actions);
-  }).filter(Boolean).join('');
-  document.getElementById(listId).innerHTML = html || `<div class="empty">${emptyText}</div>`;
-  document.getElementById(countId).textContent = totalActions;
+  const flat = [];
+  majors.forEach(major => {
+    visibleActionsForMajor(major, section).forEach(([actionKey, action]) => flat.push({ major, actionKey, action }));
+  });
+  flat.sort((a,b) => actionSortValue(a.action, { includeDone:section === 'done' }) - actionSortValue(b.action, { includeDone:section === 'done' }));
+  document.getElementById(countId).textContent = flat.length;
+  if (!flat.length) {
+    document.getElementById(listId).innerHTML = `<div class="timeline-empty">${emptyText}</div>`;
+    return;
+  }
+  const grouped = new Map();
+  flat.forEach(item => {
+    const key = dateBucketKey(item.action);
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(item);
+  });
+  const html = [...grouped.entries()].map(([dateKey, items]) => {
+    const info = dateBucketInfo(dateKey);
+    return `<div class="timeline-day">
+      <div class="timeline-date ${info.cls}"><div class="date-main">${escapeHtml(info.main)}</div><div class="date-sub">${escapeHtml(info.sub)}</div></div>
+      <div class="timeline-actions">${items.map(renderTimelineAction).join('')}</div>
+    </div>`;
+  }).join('');
+  document.getElementById(listId).innerHTML = `<div class="timeline-list">${html}</div>`;
 }
 function renderAll() {
   document.getElementById('legacyPanel').style.display = legacyTasks.length ? '' : 'none';
   setSummary();
   setMajorSelect();
-  renderSection('now', 'nowList', 'countNow', '지금 바로 처리할 Action Item이 없습니다.');
-  renderSection('week', 'weekList', 'countWeek', '이번 주에 마감되는 Action Item이 없습니다.');
-  renderSection('done', 'doneList', 'countDone', '완료된 Action Item이 없습니다.');
+  renderTimelineSection('now', 'nowList', 'countNow', '지금 바로 처리할 Action Item이 없습니다.');
+  renderTimelineSection('week', 'weekList', 'countWeek', '이번 주에 마감되는 Action Item이 없습니다.');
+  renderTimelineSection('done', 'doneList', 'countDone', '완료된 Action Item이 없습니다.');
 }
 
 window.toggleUsageGuide = () => {

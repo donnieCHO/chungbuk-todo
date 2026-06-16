@@ -407,3 +407,11 @@ deletedBy: '작업자 라벨'
 
 또한 2026-06-16 배포본에서 `timetable.html`의 장소 필터 상태 변수 `locationFilter` 누락으로 일정 렌더링이 중단될 수 있던 문제를 수정했습니다. Firebase의 `timetable_events` 데이터 자체는 변경하지 않았고, 화면 표시 오류만 수정했습니다.
 
+
+
+### 최신 UI 운영 흐름
+
+- 주요 과제 생성과 일괄 Action Item 등록은 `admin.html`의 **To Do 등록** 영역에서 진행합니다.
+- `details.html`은 상세 조회, 주요 과제 카드 내부 Action Item 추가, 메모/링크 관리 중심으로 사용합니다.
+- `index.html`은 due date 기준 타임라인 형태로 내 Action을 보여줍니다.
+- `timetable.html` 일정 카드는 제목과 장소를 우선 표시하고 시간은 보조 정보로 작게 표시합니다.
